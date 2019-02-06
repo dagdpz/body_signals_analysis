@@ -25,12 +25,11 @@ if nargin < 4,
 end
 
 n_samples       = length(ecgSignal);
-t               = 0:1/Fs:1/Fs*(n_samples-1);
+t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sample is time 0! (not 1/Fs)
 
 min_R2R         = 0.25; % s
 MAD_sensitivity_p2p_diff = 3;
 hampel_T        = 4; % threshold for hamplel outlier detection
-
 
 
 ecgSignal = detrend(ecgSignal);
@@ -48,7 +47,7 @@ Rs  = 150;                                                  % Stopband Ripple (d
 % freqz(sos,512,Fs);
 % title(sprintf('n = %d Butterworth Lowpass Filter',n))
 
-% Filter Signal
+% Filter raw ECG
 ecgFiltered = filtfilt(sos, g, ecgSignal); 
 
 
@@ -65,8 +64,6 @@ ecgFiltered = filtfilt(sos, g, ecgSignal);
 % title(sprintf('n = %d Butterworth Filter',n))
 % 
 % ecgFiltered_artifact = filtfilt(sos, g, ecgSignal); 
-
-
 
 
 if 0 % Debug
@@ -109,8 +106,6 @@ energyProfile_tc = mean(abs(energyProfile));
 clear energyProfile
 
 
-
-
 % Find spectrum of energyProfile
 % ft_energyProfile_tc = fft(energyProfile_tc - mean(energyProfile_tc))/n_samples;         % Fourier Transform
 % Fv = linspace(0, 1, fix(n_samples/2)+1)*Fn;     % Frequency Vector
@@ -141,7 +136,7 @@ diff_peaks = [0 abs(diff(pks))];
 [data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,MAD_sensitivity_p2p_diff);
 
 
-appr_ecg_peak2peak_N_samples = mode(abs(diff(locs(idx_wo_outliers)))); % rough number of samples between ecg R peaks
+appr_ecg_peak2peak_n_samples = mode(abs(diff(locs(idx_wo_outliers)))); % rough number of samples between ecg R peaks
 
 
 
@@ -149,7 +144,7 @@ ecgFiltered_pos = max(ecgFiltered,0);
 [pos_ecg_pks,pos_ecg_locs]=findpeaks(ecgFiltered_pos,'threshold',eps,'minpeakdistance',fix(min_R2R*Fs));
 
 % find ecg peaks closest (in time) to valid energyProfile_tc peaks, within search_segment_n_samples
-search_segment_n_samples = fix(appr_ecg_peak2peak_N_samples/20);
+search_segment_n_samples = fix(appr_ecg_peak2peak_n_samples/20);
 
 maybe_valid_pos_ecg_locs = [];
 for p = 1:length(idx_wo_outliers)
@@ -161,8 +156,8 @@ for p = 1:length(idx_wo_outliers)
     
 end
 
-
-R2R = [NaN diff(t(maybe_valid_pos_ecg_locs))];
+% R2R intervals
+R2R = [NaN diff(t(maybe_valid_pos_ecg_locs))]; % 
 median_R2R = median(R2R);
 mode_R2R = mode(R2R);
 [hist_R2R,bins] = hist(R2R,[min_R2R:0.01:1]);
@@ -237,19 +232,21 @@ end
 % output
 
 if length(R2R_valid) < 100,
+    out.Rpeak_t                 = NaN;
+    out.Rpeak_idx               = NaN;   
     out.R2R_valid               = NaN;
     out.R2R_valid_bpm           = NaN;
     out.mean_R2R_valid_bpm      = NaN;
     out.median_R2R_valid_bpm    = NaN;
     out.std_R2R_valid_bpm       = NaN;
 else
-    
+    out.Rpeak_t                 = t(R2R_valid_locs);
+    out.Rpeak_idx               = R2R_valid_locs;
     out.R2R_valid               = R2R_valid;
     out.R2R_valid_bpm           = R2R_valid_bpm;
     out.mean_R2R_valid_bpm      = mean_R2R_valid_bpm;
     out.median_R2R_valid_bpm    = median_R2R_valid_bpm;
     out.std_R2R_valid_bpm       = std_R2R_valid_bpm;
-
 end
 
 out.hf = [];
