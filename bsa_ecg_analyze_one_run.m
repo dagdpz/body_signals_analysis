@@ -27,9 +27,10 @@ end
 n_samples       = length(ecgSignal);
 t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sample is time 0! (not 1/Fs)
 
-min_R2R         = 0.25; % s
-MAD_sensitivity_p2p_diff = 3;
-hampel_T        = 4; % threshold for hamplel outlier detection
+min_R2R                         = 0.25; % s
+eP_tc_minpeakheight_med_prop    = 0.33; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
+MAD_sensitivity_p2p_diff        = 3;
+hampel_T                        = 4; % threshold for hamplel outlier detection
 
 
 ecgSignal = detrend(ecgSignal);
@@ -126,7 +127,7 @@ clear energyProfile
 % plot(t,energyProfile_tc - energyProfile_tc_smoothed,'r');
 
 range_energyProfile_tc = max(energyProfile_tc) - min(energyProfile_tc);
-[pks,locs]=findpeaks(energyProfile_tc,'threshold',eps,'minpeakdistance',fix(min_R2R*Fs),'minpeakheight',median(energyProfile_tc));
+[pks,locs]=findpeaks(energyProfile_tc,'threshold',eps,'minpeakdistance',fix(min_R2R*Fs),'minpeakheight',eP_tc_minpeakheight_med_prop*median(energyProfile_tc));
 
 
 diff_peaks = [0 abs(diff(pks))];
@@ -165,9 +166,9 @@ mode_R2R = mode(R2R);
 
 % invalidate all R2R less than 0.66 of mode and more than 1.5 of mode
 idx_valid_R2R = find((R2R>0.66*mode_R2R & R2R<1.5*mode_R2R));
+
 t_valid_R2R = t(maybe_valid_pos_ecg_locs(idx_valid_R2R));
 R2R_valid_before_hamplel = R2R(idx_valid_R2R);
-
 
 % remove outliers from R2R
 [YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hamplel,10,hampel_T);
@@ -195,37 +196,57 @@ if sum(idx_outliers_hampel), % there are outliers
 end
 
 
+idx_valid_R = unique([idx_valid_R2R idx_valid_R2R-1]); % add start of each valid R2R interval to valid R peaks
+R_valid_locs = maybe_valid_pos_ecg_locs(idx_valid_R);
+
 R2R_valid_locs = maybe_valid_pos_ecg_locs(idx_valid_R2R);
 R2R_valid = R2R(idx_valid_R2R);
+
+median_R2R_valid = median(R2R_valid);
+mode_R2R_valid = mode(R2R_valid);
 [hist_R2R_valid,bins] = hist(R2R_valid,bins);
-
-
-% find consecutive R2Rs
-idx_valid_R2R_consec = find([NaN diff(t(R2R_valid_locs))]<1.5*mode_R2R);
 
 R2R_valid_bpm           = 60./R2R_valid;
 mean_R2R_valid_bpm      = mean(R2R_valid_bpm);
 median_R2R_valid_bpm    = median(R2R_valid_bpm);
 std_R2R_valid_bpm       = std(R2R_valid_bpm);
 
+
+% find consecutive R2Rs
+idx_valid_R2R_consec = find([NaN diff(t(R2R_valid_locs))]<1.5*mode_R2R_valid);
+R2R_valid_bpm_consec = R2R_valid_bpm(idx_valid_R2R_consec);
+
+% RMSSD ("root mean square of successive differences")
+% the square root of the mean of the squares of the successive differences between ***adjacent*** intervals
+R2R_diff = diff(R2R_valid);
+R2R_bpm_diff = diff(R2R_valid_bpm);
+
+rmssd_R2R_valid_bpm     = sqrt(mean(R2R_bpm_diff(idx_valid_R2R_consec-1).^2));
+rmssd_R2R_valid_ms      = sqrt(mean((1000*R2R_diff(idx_valid_R2R_consec-1)).^2));
+
 R2R_valid_spectrum = false;
 if length(R2R_valid_locs)>1,
     R2R_valid_spectrum = true;
     % BPS spectrum
     % https://de.mathworks.com/matlabcentral/answers/143654-need-an-example-for-calculating-power-spectrum-density
-    resampling_rate = 1; % Hz
+    resampling_rate = 5; % Hz
     t_interp = t(R2R_valid_locs(1)):1/resampling_rate:t(R2R_valid_locs(end));
 
-    BPS = interp1(t(R2R_valid_locs),R2R_valid,t_interp,'nearest');
+    BPS = interp1(t(R2R_valid_locs),R2R_valid,t_interp,'linear');
 
     % compute the PSD, units of Pxx are squared seconds/Hz.
-    [Pxx,F] = periodogram(BPS-mean(BPS),[],numel(BPS),resampling_rate);
-
+    % [Pxx,freq] = periodogram(BPS-mean(BPS),[],numel(BPS),resampling_rate);
+    [Pxx,freq] = periodogram(BPS-mean(BPS),hamming(length(BPS)),512,resampling_rate);
+    % [Pxx_w,freq_w] = pwelch(BPS-mean(BPS),[],[],256,resampling_rate);
+    
+    % convert to ms^2 / Hz
+    Pxx = Pxx*1e6;
+    
     % compute the power in the various bands...
-    vlf = bandpower(Pxx,F,[0 0.04],'psd'); % units of sec^2
-    lf = bandpower(Pxx,F,[0.04 0.15],'psd'); % units of sec^2
-    hf = bandpower(Pxx,F,[0.15 0.4],'psd'); % units of sec^2
-    totPower = bandpower(Pxx,F,'psd'); % units of sec^2
+    vlfPower    = bandpower(Pxx,freq,[0 0.04],'psd'); % units of sec^2
+    lfPower     = bandpower(Pxx,freq,[0.04 0.15],'psd'); % units of sec^2
+    hfPower     = bandpower(Pxx,freq,[0.15 0.5],'psd'); % units of sec^2
+    totPower    = bandpower(Pxx,freq,'psd'); % units of sec^2
     % you can then take the ratio of lf, hf, etc. to totPower * 100 to get the percentages etc.    
 end
 
@@ -233,20 +254,42 @@ end
 
 if length(R2R_valid) < 100,
     out.Rpeak_t                 = NaN;
-    out.Rpeak_idx               = NaN;   
+    out.Rpeak_sample            = NaN;
+    out.R2R_t                   = NaN;
+    out.R2R_sample              = NaN;   
     out.R2R_valid               = NaN;
     out.R2R_valid_bpm           = NaN;
+    out.idx_valid_R2R_consec    = NaN;
     out.mean_R2R_valid_bpm      = NaN;
     out.median_R2R_valid_bpm    = NaN;
     out.std_R2R_valid_bpm       = NaN;
+    out.rmssd_R2R_valid_ms      = NaN;
+    out.rmssd_R2R_valid_bpm     = NaN;
+    out.Pxx                     = NaN;
+    out.freq                    = NaN;
+    out.vlfPower                = NaN;
+    out.lfPower                 = NaN;
+    out.hfPower                 = NaN;
+    out.totPower                = NaN;
 else
-    out.Rpeak_t                 = t(R2R_valid_locs);
-    out.Rpeak_idx               = R2R_valid_locs;
+    out.Rpeak_t                 = t(R_valid_locs);
+    out.Rpeak_sample            = R_valid_locs;
+    out.R2R_t                   = t(R2R_valid_locs);
+    out.R2R_sample              = R2R_valid_locs;
     out.R2R_valid               = R2R_valid;
     out.R2R_valid_bpm           = R2R_valid_bpm;
+    out.idx_valid_R2R_consec    = idx_valid_R2R_consec; % index into R2R_valid vector!
     out.mean_R2R_valid_bpm      = mean_R2R_valid_bpm;
     out.median_R2R_valid_bpm    = median_R2R_valid_bpm;
     out.std_R2R_valid_bpm       = std_R2R_valid_bpm;
+    out.rmssd_R2R_valid_ms      = rmssd_R2R_valid_ms;
+    out.rmssd_R2R_valid_bpm     = rmssd_R2R_valid_bpm;
+    out.Pxx                     = Pxx;
+    out.freq                    = freq;
+    out.vlfPower                = vlfPower;
+    out.lfPower                 = lfPower;
+    out.hfPower                 = hfPower;
+    out.totPower                = totPower;
 end
 
 out.hf = [];
@@ -259,34 +302,47 @@ if TOPLOT
     plot(t,ecgSignal,'b'); hold on;
     plot(t,ecgFiltered,'g');    
     plot(t(locs(idx_wo_outliers)),ecgFiltered(locs(idx_wo_outliers)),'ko','MarkerSize',6);
-    plot(t(locs(idx_outliers)),ecgFiltered(locs(idx_outliers)),'rx');
+    plot(t(locs(idx_outliers)),ecgFiltered(locs(idx_outliers)),'bx');
     plot(t(maybe_valid_pos_ecg_locs),ecgFiltered(maybe_valid_pos_ecg_locs),'kv','MarkerSize',6,'MarkerEdgeColor',[0.5 0.5 0.5]);
+    plot(t(R_valid_locs),ecgFiltered(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6); % valid R peaks
     plot(t(R2R_valid_locs),ecgFiltered(R2R_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
+   
+    
+    plot([t(R2R_valid_locs(idx_valid_R2R_consec)) - R2R_valid(idx_valid_R2R_consec); t(R2R_valid_locs(idx_valid_R2R_consec))], ...
+         [ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec)); ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec))],'k');
     
     set(gca,'Xlim',[0 max(t)]);
     xlabel('Time (s)');
+    title(sprintf('ECG: %d valid peaks, %d valid R2R intervals',length(R_valid_locs),length(R2R_valid_locs)));
        
     
     
     ha2 = subplot(4,4,[5:8]);
     plot(t,energyProfile_tc,'g'); hold on
     set(gca,'Xlim',[0 max(t)]);
-    plot(t(locs),pks,'ko','MarkerSize',4);
-    plot(t(locs(idx_outliers)),pks(idx_outliers),'rx');
+    plot(t(locs),pks,'k.','MarkerSize',6);
+    plot(t(locs(idx_outliers)),pks(idx_outliers),'bx');
+    plot([t(1) t(end)],[eP_tc_minpeakheight_med_prop*median(energyProfile_tc) eP_tc_minpeakheight_med_prop*median(energyProfile_tc)],'k:');
     
    
     
     ha3 = subplot(4,4,[9:12]);
     plot(t(R2R_valid_locs),R2R_valid,'m.'); hold on
     set(gca,'Xlim',[0 max(t)]);
-    plot(t(R2R_valid_locs(idx_valid_R2R_consec)),R2R_valid(idx_valid_R2R_consec),'ko','MarkerSize',4); hold on
+    plot(t(R2R_valid_locs(idx_valid_R2R_consec)),R2R_valid(idx_valid_R2R_consec),'k.','MarkerSize',6); hold on
+    % plot(t(R2R_valid_locs(idx_valid_R2R_consec)),R2R_valid(idx_valid_R2R_consec) - R2R_diff(idx_valid_R2R_consec-1),'ks','MarkerSize',3);
     plot(t_valid_R2R(idx_to_delete_after_outliers),R2R_valid_before_hamplel(idx_to_delete_after_outliers),'cx'); hold on
     plot(t_valid_R2R(idx_outliers_hampel),R2R_valid_before_hamplel(idx_outliers_hampel),'rx'); hold on
-    set(gca,'Xlim',[0 max(t)]);
-    title('valid R2R');
-    ylabel('P2P (s)');
-    legend({'valid','consecutive','after outliers','hampel outliers'},'location','Best');
     
+    if R2R_valid_spectrum,
+        % plot(t_interp,BPS,'y','Color',[0.4706    0.3059    0.4471]);
+    end
+    
+    set(gca,'Xlim',[0 max(t)]);
+    title(sprintf('R2R (s): %d valid, %d consecutive, %d outliers, RMSSD %.3f bpm | %.1f ms',...
+        length(R2R_valid_locs),length(idx_valid_R2R_consec),length(unique([idx_outliers_hampel' idx_to_delete_after_outliers])), rmssd_R2R_valid_bpm, rmssd_R2R_valid_ms));
+    ylabel('R2R (s)');
+    legend({'valid','consecutive','after outliers','hampel outliers'},'location','Best');
     
     
     subplot(4,4,13);
@@ -304,21 +360,28 @@ if TOPLOT
     ylabel('BPM');
     
     subplot(4,4,15);
-    plot(R2R_valid_bpm(1:end-1),R2R_valid_bpm(2:end),'k.','MarkerFaceColor',[0.5 0.5 0.5]); hold on
-    xlabel('n');
-    ylabel('n+1');
+    plot(R2R_valid_bpm(1:end-1),R2R_valid_bpm(2:end),'k.','MarkerEdgeColor',[0.5 0.5 0.5]); hold on
+    plot(R2R_valid_bpm_consec(1:end-1),R2R_valid_bpm_consec(2:end),'m.','MarkerEdgeColor',[0.4235    0.2510    0.3922]);
+    
+    xlabel('R2R(n)');
+    ylabel('R2R(n+1)');
     title('Poincaré plot');
-    axis equal
     axis square
+    ig_set_xy_axes_equal;
+    ig_add_equality_line;
     
     if R2R_valid_spectrum,
-    subplot(4,4,16);
-    plot(F,Pxx,'k'); hold on;
-    plot(F(F>0 & F<0.04),Pxx(F>0 & F<0.04),'g');
-    plot(F(F>=0.04 & F<0.15),Pxx(F>=0.04 & F<0.15),'b');
-    plot(F(F>=0.15 & F<=0.4),Pxx(F>=0.15 & F<=0.4),'r');
-    xlabel('Hz');
-    ylabel('s^2 / Hz');
+        subplot(4,4,16);
+        % plot(freq,Pxx,'k'); hold on;
+        % plot(freq_w,Pxx_w,'m'); hold on;
+        % plot(freq(freq>0 & freq<0.04),Pxx(freq>0 & freq<0.04),'b');
+        plot(freq(freq>=0.04 & freq<=0.15),Pxx(freq>=0.04 & freq<=0.15),'r'); hold on
+        plot(freq(freq>=0.15 & freq<=0.5),Pxx(freq>=0.15 & freq<=0.5),'g'); 
+        plot(freq(freq>0.5 & freq<=1),Pxx(freq>0.5 & freq<=1),'k'); 
+        set(gca,'Xlim',[0 1]);
+        xlabel('Hz');
+        ylabel('ms^2 / Hz');
+        title(sprintf('[vlf %.3f] lf %.3f hf %.3f',vlfPower,lfPower,hfPower));
     end
     
     
@@ -329,9 +392,6 @@ if TOPLOT
     out.hf = hf;
     
 end % of if TOPLOT
-
-
-
 
 function scales = wavelet_init_scales(minFreq, maxFreq, scalesPerDecade)
 MorletFourierFactor = 4*pi/(6+sqrt(2+6^2));

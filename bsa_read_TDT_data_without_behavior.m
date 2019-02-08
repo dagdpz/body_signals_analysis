@@ -1,11 +1,15 @@
-function bsa_read_TDT_data_without_behavior(session2read, save2dir)
+function dat = bsa_read_TDT_data_without_behavior(session2read, save2dir)
 
 % E.g.
-% session2read='Y:\Data\TDTtanks\Cornelius_phys\20190124\';
-% save2dir='Y:\Data\bodysignals_without_behavior';.
+% bsa_read_TDT_data_without_behavior('Y:\Data\TDTtanks\Magnus_phys\20190124', 'Y:\Projects\PhysiologicalRecording\Data\Magnus\20190124\bodysignals_without_behavior');
+
+% addpath('F:\Dropbox\DAG\DAG_toolbox\Phys_scripts');
 
 blocknames=dir([session2read filesep 'Block*']);
-blocknames=strcat(session2read, filesep, {blocknames.name});
+blocknames_wrongly_sorted = {blocknames.name};
+a = asort(blocknames_wrongly_sorted,'-s','descend');
+blocknames_correctly_sorted = a.anr;
+blocknames=strcat(session2read, filesep, blocknames_correctly_sorted);
 
 for b=1:numel(blocknames)
     blockname=blocknames{b};
