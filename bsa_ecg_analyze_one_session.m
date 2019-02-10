@@ -80,6 +80,21 @@ ses = [];
 % 1
 % ]; 
 
+% Magnus 20190208
+% ses.first_inj_block = 9;
+% ses.type = ... % 1 task, 0 rest
+% [
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% ];
+
+
 % Cornelius 20190124
 % ses.first_inj_block = 3;
 % ses.type = ... % 1 task, 0 rest
@@ -104,32 +119,36 @@ ses = [];
 % 1
 % ];
 
-% Cornelius 20190129
-% ses.first_inj_block = 6;
-% ses.type = ... % 1 task, 0 rest
-% [1
-% 0
-% 1
-% 0
-% 1
-% 0
-% 0
-% 1
-% -1
-% -1
-% 1
-% 0
-% 1
-% 0
-% 1
-% 0
-% 1
-% 0
-% 0
-% 1
-% 1
-% 1
-% ];
+% Cornelius 20190129b (block 8 deleted)
+ses.first_inj_block = 6;
+ses.type = ... % 1 task, 0 rest
+[
+1
+0
+1
+0
+1
+0
+0
+
+-1
+-1
+1
+0
+1
+0
+1
+0
+1
+0
+
+0
+1
+1
+1
+1
+0
+];
 
 % Cornelius 20190201
 % ses.first_inj_block = 6;
@@ -161,33 +180,80 @@ ses = [];
 % ];
 
 % Cornelius 20190207
-ses.first_inj_block = 6;
-ses.type = ... % 1 task, 0 rest
-[
-1
-0
-1
-0
-1
-0
-0
-1
-1
-0
-1
-0
-1
-0
-1
-0
-1
-0
-1
-0
-1
-0
-];
+% ses.first_inj_block = 6;
+% ses.type = ... % 1 task, 0 rest
+% [
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 0
+% 1
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% ];
 
+
+% % Cornelius 20190131 baseline
+% ses.first_inj_block = 5;
+% ses.type = ... % 1 task, 0 rest
+% [
+% 1
+% 0
+% 1
+% 0
+% 0
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% -1
+% 1
+% ];
+
+
+% Cornelius 20190121 baseline
+% ses.first_inj_block = 5;
+% ses.type = ... % 1 task, 0 rest
+% [
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% ];
 
 for r = 1:n_blocks, % for each run/block
     disp(sprintf('Processing block %d',r));
@@ -208,7 +274,7 @@ for r = 1:n_blocks, % for each run/block
     
 end
 
-save([par.saveResults filesep session_name '_ecg.mat'],'out','par','session_name','session_path');
+save([par.saveResults filesep session_name '_ecg.mat'],'out','par','ses','session_name','session_path');
 
 
 blks = 1:n_blocks;
