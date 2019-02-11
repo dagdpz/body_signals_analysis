@@ -19,12 +19,14 @@ def_keepRunFigs = false;        % second optional argument
 def_dataOrigin = 'combined';    % third optional argument pair
 val_dataOrigin = {'combined','TDT'};
 chk_dataOrigin = @(x) any(validatestring(x,val_dataOrigin));
+def_sessionInfo = [];
 
 p = inputParser; % in order of arguments
 addRequired(p,'session_path',@ischar);
 addOptional(p,'saveResults',def_saveResults,@ischar);
 addOptional(p,'keepRunFigs',def_keepRunFigs,@islogical);
 addParameter(p,'dataOrigin',def_dataOrigin,chk_dataOrigin);
+addParameter(p,'sessionInfo',def_sessionInfo,@isstruct);
 
 parse(p,session_path,varargin{:});
 par = p.Results;
@@ -35,6 +37,7 @@ end
 
 session_name_idx = strfind(session_path,'201');
 session_name = session_path(session_name_idx(1):session_name_idx(1)+7);
+
 
 if ~exist(par.saveResults,'dir'),
    mkdir(par.saveResults); 
@@ -53,8 +56,7 @@ end
 disp(['Found ' num2str(n_blocks) ' blocks']);
 
 
-
-ses = [];
+ses = par.sessionInfo;
 
 % Magnus 20190206
 % ses.first_inj_block = 6;
@@ -119,36 +121,36 @@ ses = [];
 % 1
 % ];
 
-% Cornelius 20190129b (block 8 deleted)
-ses.first_inj_block = 6;
-ses.type = ... % 1 task, 0 rest
-[
-1
-0
-1
-0
-1
-0
-0
-
--1
--1
-1
-0
-1
-0
-1
-0
-1
-0
-
-0
-1
-1
-1
-1
-0
-];
+% Cornelius 20190129 (block 8 deleted)
+% ses.first_inj_block = 6;
+% ses.type = ... % 1 task, 0 rest
+% [
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 0
+% 
+% -1
+% -1
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 
+% 0
+% 1
+% 1
+% 1
+% 1
+% 0
+% ];
 
 % Cornelius 20190201
 % ses.first_inj_block = 6;
@@ -207,24 +209,21 @@ ses.type = ... % 1 task, 0 rest
 % 0
 % ];
 
-
-% % Cornelius 20190131 baseline
+% Cornelius 20190111 training
 % ses.first_inj_block = 5;
 % ses.type = ... % 1 task, 0 rest
 % [
-% 1
-% 0
-% 1
-% 0
-% 0
-% 0
+% -2 % skip this block
 % 1
 % 0
 % 1
 % 0
 % 1
+% 1
+% 1
+% 1
+% 1
 % 0
-% -1
 % 1
 % ];
 
@@ -255,23 +254,53 @@ ses.type = ... % 1 task, 0 rest
 % 1
 % ];
 
+
+% Cornelius 20190131 baseline
+% ses.first_inj_block = 5;
+% ses.type = ... % 1 task, 0 rest
+% [
+% 1
+% 0
+% 1
+% 0
+% 0
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% -1
+% 1
+% ];
+
 for r = 1:n_blocks, % for each run/block
-    disp(sprintf('Processing block %d',r));
     
-    if strcmp(par.dataOrigin, 'TDT'),
-        ecgSignal   = double(ECG{r});
-    else
-        ecg = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(r).name], 1); % get ecg only
-        ecgSignal   = ecg.ECG1;
-        Fs          = ecg.Fs;
-    end
-    out(r) = bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r));
-    print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
-    if ~par.keepRunFigs
-        close(out(r).hf);
-    end
+    % first check if to skip the block
+    if ~isempty(ses),
+        if ses.type(r) == -2,
+           disp(sprintf('Skipping block %d',r));
+           continue
+        end
+    end   
+     
+     disp(sprintf('Processing block %d',r));
+     
+     if strcmp(par.dataOrigin, 'TDT'),
+         ecgSignal   = double(ECG{r});
+     else
+         ecg = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(r).name], 1); % get ecg only
+         ecgSignal   = ecg.ECG1;
+         Fs          = ecg.Fs;
+     end
+     out(r) = bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r));
+     print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
+     if ~par.keepRunFigs
+         close(out(r).hf);
+     end
    
-    
+   
 end
 
 save([par.saveResults filesep session_name '_ecg.mat'],'out','par','ses','session_name','session_path');
