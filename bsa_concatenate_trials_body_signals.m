@@ -12,8 +12,9 @@ if nargin < 4,
     export2dlm = false;
 end
 
+fprintf('Loading %s...',combined_matfile_path);
 load(combined_matfile_path);
-
+fprintf('->Loaded\n');
 [pathstr,name,ext] = fileparts(combined_matfile_path);
 
 Fs = trial(1).TDT_ECG1_samplingrate;

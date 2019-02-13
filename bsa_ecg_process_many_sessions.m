@@ -206,7 +206,7 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_T
 
 end % of switch session_path
 
-end % of % for each session
+end % of for each session
         
 
 
