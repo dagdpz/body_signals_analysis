@@ -13,7 +13,7 @@ if nargin < 4,
 end
 
 fprintf('Loading %s...',combined_matfile_path);
-load(combined_matfile_path);
+load(combined_matfile_path,'-mat');
 fprintf('->Loaded\n');
 [pathstr,name,ext] = fileparts(combined_matfile_path);
 

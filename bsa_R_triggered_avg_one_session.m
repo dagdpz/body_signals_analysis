@@ -1,12 +1,14 @@
-function out = bsa_R_triggered_avg_one_session(session_path,data_path,varargin)
+function bsa_R_triggered_avg_one_session(session_path,data_path,varargin)
+
+win_t = [-0.4 0.4]; 
 
 % define default arguments and their potential values
 def_saveResults = session_path;
 def_keepRunFigs = false; 
-def_dataStream = 'LPFx';
-val_dataStream = {'LPFx','ECG1'};
+def_dataStream = 'LFPx';
+val_dataStream = {'LFPx','ECG1'};
 chk_dataStream = @(x) any(validatestring(x,val_dataStream));
-def_dataOrigin = 'combined';    % third optional argument pair
+def_dataOrigin = 'combined';
 val_dataOrigin = {'combined','TDT'};
 chk_dataOrigin = @(x) any(validatestring(x,val_dataOrigin));
 
@@ -22,13 +24,15 @@ addParameter(p,'dataOrigin',def_dataOrigin,chk_dataOrigin);
 parse(p,session_path,data_path,varargin{:});
 par = p.Results;
 
+
 if isempty(par.saveResults),
     par.saveResults = session_path;
 end
 
 session_name_idx = strfind(session_path,'201');
 session_name = session_path(session_name_idx(1):session_name_idx(1)+7);
-
+ecg = load([session_path filesep session_name '_ecg.mat']);
+ses = ecg.ses;
 
 if ~exist(par.saveResults,'dir'),
    mkdir(par.saveResults); 
@@ -40,14 +44,14 @@ if strcmp(par.dataOrigin, 'TDT'),
     ECG = dat.ECG;
     n_blocks = length(dat.ECG);
 else
-    combined_matfiles=dir([session_path filesep '*.mat']);
+    combined_matfiles=dir([data_path filesep '*.mat']);
     n_blocks = length(combined_matfiles);
 end
 
 disp(['Found ' num2str(n_blocks) ' blocks']);
 
 
-ses = par.sessionInfo;
+
 
 % Magnus 20190206
 % ses.first_inj_block = 6;
@@ -89,7 +93,7 @@ ses = par.sessionInfo;
 
 
 for r = 1:n_blocks, % for each run/block
-    
+
     % first check if to skip the block
     if ~isempty(ses),
         if ses.type(r) == -2,
@@ -103,18 +107,25 @@ for r = 1:n_blocks, % for each run/block
      if strcmp(par.dataOrigin, 'TDT'),
          ecgSignal   = double(ECG{r});
      else
-         ecg = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(r).name], 1); % get ecg only
-         ecgSignal   = ecg.ECG1;
-         Fs          = ecg.Fs;
+         data = bsa_concatenate_trials_any_stream([data_path filesep combined_matfiles(r).name], par.dataStream);
+         n_chans=size(data.stream,1);
      end
-     out(r) = bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r));
-     print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
-     if ~par.keepRunFigs
-         close(out(r).hf);
+     
+     
+     figure;
+     for ch = 1:n_chans,
+         RTA(r,ch) = bsa_R_triggered_avg(ecg.out(r).Rpeak_t, data.t, data.stream(ch,:), win_t);
+         subplot(4,4,ch);
+         plot(RTA(r,ch).t,RTA(r,ch).mean);
+%        print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
+%          if ~par.keepRunFigs
+%              close(out(r).hf);
+%          end
+         
+         
      end
-   
-   
 end
+return;
 
 save([par.saveResults filesep session_name '_ecg.mat'],'out','par','ses','session_name','session_path');
 

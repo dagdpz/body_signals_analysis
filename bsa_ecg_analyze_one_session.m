@@ -58,6 +58,16 @@ disp(['Found ' num2str(n_blocks) ' blocks']);
 
 ses = par.sessionInfo;
 
+% % Magnus 20190131
+ses.first_inj_block = 5;
+ses.type = ... % 1 task, 0 rest
+[
+1
+0
+1
+0
+];
+
 % Magnus 20190206
 % ses.first_inj_block = 6;
 % ses.type = ... % 1 task, 0 rest
@@ -82,19 +92,19 @@ ses = par.sessionInfo;
 % 1
 % ]; 
 
-% Magnus 20190208
-ses.first_inj_block = 9;
-ses.type = ... % 1 task, 0 rest
-[
-1
-0
-1
-0
-1
-0
-1
-0
-];
+% % Magnus 20190208
+% ses.first_inj_block = 9;
+% ses.type = ... % 1 task, 0 rest
+% [
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% 1
+% 0
+% ];
 
 
 for r = 1:n_blocks, % for each run/block
