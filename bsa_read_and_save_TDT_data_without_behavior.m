@@ -1,8 +1,14 @@
 function dat = bsa_read_and_save_TDT_data_without_behavior(session2read, save2dir)
 
-% E.g.
+%% What is the function doing?
+% 1. sort the Block correctly
+% 2. read the ECG, CAP, POX1 data & its sampling rate of each TDT-Block
+% 3. output for the length of the block in seconds
+% 3. save the structure 'dat' in bodysignals_wo_behavior.mat for each
+% session
+%% example to call the function
 % bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Magnus_phys\20190124', 'Y:\Projects\PhysiologicalRecording\Data\Magnus\20190124\bodysignals_without_behavior');
-
+%%
 
 if isempty(strfind(path,'DAG\DAG_toolbox\Phys_scripts'))
     dropbox_path = DropboxRootPath;

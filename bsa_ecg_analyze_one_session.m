@@ -1,4 +1,12 @@
 function out = bsa_ecg_analyze_one_session(session_path,varargin)
+
+%% What is the function doing?
+%1) loads the created mat-file from bsa_read_and_save_TDT_data_without_behavior.m
+%2) bsa_concatenate_trials_body_signals 
+%3) bsa_ecg_analyze_one_run -> preprocessing the ECG, create R-R intervals
+%4) Plot & save as PDFs
+
+%%
 % E.g.
 % out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131');
 % out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190207','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207');
@@ -22,9 +30,9 @@ chk_dataOrigin = @(x) any(validatestring(x,val_dataOrigin));
 def_sessionInfo = [];
 
 p = inputParser; % in order of arguments
-addRequired(p,'session_path',@ischar);
-addOptional(p,'saveResults',def_saveResults,@ischar);
-addOptional(p,'keepRunFigs',def_keepRunFigs,@islogical);
+addRequired(p, 'session_path',@ischar);
+addOptional(p, 'saveResults',def_saveResults,@ischar);
+addOptional(p, 'keepRunFigs',def_keepRunFigs,@islogical);
 addParameter(p,'dataOrigin',def_dataOrigin,chk_dataOrigin);
 addParameter(p,'sessionInfo',def_sessionInfo,@isstruct);
 

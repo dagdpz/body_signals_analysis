@@ -7,6 +7,12 @@ function out = bsa_ecg_analyze_one_run(ecgSignal,Fs,TOPLOT,FigInfo)
 % filtering according to https://de.mathworks.com/matlabcentral/answers/270238-how-can-i-filter-ecg-signals-with-high-motion-artifact
 % (or see also https://de.mathworks.com/matlabcentral/answers/364788-ecg-signal-artifact-removing)
 
+%% CAREFUL - the function filtfilt has the same name in the fieldtrip toolbox
+%% What is this function doing?
+
+% e.g.
+% bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r))
+%%
 %{
 [remove "{" above to run it for debugging specific blocks]
 load('bodysignals_wo_behavior.mat');
@@ -27,6 +33,7 @@ end
 n_samples       = length(ecgSignal);
 t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sample is time 0! (not 1/Fs)
 
+%% properties for the 
 min_R2R                         = 0.25; % s
 eP_tc_minpeakheight_med_prop    = 0.33; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
 MAD_sensitivity_p2p_diff        = 3;
@@ -50,7 +57,7 @@ Rs  = 150;                                                  % Stopband Ripple (d
 % freqz(sos,512,Fs);
 % title(sprintf('n = %d Butterworth Lowpass Filter',n))
 
-% Filter raw ECG
+% Filter raw ECG using filtfilt from fieldtrip
 ecgFiltered = filtfilt(sos, g, ecgSignal); 
 
 
