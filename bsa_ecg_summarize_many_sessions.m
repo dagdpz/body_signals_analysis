@@ -1,4 +1,30 @@
 function bsa_ecg_summarize_many_sessions
+%bsa_ecg_summarize_many_sessions  - summarize ECG analysis across several sessions
+%
+% USAGE:
+% bsa_ecg_summarize_many_sessions;
+%
+% INPUTS:
+%
+% OUTPUTS:
+%
+% REQUIRES:	Igtools
+%
+% See also BSA_ECG_ANALYZE_MANY_SESSIONS
+%
+%
+% Author(s):	I.Kagan, DAG, DPZ
+% URL:		http://www.dpz.eu/dag
+%
+% Change log:
+% 20190226:	Created function (Igor Kagan)
+% ...
+% $Revision: 1.0 $  $Date: 2019-02-26 15:31:09 $
+
+% ADDITIONAL INFO:
+% Set sessions and inactivation sessions
+% Each session should be processed with bsa_ecg_analyze_one_session -> session_name '_ecg.mat' should exist
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
 
 sessions = {
 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190111';

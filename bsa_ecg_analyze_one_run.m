@@ -1,18 +1,43 @@
 function out = bsa_ecg_analyze_one_run(ecgSignal,Fs,TOPLOT,FigInfo)
+%bsa_ecg_analyze_one_run  - analyses ECG in one run/block
+%
+% USAGE:
+% out = bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r));
+%
+% INPUTS:
+%		ecgSignal		- ECG
+%		Fs              - sampling rate (Hz)
+%       TOPLOT          - plot figure
+%       FigInfo         - info for figure
+%
+% OUTPUTS:
+%		out             - see structure
+%
+% REQUIRES:	Igtools
 % needs MATLAB 2014 or later for wavelet toolbox!
+%
+% See also BSA_ECG_ANALYZE_ONE_SESSION
+%
+%
+% Author(s):	I.Kagan, DAG, DPZ
+% URL:		http://www.dpz.eu/dag
+%
+% Change log:
+% 20190226:	Created function (Igor Kagan)
+% ...
+% $Revision: 1.0 $  $Date: 2019-02-26 14:11:47 $
+
+% ADDITIONAL INFO:
+% CAREFUL - the function filtfilt has the same name in the fieldtrip toolbox
 %
 % https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0140783
 % https://github.com/fieldtrip/fieldtrip/blob/master/ft_heartrate.m
 
 % filtering according to https://de.mathworks.com/matlabcentral/answers/270238-how-can-i-filter-ecg-signals-with-high-motion-artifact
 % (or see also https://de.mathworks.com/matlabcentral/answers/364788-ecg-signal-artifact-removing)
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
 
-%% CAREFUL - the function filtfilt has the same name in the fieldtrip toolbox
-%% What is this function doing?
 
-% e.g.
-% bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r))
-%%
 %{
 [remove "{" above to run it for debugging specific blocks]
 load('bodysignals_wo_behavior.mat');
@@ -33,7 +58,7 @@ end
 n_samples       = length(ecgSignal);
 t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sample is time 0! (not 1/Fs)
 
-%% properties for the 
+% properties for the ECG detection
 min_R2R                         = 0.25; % s
 eP_tc_minpeakheight_med_prop    = 0.33; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
 MAD_sensitivity_p2p_diff        = 3;

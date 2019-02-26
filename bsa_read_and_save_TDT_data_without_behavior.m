@@ -1,14 +1,34 @@
 function dat = bsa_read_and_save_TDT_data_without_behavior(session2read, save2dir)
-
-%% What is the function doing?
-% 1. sort the Block correctly
-% 2. read the ECG, CAP, POX1 data & its sampling rate of each TDT-Block
-% 3. output for the length of the block in seconds
-% 3. save the structure 'dat' in bodysignals_wo_behavior.mat for each
-% session
-%% example to call the function
+%bsa_read_and_save_TDT_data_without_behavior  - read and save body signals from TDT analog data, without_behavior
+%
+% USAGE:
 % bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Magnus_phys\20190124', 'Y:\Projects\PhysiologicalRecording\Data\Magnus\20190124\bodysignals_without_behavior');
-%%
+%
+% INPUTS:
+%		session2read		- location of TDT data
+%		save2dir            - location to save data
+%
+% OUTPUTS:
+%		dat		- dat struct
+%
+% REQUIRES:	DAG_toolbox\Phys_scripts
+%
+% Author(s):	I.Kagan, DAG, DPZ
+% URL:		http://www.dpz.eu/dag
+%
+% Change log:
+% yyyymmdd:	Created function (Igor Kagan)
+% ...
+% $Revision: 1.0 $  $Date: 2019-02-26 14:35:55 $
+
+% ADDITIONAL INFO:
+% What is the function doing?
+% 1. sort the blocks correctly
+% 2. read the ECG, CAP, POX1 data & its sampling rate for each TDT block
+% 3. output for the length of the block in seconds
+% 4. save the structure 'dat' in bodysignals_wo_behavior.mat for each session
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
+
 
 if isempty(strfind(path,'DAG\DAG_toolbox\Phys_scripts'))
     dropbox_path = DropboxRootPath;

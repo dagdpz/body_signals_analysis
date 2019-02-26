@@ -1,10 +1,37 @@
 function rta = bsa_R_triggered_avg(Rpeak_t, t, sig, win_t)
+%bsa_R_triggered_avg  - R-triggered average of a signal (ECG or LFP) in one data segment (run/block)
+%
+% USAGE:
+% From bsa_R_triggered_avg_one_session
+% RTA(r,ch) = bsa_R_triggered_avg(ecg.out(r).Rpeak_t, data.t, data.stream(ch,:), win_t);
+%
+% INPUTS:
+%       Rpeak_t         - time of Rpeak (or any event) (s)
+%       t               - time axis (s)
+%       sig             - signal to average
+%       win_t           - [window_start window_end] relative to event (negative means before event) (s)
+%
+% OUTPUTS:
+%		rta             - see struct
+%
+% REQUIRES:	NONE
+%
+% See also BSA_R_TRIGGERED_AVG_ONE_SESSION
+%
+%
+% Author(s):	I.Kagan, DAG, DPZ
+% URL:		http://www.dpz.eu/dag
+%
+% Change log:
+% 20190226:	Created function (Igor Kagan)
+% ...
+% $Revision: 1.0 $  $Date: 2019-02-26 15:55:28 $
 
-% Inputs:
-% Rpeak_t - time of Rpeak (or any event) (s)
-% t - time axis (s)
-% sig - signal to average
-% win_t - [window_start window_end] relative to event (negative means before event) (s)
+% ADDITIONAL INFO:
+% ...
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+
 
 sampling_interval = t(2)-t(1);
 

@@ -16,4 +16,3 @@ bsa_ecg_analyze_one_session.m calls
 
 bsa_ecg_analyze_one_session.m loads the created mat-file from bsa_read_and_save_TDT_data_without_behavior.m
 bsa_ecg_analyze_one_session.m save as mat-file for each session with the following outputs
-        - 

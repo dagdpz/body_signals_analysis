@@ -1,33 +1,49 @@
 function out = bsa_ecg_analyze_one_session(session_path,varargin)
+%bsa_ecg_analyze_one_session  - analyzing ECG in one session (in multiple runs/blocks)
+%
+% USAGE:
+% out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131');
+% out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190207','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207');
+% out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131\bodysignals_without_behavior','',false,'dataOrigin','TDT');
+% out = bsa_ecg_analyze_one_session(session_path,'',false,'dataOrigin','TDT','sessionInfo',ses);
+%
+% INPUTS:
+%		session_path		- Path to session data
+%		varargin (optional) - see % define default arguments and their potential values                     
+%
+% OUTPUTS:
+%		out                 - see struct
+%
+% REQUIRES:	Igtools, bsa_concatenate_trials_body_signals, bsa_ecg_analyze_one_run
+%
+% See also BSA_ECG_ANALYZE_ONE_RUN, BSA_ECG_ANALYZE_MANY_SESSIONS
+%
+%
+% Author(s):	I.Kagan, DAG, DPZ
+% URL:		http://www.dpz.eu/dag
+%
+% Change log:
+% 20190226:	Created function (Igor Kagan)
+% ...
+% $Revision: 1.0 $  $Date: 2019-02-26 14:22:52 $
 
-%% What is the function doing?
+% ADDITIONAL INFO:
+% What is the function doing?
 %1) loads the created mat-file from bsa_read_and_save_TDT_data_without_behavior.m
 %2) bsa_concatenate_trials_body_signals 
 %3) bsa_ecg_analyze_one_run -> preprocessing the ECG, create R-R intervals
 %4) Plot & save as PDFs
-
-%%
-% E.g.
-% out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131');
-% out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190207','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207');
-% out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131\bodysignals_without_behavior','',false,'dataOrigin','TDT');
-
-% session_path = 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190124\bodysignals_without_behavior'; % ina session 1
-% session_path = 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190129\bodysignals_without_behavior'; % ina session 2
-% session_path = 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190201\bodysignals_without_behavior'; % ina session 3
-
-% session_path = 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190121\bodysignals_without_behavior'; % baseline session 1
-% session_path = 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190131\bodysignals_without_behavior'; % baseline session 2
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
 
 warning off;
 
 % define default arguments and their potential values
-def_saveResults = session_path; % first optional argument (directory to save results, if empty then save to session_path)
-def_keepRunFigs = false;        % second optional argument
-def_dataOrigin = 'combined';    % third optional argument pair
+def_saveResults = session_path; % 1st optional argument (directory to save results, if empty then save to session_path)
+def_keepRunFigs = false;        % 2nd optional argument
+def_dataOrigin = 'combined';    % 3rd optional argument pair
 val_dataOrigin = {'combined','TDT'};
 chk_dataOrigin = @(x) any(validatestring(x,val_dataOrigin));
-def_sessionInfo = [];
+def_sessionInfo = [];           % 4 optional argument pair (can be defined in bsa_ecg_analyze_many_sessions)
 
 p = inputParser; % in order of arguments
 addRequired(p, 'session_path',@ischar);

@@ -1,4 +1,32 @@
 function out = bsa_concatenate_trials_any_stream(combined_matfile_path, stream)
+%bsa_concatenate_trials_any_stream  - concatenates analog streams into one vector (First_trial_INI trial1 ITI trial2 ITI...)
+%
+% USAGE:
+% bsa_concatenate_trials_any_stream;
+%
+% INPUTS:
+%		combined_matfile_path		- path to combined mat file
+%		stream                      - name of the streat
+%
+% OUTPUTS:
+%		out		- see structure
+%
+% REQUIRES:	NONE
+%
+% See also BSA_CONCATENATE_TRIALS_BODY_SIGNALS
+%
+%
+% Author(s):	I.Kagan, DAG, DPZ
+% URL:		http://www.dpz.eu/dag
+%
+% Change log:
+% 20190226:	Created function (Igor Kagan)
+% ...
+% $Revision: 1.0 $  $Date: 2019-02-26 12:16:25 $
+
+% ADDITIONAL INFO:
+% ...
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
 
 
 fprintf('Loading %s...',combined_matfile_path);

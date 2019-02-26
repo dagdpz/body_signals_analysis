@@ -1,13 +1,39 @@
 function bsa_ecg_analyze_many_sessions
+%bsa_ecg_analyze_many_sessions  - summary analysis over several sessions
+%
+% USAGE:
+% bsa_ecg_analyze_many_sessions;
+% Make sure to set sessions correctly
+%
+% INPUTS:
+%
+% OUTPUTS:
+%
+% REQUIRES:	bsa_ecg_analyze_one_session
+%
+% See also BSA_ECG_ANALYZE_ONE_SESSION
+%
+%
+% Author(s):	I.Kagan, DAG, DPZ
+% URL:		http://www.dpz.eu/dag
+%
+% Change log:
+% 20190226:	Created function (Igor Kagan)
+% ...
+% $Revision: 1.0 $  $Date: 2019-02-26 12:34:36 $
+
+% ADDITIONAL INFO:
+% ...
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
 
 sessions = {
 % 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190111';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190121\bodysignals_without_behavior'; % rerun
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190124\bodysignals_without_behavior'; % rerun
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190121\bodysignals_without_behavior';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190124\bodysignals_without_behavior'; 
 % 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190129\bodysignals_without_behavior';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190131\bodysignals_without_behavior'; % rerun
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190201'; % rerun
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207'; % rerun
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190131\bodysignals_without_behavior';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190201';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207';
 };
 
 for s = 1:length(sessions), % for each session

@@ -1,4 +1,36 @@
 function bsa_R_triggered_avg_one_session(session_path,data_path,varargin)
+IN PROGRESS
+%bsa_R_triggered_avg_one_session  -  R-triggered average of a signal (ECG or LFP) in one session (per run/block)
+%
+% USAGE:
+% usage example1;
+% usage example2;
+%		...
+%
+% INPUTS:
+%		input 1		- exlanation
+%		...
+%
+% OUTPUTS:
+%		output1		- explanation
+%		...
+%
+% REQUIRES:	...
+%
+% See also ...
+%
+%
+% Author(s):	I.Kagan, DAG, DPZ
+% URL:		http://www.dpz.eu/dag
+%
+% Change log:
+% yyyymmdd:	Created function (Author(s) firstname familyname)
+% ...
+% $Revision: 1.0 $  $Date: 2019-02-26 16:00:15 $
+
+% ADDITIONAL INFO:
+% ...
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
 
 win_t = [-0.4 0.4]; 
 
