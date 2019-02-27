@@ -1,4 +1,4 @@
-% this is not a function, just a convenience script to run functions over several sessions 
+% this is not a function, it is just a convenience script to run functions over several sessions
 
 % Load and save TDT data without behavior
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190201', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190124\bodysignals_without_behavior');
