@@ -12,7 +12,3 @@ bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\201
 
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Magnus_phys\20190124', 'Y:\Projects\PhysiologicalRecording\Data\Magnus\20190124\bodysignals_without_behavior');
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Magnus_phys\20190131', 'Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131\bodysignals_without_behavior');
-
-
-% this is test comment from Abderian
-
