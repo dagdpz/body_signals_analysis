@@ -17,7 +17,7 @@ function dat = bsa_read_and_save_TDT_data_without_behavior(session2read, save2di
 % URL:		http://www.dpz.eu/dag
 %
 % Change log:
-% yyyymmdd:	Created function (Igor Kagan)
+% 20190226:	Created function (Igor Kagan)
 % ...
 % $Revision: 1.0 $  $Date: 2019-02-26 14:35:55 $
 
