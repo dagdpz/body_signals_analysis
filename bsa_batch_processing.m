@@ -5,6 +5,8 @@ bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\201
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190121', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190129\bodysignals_without_behavior');
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190201', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190201\bodysignals_without_behavior');
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190207', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207\bodysignals_without_behavior');
+bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190216', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207\bodysignals_without_behavior');
+bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190216', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190216\bodysignals_without_behavior');
 
 
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190121', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190121\bodysignals_without_behavior');
@@ -14,3 +16,8 @@ bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Magnus_phys\201901
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Magnus_phys\20190131', 'Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131\bodysignals_without_behavior');
 
 
+%%
+
+
+%%
+bsa_ecg_summarize_many_sessions('Y:\Projects\PhysiologicalRecording\Results\Cornelius\Inactivation\ECG')

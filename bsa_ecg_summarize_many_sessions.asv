@@ -241,6 +241,8 @@ set(ha([7 8]),'Xlim',[0 0.6]);
     h(1) = figure(1); 
 %end  
 savefig(h, [path_SaveFig filesep  'Graphs_ECG.fig'])
+save([path_SaveFig filesep  'Graphs_ECG'], 'png')
+
 print(h,[path_SaveFig filesep 'Graphs_ECG'], '-dpng')
 
 

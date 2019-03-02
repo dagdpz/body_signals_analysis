@@ -87,8 +87,8 @@ table = readtable(pathExcel);
       ECG       = dat.ECG;
       n_blocks  = length(dat.ECG);
       ses.type  =   table.tasktype(table.date == str2num(session_name))';
-      ses.type  =  ses.type(~ses.block == 0); 
-       
+      ses.type  = 
+       ses.block
   else
       combined_matfiles=dir([session_path filesep '*.mat']);
       n_blocks = length(combined_matfiles);
