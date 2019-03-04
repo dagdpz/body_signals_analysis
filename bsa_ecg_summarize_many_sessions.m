@@ -41,10 +41,12 @@ sessions = {
 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190228';
 };
 
+
 inactivation_sessions = {'20190124' '20190129' '20190201' '20190207' '20190214' '20190228'};
 
 ind_con = 0;
 ind_ina = 0;
+Table = []; 
 
 for s = 1:length(sessions),
 	session_path = sessions{s};
@@ -57,7 +59,7 @@ for s = 1:length(sessions),
     if s > 6
     ses.type = ses.type(ses.type ~= -2)';
     else
-            ses.type = ses.type(ses.type ~= -2);
+    ses.type = ses.type(ses.type ~= -2);
 
     end
     
@@ -119,32 +121,103 @@ for s = 1:length(sessions),
 	S_.Pxx.pst_rest = mean([out(pst_rest_idx).Pxx],2);
 	S_.Pxx.pst_task = mean([out(pst_task_idx).Pxx],2);
 
-	if ismember(session_name,inactivation_sessions)
-		ind_ina = ind_ina + 1;
-		S_ina(ind_ina) = S_;
-		
-	else
-		ind_con = ind_con + 1;
-		S_con(ind_con) = S_;
-	end
+if ismember(session_name,inactivation_sessions)
+    ind_ina = ind_ina + 1;
+    S_ina(ind_ina) = S_;
+    %% create a table for Inactivation sessions
+    VariableNames = fieldnames(S_ina(ind_ina));
+    for indVar =  1 : numel(VariableNames)
+        if ~strcmp(VariableNames{indVar}, 'freq') && ~strcmp(VariableNames{indVar}, 'Pxx')
+           
+        TableInac = stack(struct2table(S_ina(ind_ina).(VariableNames{indVar})),1:4);
+        Var = strsplit(char(TableInac.Properties.VariableNames(2)) , '_');
+        Injection = []; TaskType = [];
+        for i = 1: numel(Var)
+            if strcmp(Var(i),  'pre')||strcmp(Var(i),  'pst')
+                Injection = [Injection, Var(i)];
+            else
+                TaskType = [TaskType, Var(i)];
+            end
+        end
+        TableInac.Injection         = Injection';
+        TableInac.TaskType          = TaskType';
+        TableInac.Properties.VariableNames(2) = {'Values'};
+        Experiment    = cell(1, size(TableInac,1))';
+        Experiment(:) = VariableNames(indVar);
+        TableInac.DependentVariable  = Experiment;       
+        Experiment(:) = {'Injection'};
+        TableInac.Experiment         = Experiment;
+        Experiment(:) = {session_name};
+        TableInac.Date               = Experiment;
+        
+        Table = [Table ;TableInac];
+        end
+    end
+    
+else
+    ind_con = ind_con + 1;
+    S_con(ind_con) = S_;
+    
+    %% create a table for Inactivation sessions
+    VariableNames = fieldnames(S_con(ind_con));
+    for indVar =  1 : numel(VariableNames)
+        if ~strcmp(VariableNames{indVar}, 'freq') && ~strcmp(VariableNames{indVar}, 'Pxx')
+        TableInac = stack(struct2table(S_con(ind_con).(VariableNames{indVar})),1:4);
+        Var = strsplit(char(TableInac.Properties.VariableNames(2)) , '_');
+        Injection = []; TaskType = [];
+        for i = 1: numel(Var)
+            if strcmp(Var(i),  'pre')||strcmp(Var(i),  'pst')
+                Injection = [Injection, Var(i)];
+            else
+                TaskType = [TaskType, Var(i)];
+            end
+        end
+        TableInac.Injection         = Injection';
+        TableInac.TaskType          = TaskType';
+        TableInac.Properties.VariableNames(2) = {'Values'};
+        Experiment    = cell(1, size(TableInac,1))';
+        Experiment(:) = VariableNames(indVar);
+        TableInac.DependentVariable  = Experiment;
+        
+        Experiment(:) = {'Control'};
+        TableInac.Experiment         = Experiment;
+        Experiment(:) = {session_name};
+        TableInac.Date         = Experiment;
 
-
-	% add blocks for analysis across all blocks from all sessions
-
-
-	
-
-	
-
+        Table = [Table ;TableInac];
+        end
+    end
+    
 end
 
 
+% add blocks for analysis across all blocks from all sessions
+
+
+
+
+
+end
+%% save Table 
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSession' ],'Table');
+writetable(Table, ['C:\Users\kkaduk\Dropbox\promotion\Projects\PhysiologicalRecording\Data', 'Table_HeartrateVaribility_PerSession'], 'Delimiter', ' ')
+
+%% Graphs 
 figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
-set(gcf,'Name','ECG parameter');
+set(gcf,'Name','AcrossSessions: R2R variables');
 
 ha(1) = subplot(3,3,1);
 plot_one_var_pre_post_rest_task([S_con.mean_R2R_bpm],[S_ina.mean_R2R_bpm]);
 title('Mean R2R (bmp)');
+ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
+text(1.5 ,230,'Control')
+text(1 ,210,'rest')
+text(3 ,210,'task')
+
+text(6.5,230,'Injection')
+set(gca,'ylim',[0 250]); 
+text(6 ,210,'rest')
+text(8 ,210,'task')
 
 ha(2) = subplot(3,3,2);
 plot_one_var_pre_post_rest_task([S_con.median_R2R_bpm],[S_ina.median_R2R_bpm]);
