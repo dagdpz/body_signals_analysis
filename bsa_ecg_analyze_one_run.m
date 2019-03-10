@@ -361,8 +361,12 @@ out.hf = [];
 if TOPLOT
     hf = figure('Name',FigInfo,'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
     
-    
-    ha1 = subplot(4,4,[1:4]);
+    %% single HR-peak
+%     t = t*1000; 
+%      plot(t,ecgSignal,'b'); hold on;
+%     set(gca,'xlim',[172 173]);    
+%     
+    ha1 = subplot(4,4,[1:4]); %   ha1 = subplot(4,4,[1:4]);
     plot(t,ecgSignal,'b'); hold on;
     plot(t,ecgFiltered,'g');    
     plot(t(locs(idx_wo_outliers)),ecgFiltered(locs(idx_wo_outliers)),'ko','MarkerSize',6);

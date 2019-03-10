@@ -4,7 +4,7 @@ function out = bsa_ecg_analyze_one_session(session_path,varargin)
 % USAGE:
 % out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131');
 % out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190221','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190221');
-% out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190131\bodysignals_without_behavior','',false,'dataOrigin','TDT');
+% out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190129\bodysignals_without_behavior','',false,'dataOrigin','TDT');
 
 % out = bsa_ecg_analyze_one_session(session_path,'',false,'dataOrigin','TDT','sessionInfo',ses);
 %
@@ -96,9 +96,9 @@ table = readtable(pathExcel);
       
       for indBlock = 1: n_blocks
           load([session_path filesep combined_matfiles(indBlock).name])
-          if task.type == 2 && all(trial(1).task.reward.time_neutral > [0.19 0.19])%&& numel(trial) > 10
+          if task.type == 2 && all(trial(1).task.reward.time_neutral > [0.19 0.19])&& numel(trial) > 10
               ses.type(indBlock)   =    1;
-          elseif task.type == 1 && all(trial(1).task.reward.time_neutral == [0 0]) %&& numel(trial) > 10;
+          elseif task.type == 1 && all(trial(1).task.reward.time_neutral == [0 0]) && numel(trial) > 10;
               ses.type(indBlock)   =    0;
           else
               ses.type(indBlock)   =    -2;
@@ -108,12 +108,8 @@ table = readtable(pathExcel);
       
   end
 
-disp(['Found ' num2str(n_blocks) ' blocks in the TDT-Dataset']);
+disp(['Found ' num2str(n_blocks) ' blocks in the ecg-Dataset']);
 disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
-if  ~sum(~ses.block == 0) ==  n_blocks
-      error('Error. \Number of Block to be anlyzed from exce-sheet does not match the number of Blocks from the TDT-datasets.')
-end
-    
 %%
 for r = 1:n_blocks, % for each run/block
     

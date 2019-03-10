@@ -43,11 +43,14 @@ sessions = {
 
 
 inactivation_sessions = {'20190124' '20190129' '20190201' '20190207' '20190214' '20190228'};
+%inactivation_sessions = {'20190214' '20190228'};
 
 ind_con = 0;
 ind_ina = 0;
-Table = []; 
+ind_con_Blocks = 0;
+ind_ina_Blocks = 0;
 
+Table = []; TableBlocks =[]; 
 for s = 1:length(sessions),
 	session_path = sessions{s};
 	session_name_idx = strfind(session_path,'201');
@@ -56,13 +59,11 @@ for s = 1:length(sessions),
 	load([session_path filesep session_name '_ecg.mat']);
 
     % remove -2: skipped sessions
-    if s > 6
     ses.type = ses.type(ses.type ~= -2)';
-    else
-    ses.type = ses.type(ses.type ~= -2);
-
-    end
-    
+%         if isempty(out(indBlock).mean_R2R_valid_bpm)|| isnan(out(indBlock).mean_R2R_valid_bpm)
+%         out(13) = [];
+%          disp(sprintf('removed the skipped block %d',num2str()));
+%     end
     rest_idx = [];   task_idx = []; 
 	rest_idx = find(ses.type == 0  & ~isnan([out.mean_R2R_valid_bpm]'));
     task_idx = find(ses.type == 1 & ~isnan([out.mean_R2R_valid_bpm]'));
@@ -192,15 +193,166 @@ end
 
 
 % add blocks for analysis across all blocks from all sessions
+% How many Blocks in this session?
+S_Blocks = [];
+Blocks = sort([task_idx' , rest_idx']);
+for indBlock = 1:   length(Blocks) %indBlock =  Blocks
+
+    NrBlock = Blocks(indBlock); 
+    S_Blocks.Block(indBlock).Block = NrBlock;
+    
+    S_Blocks.Block(indBlock).mean_R2R_valid_bpm         = 'NaN';
+    S_Blocks.Block(indBlock).median_R2R_valid_bpm       = 'NaN';
+    S_Blocks.Block(indBlock).rmssd_R2R_valid_ms         = 'NaN';
+    S_Blocks.Block(indBlock).std_R2R_valid_bpm          = 'NaN';
+    S_Blocks.Block(indBlock).lfPower                    = 'NaN';
+    S_Blocks.Block(indBlock).hfPower                    = 'NaN';
+    S_Blocks.Block(indBlock).Injection                  = 'NaN';
+    S_Blocks.Block(indBlock).TaskType                   = 'NaN';
+    S_Blocks.Block(indBlock).Date                       = 'NaN';
+    S_Blocks.Block(indBlock).Experiment                 = 'NaN';
+    
+    
+    
+    S_Blocks.Block(indBlock).mean_R2R_valid_bpm      = [out(NrBlock).mean_R2R_valid_bpm];
+    S_Blocks.Block(indBlock).median_R2R_valid_bpm    = [out(NrBlock).median_R2R_valid_bpm];
+    S_Blocks.Block(indBlock).rmssd_R2R_valid_ms      = [out(NrBlock).rmssd_R2R_valid_ms];
+    S_Blocks.Block(indBlock).std_R2R_valid_bpm       = [out(NrBlock).std_R2R_valid_bpm];
+    S_Blocks.Block(indBlock).lfPower                 = [out(NrBlock).lfPower];
+    S_Blocks.Block(indBlock).hfPower                 = [out(NrBlock).hfPower];
+    
+    
+    if ismember(indBlock, pre_rest_idx)
+        S_Blocks.Block(indBlock).Condition = 'pre_rest';
+    elseif ismember(indBlock, pre_task_idx)
+        S_Blocks.Block(indBlock).Condition = 'pre_task';
+    elseif ismember(indBlock, pst_rest_idx)
+        S_Blocks.Block(indBlock).Condition =  'pst_rest';
+    elseif ismember(indBlock, pst_task_idx)
+        S_Blocks.Block(indBlock).Condition =  'pst_task';
+    else
+        S_Blocks.Block(indBlock).Condition =  'NaN_NaN';
+    end
+    
+    Var = strsplit(char(S_Blocks.Block(indBlock).Condition) , '_');
+    
+    for i = 1: numel(Var)
+        if strcmp(Var(i),  'pre')||strcmp(Var(i),  'pst')
+            S_Blocks.Block(indBlock).Injection =  char(Var(i));
+        else
+            S_Blocks.Block(indBlock).TaskType =  char(Var(i));
+        end
+    end
+    if ismember(session_name,inactivation_sessions)
+        S_Blocks.Block(indBlock).Experiment          = 'Injection';
+    else
+        S_Blocks.Block(indBlock).Experiment         = 'Control';
+    end
+    S_Blocks.Block(indBlock).Date               = session_name;
+    
+end
 
 
+%     S_Blocks.Block.pre_rest = pre_rest_idx';
+%     S_Blocks.Block.pre_task_idx = pre_task_idx';
+%     S_Blocks.Block.pst_rest_idx = pst_rest_idx';
+%     S_Blocks.Block.pst_task_idx = pst_task_idx';
+%     
+% 
+%     S_Blocks.mean_R2R_bpm.pre_rest = zeros(1,ini );
+% 	S_Blocks.mean_R2R_bpm.pre_task = zeros(1,ini );
+% 	S_Blocks.mean_R2R_bpm.pst_rest = zeros(1,ini );
+% 	S_Blocks.mean_R2R_bpm.pst_task = zeros(1,ini );
+%     
+%     S_Blocks.mean_R2R_bpm.pre_rest = [out(pre_rest_idx).mean_R2R_valid_bpm];
+% 	S_Blocks.mean_R2R_bpm.pre_task = [out(pre_task_idx).mean_R2R_valid_bpm];
+% 	S_Blocks.mean_R2R_bpm.pst_rest = [out(pst_rest_idx).mean_R2R_valid_bpm];
+% 	S_Blocks.mean_R2R_bpm.pst_task = [out(pst_task_idx).mean_R2R_valid_bpm];
+% 
+% 	S_Blocks.median_R2R_bpm.pre_rest = [out(pre_rest_idx).median_R2R_valid_bpm];
+% 	S_Blocks.median_R2R_bpm.pre_task = [out(pre_task_idx).median_R2R_valid_bpm];
+% 	S_Blocks.median_R2R_bpm.pst_rest = [out(pst_rest_idx).median_R2R_valid_bpm];
+% 	S_Blocks.median_R2R_bpm.pst_task = [out(pst_task_idx).median_R2R_valid_bpm];
+% 
+% 	S_Blocks.rmssd_R2R_ms.pre_rest = [out(pre_rest_idx).rmssd_R2R_valid_ms];
+% 	S_Blocks.rmssd_R2R_ms.pre_task = [out(pre_task_idx).rmssd_R2R_valid_ms];
+% 	S_Blocks.rmssd_R2R_ms.pst_rest = [out(pst_rest_idx).rmssd_R2R_valid_ms];
+% 	S_Blocks.rmssd_R2R_ms.pst_task = [out(pst_task_idx).rmssd_R2R_valid_ms];
+% 
+% 	S_Blocks.std_R2R_bpm.pre_rest = [out(pre_rest_idx).std_R2R_valid_bpm];
+% 	S_Blocks.std_R2R_bpm.pre_task = [out(pre_task_idx).std_R2R_valid_bpm];
+% 	S_Blocks.std_R2R_bpm.pst_rest = [out(pst_rest_idx).std_R2R_valid_bpm];
+% 	S_Blocks.std_R2R_bpm.pst_task = [out(pst_task_idx).std_R2R_valid_bpm];
+% 
+% 	S_Blocks.lfPower.pre_rest = [out(pre_rest_idx).lfPower];
+% 	S_Blocks.lfPower.pre_task = [out(pre_task_idx).lfPower];
+% 	S_Blocks.lfPower.pst_rest = [out(pst_rest_idx).lfPower];
+% 	S_Blocks.lfPower.pst_task = [out(pst_task_idx).lfPower];
+% 
+% 	S_Blocks.hfPower.pre_rest = [out(pre_rest_idx).hfPower];
+% 	S_Blocks.hfPower.pre_task = [out(pre_task_idx).hfPower];
+% 	S_Blocks.hfPower.pst_rest = [out(pst_rest_idx).hfPower];
+% 	S_Blocks.hfPower.pst_task = [out(pst_task_idx).hfPower];
+% 
+% 
+% 	S_Blocks.totPower.pre_rest = [out(pre_rest_idx).totPower];
+% 	S_Blocks.totPower.pre_task = [out(pre_task_idx).totPower];
+% 	S_Blocks.totPower.pst_rest = [out(pst_rest_idx).totPower];
+% 	S_Blocks.totPower.pst_task = [out(pst_task_idx).totPower];
+% 
+% 
+% 	S_Blocks.freq.pre_rest = [out(pre_rest_idx).freq];
+% 	S_Blocks.freq.pre_task = [out(pre_task_idx).freq];
+% 	S_Blocks.freq.pst_rest = [out(pst_rest_idx).freq];
+% 	S_Blocks.freq.pst_task = [out(pst_task_idx).freq];
+% 
+% 	S_Blocks.Pxx.pre_rest = [out(pre_rest_idx).Pxx];
+% 	S_Blocks.Pxx.pre_task = [out(pre_task_idx).Pxx];
+% 	S_Blocks.Pxx.pst_rest = [out(pst_rest_idx).Pxx];
+% 	S_Blocks.Pxx.pst_task = [out(pst_task_idx).Pxx];
 
+if ismember(session_name,inactivation_sessions)
+    ind_ina_Blocks = ind_ina + 1;
+    S_Blocks_ina(ind_ina_Blocks) = S_Blocks;
+    %% create a table for Inactivation sessions
+    TableBlocks_Inac = [];
+    TableBlocks_Inac = struct2table(S_Blocks_ina(ind_ina_Blocks).Block); 
+%     VariableNames = TableBlocks_Inac.Properties.VariableNames
+%     TableBlocks_Inac.Properties.VariableUnits
+% for i_Var = 1: length(VariableNames)
+%     if TableBlocks_Inac(:,1)
+%         TableBlocks_Inac.Block = cell2table(TableBlocks_Inac.Block)
+%        TableBlocks_Inac.Block =  cell2mat(TableBlocks_Inac.Block)
+%     end
+% end
+    TableBlocks = [TableBlocks ;TableBlocks_Inac];
+              
+else
+    ind_con_Blocks = ind_con_Blocks + 1;
+    S_Blocks_con(ind_con_Blocks) = S_Blocks;
+    
+    %% create a table for Control sessions
+   TableBlocks_Con = [];
+
+    TableBlocks_Con = struct2table(S_Blocks_con(ind_con_Blocks).Block);
+    TableBlocks = [TableBlocks ;TableBlocks_Con];
+        
+end
 
 
 end
-%% save Table 
+%% save Data-Structures to plot
+S_con
+S_ina
+S_Blocks_ina
+S_Blocks_con
+%% save Table for further statistical analysis
 save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSession' ],'Table');
-writetable(Table, ['C:\Users\kkaduk\Dropbox\promotion\Projects\PhysiologicalRecording\Data', 'Table_HeartrateVaribility_PerSession'], 'Delimiter', ' ')
+writetable(Table, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerBlock_PerSession'], 'Delimiter', ' ')
+
+
+writetable(Table, ['C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data', 'Table_HeartrateVaribility_PerSession'], 'Delimiter', ' ')
+writetable(Table, ['C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data', 'Table_HeartrateVaribility_PerBlock_PerSession'], 'Delimiter', ' ')
 
 %% Graphs 
 figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
