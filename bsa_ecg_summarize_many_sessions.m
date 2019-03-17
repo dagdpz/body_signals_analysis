@@ -195,16 +195,17 @@ end
 % add blocks for analysis across all blocks from all sessions
 % How many Blocks in this session?
 S_Blocks = [];
+S_Blocks2 = []; 
 Blocks = sort([task_idx' , rest_idx']);
 for indBlock = 1:   length(Blocks) %indBlock =  Blocks
 
     NrBlock = Blocks(indBlock); 
     S_Blocks.Block(indBlock).Block = NrBlock;
     
-    S_Blocks.Block(indBlock).mean_R2R_valid_bpm         = 'NaN';
-    S_Blocks.Block(indBlock).median_R2R_valid_bpm       = 'NaN';
-    S_Blocks.Block(indBlock).rmssd_R2R_valid_ms         = 'NaN';
-    S_Blocks.Block(indBlock).std_R2R_valid_bpm          = 'NaN';
+    S_Blocks.Block(indBlock).mean_R2R_bpm         = 'NaN';
+    S_Blocks.Block(indBlock).median_R2R_bpm       = 'NaN';
+    S_Blocks.Block(indBlock).rmssd_R2R_ms         = 'NaN';
+    S_Blocks.Block(indBlock).std_R2R_bpm          = 'NaN';
     S_Blocks.Block(indBlock).lfPower                    = 'NaN';
     S_Blocks.Block(indBlock).hfPower                    = 'NaN';
     S_Blocks.Block(indBlock).Injection                  = 'NaN';
@@ -214,10 +215,10 @@ for indBlock = 1:   length(Blocks) %indBlock =  Blocks
     
     
     
-    S_Blocks.Block(indBlock).mean_R2R_valid_bpm      = [out(NrBlock).mean_R2R_valid_bpm];
-    S_Blocks.Block(indBlock).median_R2R_valid_bpm    = [out(NrBlock).median_R2R_valid_bpm];
-    S_Blocks.Block(indBlock).rmssd_R2R_valid_ms      = [out(NrBlock).rmssd_R2R_valid_ms];
-    S_Blocks.Block(indBlock).std_R2R_valid_bpm       = [out(NrBlock).std_R2R_valid_bpm];
+    S_Blocks.Block(indBlock).mean_R2R_bpm            = [out(NrBlock).mean_R2R_valid_bpm];
+    S_Blocks.Block(indBlock).median_R2R_bpm          = [out(NrBlock).median_R2R_valid_bpm];
+    S_Blocks.Block(indBlock).rmssd_R2R_ms            = [out(NrBlock).rmssd_R2R_valid_ms];
+    S_Blocks.Block(indBlock).std_R2R_bpm             = [out(NrBlock).std_R2R_valid_bpm];
     S_Blocks.Block(indBlock).lfPower                 = [out(NrBlock).lfPower];
     S_Blocks.Block(indBlock).hfPower                 = [out(NrBlock).hfPower];
     
@@ -252,65 +253,6 @@ for indBlock = 1:   length(Blocks) %indBlock =  Blocks
     
 end
 
-
-%     S_Blocks.Block.pre_rest = pre_rest_idx';
-%     S_Blocks.Block.pre_task_idx = pre_task_idx';
-%     S_Blocks.Block.pst_rest_idx = pst_rest_idx';
-%     S_Blocks.Block.pst_task_idx = pst_task_idx';
-%     
-% 
-%     S_Blocks.mean_R2R_bpm.pre_rest = zeros(1,ini );
-% 	S_Blocks.mean_R2R_bpm.pre_task = zeros(1,ini );
-% 	S_Blocks.mean_R2R_bpm.pst_rest = zeros(1,ini );
-% 	S_Blocks.mean_R2R_bpm.pst_task = zeros(1,ini );
-%     
-%     S_Blocks.mean_R2R_bpm.pre_rest = [out(pre_rest_idx).mean_R2R_valid_bpm];
-% 	S_Blocks.mean_R2R_bpm.pre_task = [out(pre_task_idx).mean_R2R_valid_bpm];
-% 	S_Blocks.mean_R2R_bpm.pst_rest = [out(pst_rest_idx).mean_R2R_valid_bpm];
-% 	S_Blocks.mean_R2R_bpm.pst_task = [out(pst_task_idx).mean_R2R_valid_bpm];
-% 
-% 	S_Blocks.median_R2R_bpm.pre_rest = [out(pre_rest_idx).median_R2R_valid_bpm];
-% 	S_Blocks.median_R2R_bpm.pre_task = [out(pre_task_idx).median_R2R_valid_bpm];
-% 	S_Blocks.median_R2R_bpm.pst_rest = [out(pst_rest_idx).median_R2R_valid_bpm];
-% 	S_Blocks.median_R2R_bpm.pst_task = [out(pst_task_idx).median_R2R_valid_bpm];
-% 
-% 	S_Blocks.rmssd_R2R_ms.pre_rest = [out(pre_rest_idx).rmssd_R2R_valid_ms];
-% 	S_Blocks.rmssd_R2R_ms.pre_task = [out(pre_task_idx).rmssd_R2R_valid_ms];
-% 	S_Blocks.rmssd_R2R_ms.pst_rest = [out(pst_rest_idx).rmssd_R2R_valid_ms];
-% 	S_Blocks.rmssd_R2R_ms.pst_task = [out(pst_task_idx).rmssd_R2R_valid_ms];
-% 
-% 	S_Blocks.std_R2R_bpm.pre_rest = [out(pre_rest_idx).std_R2R_valid_bpm];
-% 	S_Blocks.std_R2R_bpm.pre_task = [out(pre_task_idx).std_R2R_valid_bpm];
-% 	S_Blocks.std_R2R_bpm.pst_rest = [out(pst_rest_idx).std_R2R_valid_bpm];
-% 	S_Blocks.std_R2R_bpm.pst_task = [out(pst_task_idx).std_R2R_valid_bpm];
-% 
-% 	S_Blocks.lfPower.pre_rest = [out(pre_rest_idx).lfPower];
-% 	S_Blocks.lfPower.pre_task = [out(pre_task_idx).lfPower];
-% 	S_Blocks.lfPower.pst_rest = [out(pst_rest_idx).lfPower];
-% 	S_Blocks.lfPower.pst_task = [out(pst_task_idx).lfPower];
-% 
-% 	S_Blocks.hfPower.pre_rest = [out(pre_rest_idx).hfPower];
-% 	S_Blocks.hfPower.pre_task = [out(pre_task_idx).hfPower];
-% 	S_Blocks.hfPower.pst_rest = [out(pst_rest_idx).hfPower];
-% 	S_Blocks.hfPower.pst_task = [out(pst_task_idx).hfPower];
-% 
-% 
-% 	S_Blocks.totPower.pre_rest = [out(pre_rest_idx).totPower];
-% 	S_Blocks.totPower.pre_task = [out(pre_task_idx).totPower];
-% 	S_Blocks.totPower.pst_rest = [out(pst_rest_idx).totPower];
-% 	S_Blocks.totPower.pst_task = [out(pst_task_idx).totPower];
-% 
-% 
-% 	S_Blocks.freq.pre_rest = [out(pre_rest_idx).freq];
-% 	S_Blocks.freq.pre_task = [out(pre_task_idx).freq];
-% 	S_Blocks.freq.pst_rest = [out(pst_rest_idx).freq];
-% 	S_Blocks.freq.pst_task = [out(pst_task_idx).freq];
-% 
-% 	S_Blocks.Pxx.pre_rest = [out(pre_rest_idx).Pxx];
-% 	S_Blocks.Pxx.pre_task = [out(pre_task_idx).Pxx];
-% 	S_Blocks.Pxx.pst_rest = [out(pst_rest_idx).Pxx];
-% 	S_Blocks.Pxx.pst_task = [out(pst_task_idx).Pxx];
-
 if ismember(session_name,inactivation_sessions)
     ind_ina_Blocks = ind_ina + 1;
     S_Blocks_ina(ind_ina_Blocks) = S_Blocks;
@@ -338,6 +280,64 @@ else
     TableBlocks = [TableBlocks ;TableBlocks_Con];
         
 end
+
+    S_Blocks2.Block.pre_rest = pre_rest_idx';
+    S_Blocks2.Block.pre_task_idx = pre_task_idx';
+    S_Blocks2.Block.pst_rest_idx = pst_rest_idx';
+    S_Blocks2.Block.pst_task_idx = pst_task_idx';
+    
+
+    S_Blocks2.mean_R2R_bpm.pre_rest = zeros(1,ini );
+	S_Blocks2.mean_R2R_bpm.pre_task = zeros(1,ini );
+	S_Blocks2.mean_R2R_bpm.pst_rest = zeros(1,ini );
+	S_Blocks2.mean_R2R_bpm.pst_task = zeros(1,ini );
+    
+    S_Blocks2.mean_R2R_bpm.pre_rest = [out(pre_rest_idx).mean_R2R_valid_bpm];
+	S_Blocks2.mean_R2R_bpm.pre_task = [out(pre_task_idx).mean_R2R_valid_bpm];
+	S_Blocks2.mean_R2R_bpm.pst_rest = [out(pst_rest_idx).mean_R2R_valid_bpm];
+	S_Blocks2.mean_R2R_bpm.pst_task = [out(pst_task_idx).mean_R2R_valid_bpm];
+
+	S_Blocks2.median_R2R_bpm.pre_rest = [out(pre_rest_idx).median_R2R_valid_bpm];
+	S_Blocks2.median_R2R_bpm.pre_task = [out(pre_task_idx).median_R2R_valid_bpm];
+	S_Blocks2.median_R2R_bpm.pst_rest = [out(pst_rest_idx).median_R2R_valid_bpm];
+	S_Blocks2.median_R2R_bpm.pst_task = [out(pst_task_idx).median_R2R_valid_bpm];
+
+	S_Blocks2.rmssd_R2R_ms.pre_rest = [out(pre_rest_idx).rmssd_R2R_valid_ms];
+	S_Blocks2.rmssd_R2R_ms.pre_task = [out(pre_task_idx).rmssd_R2R_valid_ms];
+	S_Blocks2.rmssd_R2R_ms.pst_rest = [out(pst_rest_idx).rmssd_R2R_valid_ms];
+	S_Blocks2.rmssd_R2R_ms.pst_task = [out(pst_task_idx).rmssd_R2R_valid_ms];
+
+	S_Blocks2.std_R2R_bpm.pre_rest = [out(pre_rest_idx).std_R2R_valid_bpm];
+	S_Blocks2.std_R2R_bpm.pre_task = [out(pre_task_idx).std_R2R_valid_bpm];
+	S_Blocks2.std_R2R_bpm.pst_rest = [out(pst_rest_idx).std_R2R_valid_bpm];
+	S_Blocks2.std_R2R_bpm.pst_task = [out(pst_task_idx).std_R2R_valid_bpm];
+
+	S_Blocks2.lfPower.pre_rest = [out(pre_rest_idx).lfPower];
+	S_Blocks2.lfPower.pre_task = [out(pre_task_idx).lfPower];
+	S_Blocks2.lfPower.pst_rest = [out(pst_rest_idx).lfPower];
+	S_Blocks2.lfPower.pst_task = [out(pst_task_idx).lfPower];
+
+	S_Blocks2.hfPower.pre_rest = [out(pre_rest_idx).hfPower];
+	S_Blocks2.hfPower.pre_task = [out(pre_task_idx).hfPower];
+	S_Blocks2.hfPower.pst_rest = [out(pst_rest_idx).hfPower];
+	S_Blocks2.hfPower.pst_task = [out(pst_task_idx).hfPower];
+
+
+	S_Blocks2.totPower.pre_rest = [out(pre_rest_idx).totPower];
+	S_Blocks2.totPower.pre_task = [out(pre_task_idx).totPower];
+	S_Blocks2.totPower.pst_rest = [out(pst_rest_idx).totPower];
+	S_Blocks2.totPower.pst_task = [out(pst_task_idx).totPower];
+
+
+	S_Blocks2.freq.pre_rest = [out(pre_rest_idx).freq];
+	S_Blocks2.freq.pre_task = [out(pre_task_idx).freq];
+	S_Blocks2.freq.pst_rest = [out(pst_rest_idx).freq];
+	S_Blocks.freq.pst_task = [out(pst_task_idx).freq];
+
+	S_Blocks.Pxx.pre_rest = [out(pre_rest_idx).Pxx];
+	S_Blocks.Pxx.pre_task = [out(pre_task_idx).Pxx];
+	S_Blocks.Pxx.pst_rest = [out(pst_rest_idx).Pxx];
+	S_Blocks.Pxx.pst_task = [out(pst_task_idx).Pxx];
 
 
 end

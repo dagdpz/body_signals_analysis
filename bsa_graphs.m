@@ -1,7 +1,11 @@
 function bsa_graphs()
 
 load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Control' ])
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Control' ])
+
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation' ])
 load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Inactivation' ])
+
 MultComp  = load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'MultComp_PValues_HeartrateVaribility_PerSession' ]);
 Tabl_MultComp = struct2table(MultComp.tabl_MultCom_pValues_Data); 
 
@@ -10,6 +14,9 @@ Tabl_MultComp = struct2table(MultComp.tabl_MultCom_pValues_Data);
 
 for ind_DV = 1: length(DVs)
     Stat = []; 
+  
+ %% Blocks
+ %% Session   
 figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
 set(gcf,'Name',DVs{ind_DV});
 [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]);
@@ -19,9 +26,9 @@ title(char(DVs{ind_DV}));
 ylabel(char(DVs{ind_DV}),'fontsize',14,'fontweight','b' );
 
 
-
 max_yValue = Ymax +80; 
-min_yValue = Ymin -20; ; if min_yValue < 0; min_yValue = 0; end;
+min_yValue = Ymin -20; 
+if min_yValue < 0; min_yValue = 0; end;
 set(gca,'ylim',[min_yValue max_yValue]); 
 
 text(1.5 ,max_yValue -10,'Control')
@@ -39,22 +46,34 @@ Stat = Tabl_MultComp(strcmp(Tabl_MultComp.Variable, DVs{ind_DV}),:);
 Row(1) =find(sum([strcmp(Stat.Comparison1, 'Control,pre,task'), strcmp(Stat.Comparison2, 'Injection,pre,task')],2)== 2);
 Row(2) =find(sum([strcmp(Stat.Comparison1, 'Control,pst,task'), strcmp(Stat.Comparison2, 'Injection,pst,task')],2)== 2);
 Row(3) =find(sum([strcmp(Stat.Comparison1, 'Injection,pre,task'), strcmp(Stat.Comparison2, 'Injection,pst,task')],2)== 2);
+Row(4) =find(sum([strcmp(Stat.Comparison1, 'Control,pre,task'), strcmp(Stat.Comparison2, 'Control,pst,task')],2)== 2);
+
 Stat(Row,:)
 Contrast(1,:) = [3,8];
 Contrast(2,:) = [4,9];
 Contrast(3,:) = [8,9];
+Contrast(4,:) = [3,4];
+
 Y_C(1) = max_yValue -50;
 Y_C(2) = max_yValue -60;
 Y_C(3) = max_yValue -80;
+Y_C(4) = max_yValue -80;
+
 %Y = [nanmean([S_con.mean_R2R_bpm.pre_rest]),nanmean([S_con.mean_R2R_bpm.pst_rest]),nanmean([S_con.mean_R2R_bpm.pre_task]),nanmean([S_con.mean_R2R_bpm.pst_task])]
 %Y = [200 , 210, 220, 230,200 , 210, 220, 230 ];
-for NrContrasts = 1: 3
+for NrContrasts = 1: 4
 sigline(Contrast(NrContrasts,:),char(Stat.Star(Row(NrContrasts))),Y_C(NrContrasts)); hold on; 
 end
+h = [];
 h(1) = figure(1); 
 path_SaveFig = 'Y:\Projects\PhysiologicalRecording\Figures\ECG'; 
 print(h,[path_SaveFig filesep DVs{ind_DV}], '-dpng')
-close all; 
+close all;
+
+
+
+
+
 end
 
 %% overview of all Variables in Bargraphs 
@@ -173,6 +192,49 @@ savefig(h, [path_SaveFig filesep  'OverviewBarGraph_Heartratevariability.fig'])
 print(h,[path_SaveFig filesep 'OverviewBarGraph_Heartratevariability'], '-dpng')
 
 function [Graph, Ymin ,Ymax] = plot_one_var_pre_post_rest_task(S_con,S_ina)
+
+con_b_col = [0.4667    0.6745    0.1882];
+con_d_col = [0.0706    0.2118    0.1412];
+ina_b_col = [0.5137    0.3804    0.4824];
+ina_d_col = [0.3490    0.2000    0.3294];
+
+ plot(  1, nanmean([S_con.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
+ plot(  2, nanmean([S_con.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col); 
+ plot(  3, nanmean([S_con.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col); 
+ plot(  4, nanmean([S_con.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col) ;
+
+ plot(  6, nanmean([S_ina.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',ina_b_col) ;
+ plot(  7, nanmean([S_ina.pst_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',ina_d_col) ;
+ plot(  8, nanmean([S_ina.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',ina_b_col); 
+ plot(  9, nanmean([S_ina.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',ina_d_col) ;
+
+ Graph = plot(  1, [S_con.pre_rest], '.','color',con_b_col ,'MarkerSize',25) ; hold on; 
+ Graph = plot(  2, [S_con.pst_rest], '.','color',con_d_col ,'MarkerSize',25) ;
+ Graph = plot(  3, [S_con.pre_task], '.','color',con_b_col ,'MarkerSize',25); 
+ Graph = plot(  4, [S_con.pst_task], '.','color',con_d_col ,'MarkerSize',25) ;
+
+
+ Graph =plot(  6, [S_ina.pre_rest], '.','color',ina_b_col ,'MarkerSize',25) ;
+ Graph =plot(  7, [S_ina.pst_rest], '.','color',ina_d_col ,'MarkerSize',25) ;
+ Graph =plot(  8, [S_ina.pre_task], '.','color',ina_b_col ,'MarkerSize',25) ;
+ Graph =plot(  9, [S_ina.pst_task], '.','color',ina_d_col ,'MarkerSize',25) ;
+ 
+C1 = struct2cell(S_con);
+C2 = struct2cell(S_ina);
+
+Ymin(1) = min([C1{:}]);
+Ymax(1) = max([C1{:}]);
+Ymin(2) = min([C2{:}]);
+Ymax(2) = max([C2{:}]);  
+Ymin=   min(Ymin) ;
+Ymax=   max(Ymax) ;
+
+hold off; 
+
+set(gca,'xlim',[0 10],'Xtick',[1:4 6:9],'XTickLabel',{'pre' 'post' 'pre' 'post' 'pre' 'post' 'pre' 'post'});
+
+
+function [Graph, Ymin ,Ymax] = plot_one_var_EachBlock_pre_post_rest_task(S_con,S_ina)
 
 con_b_col = [0.4667    0.6745    0.1882];
 con_d_col = [0.0706    0.2118    0.1412];
