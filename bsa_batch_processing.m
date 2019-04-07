@@ -1,5 +1,7 @@
 % this is not a function, it is just a convenience script to run functions over several sessions
-
+%% TODO
+% 1) vector with sessions & monkey to have only one line
+%%
 % Load and save TDT data without behavior
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190201', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190124\bodysignals_without_behavior');
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190121', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190129\bodysignals_without_behavior');
@@ -28,6 +30,7 @@ out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Corne
  out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190228','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190228');
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190304', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190304\bodysignals_without_behavior');
  out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190304','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190304');
+ out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190313','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190313');
 
 
 %%

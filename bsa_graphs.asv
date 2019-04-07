@@ -37,7 +37,7 @@ ylabel(char(DVs{ind_DV}),'fontsize',14,'fontweight','b' );
 h = [];
 h(1) = figure(1); 
 path_SaveFig = 'Y:\Projects\PhysiologicalRecording\Figures\ECG'; 
-print(h,[path_SaveFig filesep 'Blocks_' DVs{ind_DV} ], '-dpng')
+print(h,[path_SaveFig filesep DVs{ind_DV}], '-dpng')
 close all;
 
 
@@ -223,8 +223,8 @@ function plot_oneVar_Block_pre_post_rest_task(Experiment, Block,Variable)
 %[Graph, Ymin ,Ymax] = 
 con_b_col = [0.4667    0.6745    0.1882];
 con_d_col = [0.0706    0.2118    0.1412];
-ina_b_col = [0          0.7   0.9];
-ina_d_col = [0          0    0.9];
+ina_b_col = [0.5137    0.3804    0.4824];
+ina_d_col = [0    0    1];
 
 % plot(  1, nanmean([Block.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
 % plot(  2, nanmean([Block.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col); 
@@ -270,8 +270,8 @@ function [Graph, Ymin ,Ymax] = plot_one_var_pre_post_rest_task(S_con,S_ina)
 
 con_b_col = [0.4667    0.6745    0.1882];
 con_d_col = [0.0706    0.2118    0.1412];
-ina_b_col = [0          0.7   0.9];
-ina_d_col = [0          0    0.9];
+ina_b_col = [0.5137    0.3804    0.4824];
+ina_d_col = [0.3490    0.2000    0.3294];
 
  plot(  1, nanmean([S_con.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
  plot(  2, nanmean([S_con.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col); 

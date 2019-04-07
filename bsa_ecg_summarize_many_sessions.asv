@@ -70,8 +70,8 @@ for s = 1:length(sessions),
     task_idx = find(ses.type == 1 & ~isnan([out.mean_R2R_valid_bpm]'));
 	pre_rest_idx = 	rest_idx(rest_idx < ses.first_inj_block);
 	pre_task_idx = 	task_idx(task_idx < ses.first_inj_block);
-	pst_rest_idx = 	rest_idx(rest_idx >= ses.first_inj_block);
-	pst_task_idx = 	task_idx(task_idx >= ses.first_inj_block);
+	pst_rest_idx = 	rest_idx(rest_idx >= ses.first_inj_block+5);
+	pst_task_idx = 	task_idx(task_idx >= ses.first_inj_block+5);
 
 
 	% for analysis across sessions
@@ -200,7 +200,7 @@ end
 %% BLOCKS
 %add blocks for analysis across all blocks from all sessions
 % How many Blocks in this session?
-S_Blocks = [];Blocks =[];
+S_Blocks = [];
 Blocks = sort([task_idx' , rest_idx']);
 for indBlock = 1:   length(Blocks) %indBlock =  Blocks
 
@@ -228,13 +228,13 @@ for indBlock = 1:   length(Blocks) %indBlock =  Blocks
     S_Blocks.Block(indBlock).hfPower                 = [out(NrBlock).hfPower];
     
     
-    if ismember(NrBlock, pre_rest_idx)
+    if ismember(indBlock, pre_rest_idx)
         S_Blocks.Block(indBlock).Condition = 'pre_rest';
-    elseif ismember(NrBlock, pre_task_idx)
+    elseif ismember(indBlock, pre_task_idx)
         S_Blocks.Block(indBlock).Condition = 'pre_task';
-    elseif ismember(NrBlock, pst_rest_idx)
+    elseif ismember(indBlock, pst_rest_idx)
         S_Blocks.Block(indBlock).Condition =  'pst_rest';
-    elseif ismember(NrBlock, pst_task_idx)
+    elseif ismember(indBlock, pst_task_idx)
         S_Blocks.Block(indBlock).Condition =  'pst_task';
     else
         S_Blocks.Block(indBlock).Condition =  'NaN_NaN';
@@ -339,19 +339,17 @@ end
 
 end
 
-MeanForBlock_Task_Experiment = varfun(@mean,TableBlocks,'InputVariables','mean_R2R_bpm', 'GroupingVariables',{'Block','Experiment','Condition'});
+varfun(@mean,TableBlocks,'InputVariables','mean_R2R_bpm', 'GroupingVariables',{'Block','Experiment','Condition'})
    
-
+   
+ind = sum([TableBlocks.Block == 1  strcmp(TableBlocks.Experiment , 'Control') strcmp(TableBlocks.Condition , 'pre_task')],2) == 3; 
+mean(TableBlocks(ind,2 :7),2)
 %% save Data-Structures to plot
 save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSession' ],'Table');
 writetable(Table, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSession'], 'Delimiter', ' ')
 
 writetable(TableBlocks, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSessionPerBlock'], 'Delimiter', ' ')
 save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSessionPerBlocks' ],'TableBlocks');
-
-writetable(MeanForBlock_Task_Experiment, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Experiment'], 'Delimiter', ' ')
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Experiment' ],'MeanForBlock_Task_Experiment');
-
 
 
 save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Control' ],'S_con');
