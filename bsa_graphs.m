@@ -7,8 +7,12 @@ load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_Heartrate
 load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Inactivation' ])
 load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock' ])
 
-MultComp  = load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'MultComp_PValues_HeartrateVaribility_PerSession' ]);
-Tabl_MultComp = struct2table(MultComp.tabl_MultCom_pValues_Data); 
+
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Control' ]);
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Injection' ]);
+
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'MultComp_PValues_HeartrateVaribility_PerSession' ]);
+Tabl_MultComp = struct2table(tabl_MultCom_pValues_Data); 
 
 %%each Variable has one figure
  DVs =   unique(Tabl_MultComp.Variable); 
@@ -17,17 +21,25 @@ for ind_DV = 1: length(DVs)
     Stat = []; 
   
  %% Blocks
-  figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
+figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
 set(gcf,'Name',DVs{ind_DV}); hold on; 
  for I_Ses = 1: length(S_Blocks2)
-
  plot_oneVar_Block_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, [S_Blocks2(I_Ses).Block],[S_Blocks2(I_Ses).(DVs{ind_DV})]);
-
- S_Blocks2(I_Ses).Block.pre_task_idx
- S_Blocks2(I_Ses).(DVs{ind_DV}).pre_task
  %[Graph, Ymin ,Ymax] = 
  % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
  end
+ 
+  MeanForBlock_Task_Control_Task = MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pre_task'),:);
+  MeanForBlock_Task_Control_Task = [MeanForBlock_Task_Control_Task; MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pst_task'),:)];
+  MeanForBlock_Task_Injection_Task = MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pre_task'),:);
+  Table_MeanForBlock_Task_Injection_Task = [MeanForBlock_Task_Injection_Task; MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pst_task'),:)];
+
+ % eine Funktion die zuerst Control plotted se
+ VarName = [ 'mean_', DVs{ind_DV}] ;
+  plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)]);
+  plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)]);
+
+  
 Name_DV = strsplit(char(DVs{ind_DV}), '_');
 title(char(DVs{ind_DV}));
 ylabel(char(DVs{ind_DV}),'fontsize',14,'fontweight','b' );
@@ -219,6 +231,26 @@ print(h,[path_SaveFig filesep 'OverviewBarGraph_Heartratevariability'], '-dpng')
 
 
 
+
+function plot_oneVarMean_Block_pre_post_rest_task(Experiment, Block,Variable)
+%[Graph, Ymin ,Ymax] = 
+con_b_col = [0.4667    0.6745    0.1882];
+con_d_col = [0.0706    0.2118    0.1412];
+ina_b_col = [0          0.7   0.9];
+ina_d_col = [0          0    0.9];
+
+% plot(  1, nanmean([Block.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
+% plot(  2, nanmean([Block.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col); 
+if  strcmp(Experiment, 'Control')
+plot(   Block(1:3),Variable(1:3), '-o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',con_b_col); hold on; 
+plot(   Block(4:end),Variable(4:end), '-o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',con_d_col); hold on; 
+elseif  strcmp(Experiment, 'Injection')
+plot(   Block(1:3),Variable(1:3), '-o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',ina_b_col); hold on; 
+plot(   Block(4:end),Variable(4:end), '-o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',ina_d_col); hold on; 
+ end
+
+
+
 function plot_oneVar_Block_pre_post_rest_task(Experiment, Block,Variable)
 %[Graph, Ymin ,Ymax] = 
 con_b_col = [0.4667    0.6745    0.1882];
@@ -236,32 +268,7 @@ elseif  strcmp(Experiment, 'Injection')
  plot(   1:length([Block.pre_task_idx]),[Variable.pre_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_b_col); hold on; 
  plot(   4:(length([Block.pst_task_idx])+3),[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_d_col) ;
  end
-% 
-% 
-%  Graph = plot(  1, [S_con.pre_rest], '.','color',con_b_col ,'MarkerSize',25) ; hold on; 
-%  Graph = plot(  2, [S_con.pst_rest], '.','color',con_d_col ,'MarkerSize',25) ;
-%  Graph = plot(  3, [S_con.pre_task], '.','color',con_b_col ,'MarkerSize',25); 
-%  Graph = plot(  4, [S_con.pst_task], '.','color',con_d_col ,'MarkerSize',25) ;
-% 
-% 
-%  Graph =plot(  6, [S_ina.pre_rest], '.','color',ina_b_col ,'MarkerSize',25) ;
-%  Graph =plot(  7, [S_ina.pst_rest], '.','color',ina_d_col ,'MarkerSize',25) ;
-%  Graph =plot(  8, [S_ina.pre_task], '.','color',ina_b_col ,'MarkerSize',25) ;
-%  Graph =plot(  9, [S_ina.pst_task], '.','color',ina_d_col ,'MarkerSize',25) ;
-%  
-% C1 = struct2cell(S_con);
-% C2 = struct2cell(S_ina);
-% 
-% Ymin(1) = min([C1{:}]);
-% Ymax(1) = max([C1{:}]);
-% Ymin(2) = min([C2{:}]);
-% Ymax(2) = max([C2{:}]);  
-% Ymin=   min(Ymin) ;
-% Ymax=   max(Ymax) ;
 
-
-
-%set(gca,'xlim',[0 10],'Xtick',[1:4 6:9],'XTickLabel',{'pre' 'post' 'pre' 'post' 'pre' 'post' 'pre' 'post'});
 
 
 

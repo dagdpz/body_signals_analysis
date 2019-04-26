@@ -200,13 +200,15 @@ end
 %% BLOCKS
 %add blocks for analysis across all blocks from all sessions
 % How many Blocks in this session?
+%
 S_Blocks = [];Blocks =[];
 Blocks = sort([task_idx' , rest_idx']);
 for indBlock = 1:   length(Blocks) %indBlock =  Blocks
 
     NrBlock = Blocks(indBlock); 
     S_Blocks.Block(indBlock).Block = NrBlock;
-    
+    S_Blocks.Block(indBlock).NrBlock = indBlock;
+
     S_Blocks.Block(indBlock).mean_R2R_bpm         = 'NaN';
     S_Blocks.Block(indBlock).median_R2R_bpm       = 'NaN';
     S_Blocks.Block(indBlock).rmssd_R2R_ms         = 'NaN';
@@ -240,6 +242,8 @@ for indBlock = 1:   length(Blocks) %indBlock =  Blocks
         S_Blocks.Block(indBlock).Condition =  'NaN_NaN';
     end
     
+
+    
     Var = strsplit(char(S_Blocks.Block(indBlock).Condition) , '_');
     
     for i = 1: numel(Var)
@@ -255,6 +259,9 @@ for indBlock = 1:   length(Blocks) %indBlock =  Blocks
         S_Blocks.Block(indBlock).Experiment         = 'Control';
     end
     S_Blocks.Block(indBlock).Date               = session_name;
+   
+  
+    
     
 end
 
@@ -264,14 +271,14 @@ if ismember(session_name,inactivation_sessions)
     %% create a table for Inactivation sessions
     TableBlocks_Inac = [];
     TableBlocks_Inac = struct2table(S_Blocks_ina(ind_ina_Blocks).Block); 
-%     VariableNames = TableBlocks_Inac.Properties.VariableNames
-%     TableBlocks_Inac.Properties.VariableUnits
-% for i_Var = 1: length(VariableNames)
-%     if TableBlocks_Inac(:,1)
-%         TableBlocks_Inac.Block = cell2table(TableBlocks_Inac.Block)
-%        TableBlocks_Inac.Block =  cell2mat(TableBlocks_Inac.Block)
-%     end
-% end
+%%
+ TableBlocks_Inac.NrBlock_BasedCondition = zeros(size(TableBlocks_Inac,1),1); 
+    Var = unique(TableBlocks_Inac.Condition ); 
+    
+    for indCon =  1: length( Var)
+    TableBlocks_Inac.NrBlock_BasedCondition(TableBlocks_Inac(strcmp(TableBlocks_Inac.Condition ,Var(indCon)), :).NrBlock) = ...
+         [1: sum(strcmp(TableBlocks_Inac.Condition ,Var(indCon)))]'; 
+    end
     TableBlocks = [TableBlocks ;TableBlocks_Inac];
               
 else
@@ -282,6 +289,13 @@ else
    TableBlocks_Con = [];
 
     TableBlocks_Con = struct2table(S_Blocks_con(ind_con_Blocks).Block);
+    TableBlocks_Con.NrBlock_BasedCondition = zeros(size(TableBlocks_Con,1),1); 
+    Var = unique(TableBlocks_Con.Condition ); 
+    
+    for indCon =  1: length( Var)
+    TableBlocks_Con.NrBlock_BasedCondition(TableBlocks_Con(strcmp(TableBlocks_Con.Condition ,Var(indCon)), :).NrBlock) = ...
+         [1: sum(strcmp(TableBlocks_Con.Condition ,Var(indCon)))]'; 
+    end
     TableBlocks = [TableBlocks ;TableBlocks_Con];
         
 end
@@ -335,12 +349,15 @@ end
 	S_Blocks2(s).totPower.pst_rest = [out(pst_rest_idx).totPower];
 	S_Blocks2(s).totPower.pst_task = [out(pst_task_idx).totPower];
 
-
-
 end
 
-MeanForBlock_Task_Experiment = varfun(@mean,TableBlocks,'InputVariables','mean_R2R_bpm', 'GroupingVariables',{'Block','Experiment','Condition'});
-   
+TableBlocks_Control         = TableBlocks(strcmp(TableBlocks.Experiment, 'Control'),:);
+TableBlocks_Injection       = TableBlocks(strcmp(TableBlocks.Experiment, 'Injection'),:);
+MeanForBlock_Task_Control   = varfun(@mean,TableBlocks_Control,'InputVariables',{'mean_R2R_bpm','median_R2R_bpm','rmssd_R2R_ms', 'std_R2R_bpm', 'lfPower','hfPower'}, 'GroupingVariables',{'NrBlock_BasedCondition','Condition'});
+MeanForBlock_Task_Injection = varfun(@mean,TableBlocks_Injection,'InputVariables',{'mean_R2R_bpm','median_R2R_bpm','rmssd_R2R_ms', 'std_R2R_bpm', 'lfPower','hfPower'}, 'GroupingVariables',{'NrBlock_BasedCondition','Condition'});
+
+MeanForBlock_Task_Control.Experiment = repmat(TableBlocks_Control.Experiment(1), size(MeanForBlock_Task_Control,1),1);
+MeanForBlock_Task_Injection.Experiment = repmat(TableBlocks_Injection.Experiment(1), size(MeanForBlock_Task_Injection,1),1);
 
 %% save Data-Structures to plot
 save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSession' ],'Table');
@@ -349,8 +366,8 @@ writetable(Table, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_
 writetable(TableBlocks, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSessionPerBlock'], 'Delimiter', ' ')
 save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSessionPerBlocks' ],'TableBlocks');
 
-writetable(MeanForBlock_Task_Experiment, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Experiment'], 'Delimiter', ' ')
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Experiment' ],'MeanForBlock_Task_Experiment');
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Control' ],'MeanForBlock_Task_Control');
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Injection' ],'MeanForBlock_Task_Injection');
 
 
 
