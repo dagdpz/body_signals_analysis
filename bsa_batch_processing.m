@@ -33,9 +33,11 @@ bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\201
  out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190313','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190313');
  out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190314','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190314');
   out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190403','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190403');
-
  out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190404','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190404');
  out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190408','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190408');
+  out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190424','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190424');
+  out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190429','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190429');
+  out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190430','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190430');
 
 %%
  bsa_ecg_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\')

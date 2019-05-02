@@ -41,8 +41,8 @@ set(gcf,'Name',DVs{ind_DV}); hold on;
 
   
 Name_DV = strsplit(char(DVs{ind_DV}), '_');
-title(char(DVs{ind_DV}));
-ylabel(char(DVs{ind_DV}),'fontsize',14,'fontweight','b' );
+title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
+ylabel(char(DVs{ind_DV}),'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
  
 
 
@@ -60,8 +60,8 @@ set(gcf,'Name',DVs{ind_DV});
 [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]);
 % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
 Name_DV = strsplit(char(DVs{ind_DV}), '_');
-title(char(DVs{ind_DV}));
-ylabel(char(DVs{ind_DV}),'fontsize',14,'fontweight','b' );
+title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
+ylabel(char(DVs{ind_DV}),'fontsize',20,'fontweight','b' , 'Interpreter', 'none');
 
 
 max_yValue = Ymax +80; 
@@ -69,13 +69,13 @@ min_yValue = Ymin -20;
 if min_yValue < 0; min_yValue = 0; end;
 set(gca,'ylim',[min_yValue max_yValue]); 
 
-text(1.5 ,max_yValue -10,'Control')
-text(1 ,max_yValue -20,'rest')
-text(3 ,max_yValue -20,'task')
+text(1.5 ,max_yValue -10,'Control','fontsize',20)
+text(1 ,max_yValue -20,'rest','fontsize',15)
+text(3 ,max_yValue -20,'task','fontsize',15)
 
-text(6.5,max_yValue -10,'Injection')
-text(6 ,max_yValue -20,'rest')
-text(8 ,max_yValue -20,'task')
+text(6.5,max_yValue -10,'Inactivation','fontsize',20)
+text(6 ,max_yValue -20,'rest','fontsize',15)
+text(8 ,max_yValue -20,'task','fontsize',15)
 
 
 % add STATISTIC: line for the comparison && stars for significance
@@ -320,8 +320,8 @@ function [Graph, Ymin ,Ymax] = plot_one_var_EachBlock_pre_post_rest_task(S_con,S
 
 con_b_col = [0.4667    0.6745    0.1882];
 con_d_col = [0.0706    0.2118    0.1412];
-ina_b_col = [0.5137    0.3804    0.4824];
-ina_d_col = [0.3490    0.2000    0.3294];
+ina_b_col = [0          0.7   0.9];
+ina_d_col = [0          0    0.9];
 
  plot(  1, nanmean([S_con.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
  plot(  2, nanmean([S_con.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col); 
@@ -362,8 +362,9 @@ function BarGraph_one_var_pre_post_rest_task(S_con,S_ina)
 
 con_b_col = [0.4667    0.6745    0.1882];
 con_d_col = [0.0706    0.2118    0.1412];
-ina_b_col = [0.5137    0.3804    0.4824];
-ina_d_col = [0.3490    0.2000    0.3294];
+ina_b_col = [0          0.7   0.9];
+ina_d_col = [0          0    0.9];
+
 
 
 ig_bar_mean_se(1,[S_con.pre_rest],'sterr','FaceColor',[1 1 1],'EdgeColor',con_b_col);
