@@ -96,7 +96,7 @@ table = readtable(pathExcel);
       
       for indBlock = 1: n_blocks
           load([session_path filesep combined_matfiles(indBlock).name])
-          if task.type == 2 && all(trial(1).task.reward.time_neutral > [0.19 0.19])%&& numel(trial) > 10
+          if task.type == 2 && all(trial(1).task.reward.time_neutral > [0.15 0.15])%&& numel(trial) > 10
               ses.type(indBlock)   =    1;
           elseif task.type == 1 && all(trial(1).task.reward.time_neutral == [0 0]) %&& numel(trial) > 10;
               ses.type(indBlock)   =    0;

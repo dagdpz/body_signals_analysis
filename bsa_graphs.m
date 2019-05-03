@@ -1,21 +1,27 @@
-function bsa_graphs()
+function bsa_graphs(targetBrainArea)
+close all; 
+%% dorsal pulvinar
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Control_' ,targetBrainArea])
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Control_',targetBrainArea ])
 
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Control' ])
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Control' ])
-
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation' ])
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Inactivation' ])
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock' ])
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation_',targetBrainArea ])
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Inactivation_' ,targetBrainArea])
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_' ,targetBrainArea])
 
 
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Control' ]);
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Injection' ]);
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Control_',targetBrainArea ]);
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Injection_',targetBrainArea ]);
 
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'MultComp_PValues_HeartrateVaribility_PerSession' ]);
+
+load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'MultComp_PValues_HeartrateVaribility_PerSession_',targetBrainArea ]);
 Tabl_MultComp = struct2table(tabl_MultCom_pValues_Data); 
+ DVs =   unique(Tabl_MultComp.Variable); 
+
+
+
+%% ventral pulvinar
 
 %%each Variable has one figure
- DVs =   unique(Tabl_MultComp.Variable); 
 
 for ind_DV = 1: length(DVs)
     Stat = []; 
@@ -23,11 +29,19 @@ for ind_DV = 1: length(DVs)
  %% Blocks
 figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
 set(gcf,'Name',DVs{ind_DV}); hold on; 
+count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1; 
  for I_Ses = 1: length(S_Blocks2)
- plot_oneVar_Block_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, [S_Blocks2(I_Ses).Block],[S_Blocks2(I_Ses).(DVs{ind_DV})]);
+ [count_con, count_ina, count_c, count_i] = plot_oneVar_Block_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, [S_Blocks2(I_Ses).Block],[S_Blocks2(I_Ses).(DVs{ind_DV})],count_con, count_ina , count_c, count_i );
  %[Graph, Ymin ,Ymax] = 
  % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
  end
+ 
+ C1 = struct2cell([S_Blocks2(I_Ses).(DVs{ind_DV})]);
+ Ymin = min([C1{:}]);
+ Ymax = max([C1{:}]);
+
+ line([3.5 3.5],[Ymin Ymax],'Color',[0 0 0])
+ %text(3.5,Ymax -10,'Inactivation','fontsize',15)
  
   MeanForBlock_Task_Control_Task = MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pre_task'),:);
   MeanForBlock_Task_Control_Task = [MeanForBlock_Task_Control_Task; MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pst_task'),:)];
@@ -43,13 +57,14 @@ set(gcf,'Name',DVs{ind_DV}); hold on;
 Name_DV = strsplit(char(DVs{ind_DV}), '_');
 title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
 ylabel(char(DVs{ind_DV}),'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
+xlabel('Blocks','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
  
 
 
 h = [];
 h(1) = figure(1); 
 path_SaveFig = 'Y:\Projects\PhysiologicalRecording\Figures\ECG'; 
-print(h,[path_SaveFig filesep 'Blocks_' DVs{ind_DV} ], '-dpng')
+print(h,[path_SaveFig filesep targetBrainArea '_Blocks_' DVs{ind_DV} ], '-dpng')
 close all;
 
 
@@ -92,7 +107,7 @@ Contrast(2,:) = [4,9];
 Contrast(3,:) = [8,9];
 Contrast(4,:) = [3,4];
 
-Y_C(1) = max_yValue -50;
+Y_C(1) = max_yValue -  50;
 Y_C(2) = max_yValue -60;
 Y_C(3) = max_yValue -80;
 Y_C(4) = max_yValue -80;
@@ -105,7 +120,7 @@ end
 h = [];
 h(1) = figure(1); 
 path_SaveFig = 'Y:\Projects\PhysiologicalRecording\Figures\ECG'; 
-print(h,[path_SaveFig filesep DVs{ind_DV}], '-dpng')
+print(h,[path_SaveFig filesep targetBrainArea '_' DVs{ind_DV}], '-dpng')
 close all;
 
 
@@ -227,7 +242,7 @@ set(ha([7 8]),'Xlim',[0 0.6]);
 %end  
 path_SaveFig = 'Y:\Projects\PhysiologicalRecording\Figures\ECG'; 
 savefig(h, [path_SaveFig filesep  'OverviewBarGraph_Heartratevariability.fig'])
-print(h,[path_SaveFig filesep 'OverviewBarGraph_Heartratevariability'], '-dpng')
+print(h,[path_SaveFig filesep targetBrainArea '_OverviewBarGraph_Heartratevariability'], '-dpng')
 
 
 
@@ -251,23 +266,37 @@ plot(   Block(4:end),Variable(4:end), '-o','color',[0 0 0] ,'MarkerSize',15,'mar
 
 
 
-function plot_oneVar_Block_pre_post_rest_task(Experiment, Block,Variable)
-%[Graph, Ymin ,Ymax] = 
-con_b_col = [0.4667    0.6745    0.1882];
-con_d_col = [0.0706    0.2118    0.1412];
-ina_b_col = [0          0.7   0.9];
-ina_d_col = [0          0    0.9];
+ function [count_con, count_ina, count_c, count_i] =  plot_oneVar_Block_pre_post_rest_task(Experiment, Block,Variable, count_con, count_ina, count_c, count_i)
+%[Graph, Ymin ,Ymax] =
+
+ count_con= [0 0 0]; count_ina = [0 0 0]; 
+
+
+con_b_col = abs([0.4667    0.6745    0.1882] +count_con); % light green
+con_d_col = abs([0.0706    0.2118    0.1412] +count_con);
+ina_b_col = abs([0          0.7   0.9] +count_ina);
+ina_d_col = abs([0          0    0.9] +count_ina);
 
 % plot(  1, nanmean([Block.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
 % plot(  2, nanmean([Block.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col); 
 if  strcmp(Experiment, 'Control')
 plot(   1:length([Block.pre_task_idx]),[Variable.pre_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_b_col); hold on; 
- plot(   4:(length([Block.pst_task_idx])+3),[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_d_col) ;
+plot(   4:(length([Block.pst_task_idx])+3),[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_d_col) ;
+count_con = count_con + [0 0.15 0.15]; 
+text(1:length([Block.pre_task_idx]),[Variable.pre_task],num2str(count_c),'fontsize',15)
+text(4:(length([Block.pst_task_idx])+3),[Variable.pst_task],num2str(count_c),'fontsize',15)
+count_c = count_c +1; 
 elseif  strcmp(Experiment, 'Injection')
 
  plot(   1:length([Block.pre_task_idx]),[Variable.pre_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_b_col); hold on; 
  plot(   4:(length([Block.pst_task_idx])+3),[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_d_col) ;
- end
+count_ina = count_ina - [0  0.1 0.1]; 
+
+text(1:length([Block.pre_task_idx]),[Variable.pre_task],num2str(count_i),'fontsize',15)
+text(  4:(length([Block.pst_task_idx])+3),[Variable.pst_task],num2str(count_i),'fontsize',15)
+count_i = count_i +1; 
+%+(min([Variable.pst_task])/3)
+end
 
 
 

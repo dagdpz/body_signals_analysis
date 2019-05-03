@@ -1,4 +1,4 @@
-function bsa_ecg_summarize_many_sessions(path_SaveFig)
+function bsa_ecg_summarize_many_sessions(path_SaveFig, sessions, inactivation_sessions, targetBrainArea)
 %bsa_ecg_summarize_many_sessions  - summarize ECG analysis across several sessions
 %
 % USAGE:
@@ -26,24 +26,7 @@ function bsa_ecg_summarize_many_sessions(path_SaveFig)
 % Each session should be processed with bsa_ecg_analyze_one_session -> session_name '_ecg.mat' should exist
 %%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
 
-sessions = {
-%'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190111';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190121\bodysignals_without_behavior';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190124\bodysignals_without_behavior';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190129\bodysignals_without_behavior';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190131\bodysignals_without_behavior';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190201';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190213';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190214';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190216\bodysignals_without_behavior';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190227';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190228';
-'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190304';
-};
 
-
-inactivation_sessions = {'20190124' '20190129' '20190201' '20190207' '20190214' '20190228'};
 
 ind_con = 0;
 ind_ina = 0;
@@ -203,7 +186,7 @@ end
 %
 S_Blocks = [];Blocks =[];
 Blocks = sort([task_idx' , rest_idx']);
-for indBlock = 1:   length(Blocks) %indBlock =  Blocks
+for indBlock =  1:   length(Blocks) %indBlock =  Blocks
 
     NrBlock = Blocks(indBlock); 
     S_Blocks.Block(indBlock).Block = NrBlock;
@@ -360,22 +343,22 @@ MeanForBlock_Task_Control.Experiment = repmat(TableBlocks_Control.Experiment(1),
 MeanForBlock_Task_Injection.Experiment = repmat(TableBlocks_Injection.Experiment(1), size(MeanForBlock_Task_Injection,1),1);
 
 %% save Data-Structures to plot
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSession' ],'Table');
-writetable(Table, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSession'], 'Delimiter', ' ')
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSession_' , targetBrainArea ],'Table');
+writetable(Table, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSession_', targetBrainArea], 'Delimiter', ' ')
 
-writetable(TableBlocks, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSessionPerBlock'], 'Delimiter', ' ')
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSessionPerBlocks' ],'TableBlocks');
+writetable(TableBlocks, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSessionPerBlock_', targetBrainArea], 'Delimiter', ' ')
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSessionPerBlocks_' , targetBrainArea],'TableBlocks');
 
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Control' ],'MeanForBlock_Task_Control');
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Injection' ],'MeanForBlock_Task_Injection');
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Control_', targetBrainArea ],'MeanForBlock_Task_Control');
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Injection_' , targetBrainArea],'MeanForBlock_Task_Injection');
 
 
 
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Control' ],'S_con');
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Inactivation' ],'S_ina');
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Control' ],'S_Blocks_ina');
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation' ],'S_Blocks_con');
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock' ],'S_Blocks2');
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Control_' , targetBrainArea],'S_con');
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Inactivation_' , targetBrainArea],'S_ina');
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Control_', targetBrainArea ],'S_Blocks_ina');
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation_' , targetBrainArea],'S_Blocks_con');
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_', targetBrainArea ],'S_Blocks2');
 
 
 

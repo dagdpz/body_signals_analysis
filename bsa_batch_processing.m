@@ -39,9 +39,38 @@ bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\201
   out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190429','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190429');
   out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190430','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190430');
 
-%%
- bsa_ecg_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\')
+%% dorsal pulvinar
+sessions = {
+%'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190111';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190121\bodysignals_without_behavior';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190124\bodysignals_without_behavior';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190129\bodysignals_without_behavior';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190131\bodysignals_without_behavior';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190201';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190213';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190214';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190216\bodysignals_without_behavior';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190227';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190228';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190304';
+};
+targetBrainArea = 'dPul'; 
+inactivation_sessions = {'20190124' '20190129' '20190201' '20190207' '20190214' '20190228'};
+%% ventral pulvinar
+sessions = {
+%'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190111';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190403';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190404';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190408';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190424';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190429';
+'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190430'};
+inactivation_sessions = {'20190404' '20190408' '20190430' };
+targetBrainArea = 'vPul'; 
+ bsa_ecg_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\', sessions, inactivation_sessions, targetBrainArea)
 
 %%
-bsa_graphs()
+targetBrainArea = 'vPul'; 
+bsa_graphs(targetBrainArea)
 
