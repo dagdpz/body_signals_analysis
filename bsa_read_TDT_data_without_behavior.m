@@ -1,5 +1,5 @@
 function dat = bsa_read_TDT_data_without_behavior(session2read, save2dir)
-
+% Read TDT data even when there was no task, so no trials, which means the regular phys pipeline can not be used
 % E.g.
 % bsa_read_TDT_data_without_behavior('Y:\Data\TDTtanks\Magnus_phys\20190124', 'Y:\Projects\PhysiologicalRecording\Data\Magnus\20190124\bodysignals_without_behavior');
 
