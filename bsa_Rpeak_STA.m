@@ -3,78 +3,96 @@ function bsa_Rpeak_STA
 % variant using FieldTrip
 
 %clear all
-plot_permutations=1;
+plot_permutations=0;
 from_raw=0;
 monkey='Magnus';
 
-for whattoplot=7:8
+for whattoplot= [4]
     switch whattoplot
+        
         case 1
-            session='20190131';
-            blockspergroup={[1,3],[2,4]};
-            colorsspergroup={'r','b'};
+            
+            session='20190124';
+            blockspergroup={1,5};
+            colorsspergroup={'r','c'};
+            perturbation='inactivation';
+            target='MIP';
             stream='LFPx';
-            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask'];
-            y_lim=[-6*10^-6 4*10^-6];
+            FigName_Long1=['R peak triggered' stream 'average, r=task, c=task_pert ' target perturbation];
+            y_lim=[-7*10^-6 5*10^-6];
+            
         case 2
             
-            session='20190116';
-            blockspergroup={[1,3,5],[2,4,6]};
-            colorsspergroup={'r','b'};
+            session='20190130';
+            blockspergroup={1,2,[5 6],[3 4 7]};
+            colorsspergroup={'r','b','c','m'};
+            perturbation='inactivation';
+            target='dPul';
             stream='LFPx';
-            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask'];
+            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask, c=task_pert, m=rest_pert ' target perturbation];
             y_lim=[-7*10^-6 5*10^-6];
             
         case 3
             
-            session='20190125';
-            blockspergroup={1,2,[3,4]};
-            colorsspergroup={'r','b','g'};
+            session='20190131';
+            blockspergroup={[1 3],[2 4]};
+            colorsspergroup={'r','b'};
+            perturbation='control';
+            target='dPul';
             stream='LFPx';
-            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask  g=inactivated'];
-            y_lim=[-1*10^-5 1*10^-5];
+            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask ' target perturbation];
+            %             y_lim=[-7*10^-6 5*10^-6];
+            y_lim=[];
             
         case 4
-            session='20190131';
-            blockspergroup={[1,3],[2,4]};
-            colorsspergroup={'r','b'};
-            stream='ECG1';
-            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask'];
-            y_lim=[];
             
+            session='20190208';
+            blockspergroup={[1,3,5,7],[2,4,6,8]};
+            colorsspergroup={'r','b'};
+            perturbation='control';
+            target='MIP';
+            stream='LFPx';
+            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask ' target perturbation];
+            %              y_lim=[-2*10^-5 2*10^-5];
+            y_lim=[];
         case 5
             
-            session='20190116';
+            session='20190213';
             blockspergroup={[1,3,5],[2,4,6]};
             colorsspergroup={'r','b'};
-            stream='ECG1';
-            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask'];
+            perturbation='control';
+            target='dPul';
+            stream='LFPx';
+            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask ' target perturbation];
+            %             y_lim=[-7*10^-6 5*10^-6];
             y_lim=[];
+            
+            
             
         case 6
             
-            session='20190125';
-            blockspergroup={1,2,[3,4]};
-            colorsspergroup={'r','b','g'};
-            stream='ECG1';
-            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask  g=inactivated'];
-            y_lim=[];
-            
-        case 7
-            session='20190208';
-            blockspergroup={[1,3,5,7],[2,4,6,8]};
-            colorsspergroup={'r','b'};
+            session='20190320';
+            blockspergroup={1,[2 3 4 6],[5 7]}; % block are shifted here (e.g. 2 means 3 cause no combined files for block 2 (no task)
+            colorsspergroup={'r','c','m'};
+            perturbation='inactivation';
+            target='MIP';
             stream='LFPx';
-            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask'];
-            y_lim=[-1.2*10^-5 1.2*10^-5];
-            
-        case 8
-            session='20190208';
-            blockspergroup={[1,3,5,7],[2,4,6,8]};
-            colorsspergroup={'r','b'};
-            stream='ECG1';
-            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask'];
+            FigName_Long1=['R peak triggered' stream 'average, r=task, c=task_pert, m=rest_pert ' target perturbation];
+            %             y_lim=[-7*10^-6 5*10^-6];
             y_lim=[];
+        case 7
+            
+            session='20190404';
+            blockspergroup={[1 2 4],[3 5]};
+            colorsspergroup={'r','b'};
+            perturbation='control';
+            target='dPul';
+            stream='LFPx';
+            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask ' target perturbation];
+            %             y_lim=[-7*10^-6 5*10^-6];
+            y_lim=[];
+            
+            
     end
     
     FigName_short1= ['RPeak_trig_' stream]; %name of the file
@@ -96,7 +114,7 @@ for whattoplot=7:8
         blocknames=strcat(['Y:\Data\' monkey '_phys_combined_monkeypsych_TDT\' session '\'], {blocknames.name});
     end
     
-    
+    STA_session=struct();
     for b=1:numel(blocknames)
         blockname=blocknames{b};
         if from_raw==1
@@ -184,6 +202,7 @@ for whattoplot=7:8
             
             sta              = ft_spiketriggeredaverage(cfg, datasample);
             ttt=shadedErrorBar(sta.time,sta.avg,squeeze(sterr(sta.trial,1)),colorsspergroup{g});
+            STA_session.group{g}.chanel{ch} = sta;
             
             if plot_permutations
                 for ni=1:n_iterations
@@ -219,8 +238,10 @@ for whattoplot=7:8
     % FigName_short1= sprintf('%s_%s', hemi,PPC_method); %name of the file
     % FigName_Long1=sprintf('%s_%s, %d SF pairs', hemi, PPC_method,sum(valid_SF_combinations)); % overall title of the figure
     
+    save([keys.path_to_save filesep session_name '_STA.mat'],'STA_session');
     set(h1, 'Paperunits','centimeters','PaperSize', wanted_papersize,'PaperPositionMode', 'manual','PaperPosition', [0 0 wanted_papersize])
     mtit(h1,  [FigName_Long1 ], 'xoff', 0, 'yoff', 0.05, 'color', [0 0 0], 'fontsize', 14,'Interpreter', 'none');
-    export_fig(h1, [keys.path_to_save filesep FigName_short1], '-pdf','-transparent') % pdf by run
+    set(h1,'Color','white')
+    export_fig(h1, [keys.path_to_save filesep FigName_short1], '-pdf') % pdf by run
 end
 end
