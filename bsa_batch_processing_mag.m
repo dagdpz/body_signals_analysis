@@ -11,7 +11,6 @@ bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Magnus_phys\201904
 
 bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190124','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190124')
 bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190130','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190130')
-
 bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131')
 bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190208','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190208')
 bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190213','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190213')
@@ -19,4 +18,12 @@ bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\201903
 bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190320','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190320')
 bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190404','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190404')
 
-bsa_R_triggered_avg_one_session('Y:\Projects\PhysiologicalRecording\Data\Magnus\20190404','Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190404')
+
+bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Magnus\20190124\bodysignals_without_behavior','',false,'dataOrigin','TDT');
+bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Magnus\20190130\bodysignals_without_behavior','',false,'dataOrigin','TDT');
+bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131\bodysignals_without_behavior','',false,'dataOrigin','TDT');
+bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Magnus\20190208\bodysignals_without_behavior','',false,'dataOrigin','TDT');
+bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Magnus\20190213\bodysignals_without_behavior','',false,'dataOrigin','TDT');
+bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Magnus\20190314\bodysignals_without_behavior','',false,'dataOrigin','TDT');
+bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Magnus\20190320\bodysignals_without_behavior','',false,'dataOrigin','TDT');
+bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Magnus\20190404\bodysignals_without_behavior','',false,'dataOrigin','TDT');
