@@ -7,7 +7,7 @@ plot_permutations=0;
 from_raw=0;
 monkey='Magnus';
 
-for whattoplot= [4]
+for whattoplot= [8]
     switch whattoplot
         
         case 1
@@ -24,8 +24,8 @@ for whattoplot= [4]
         case 2
             
             session='20190130';
-            blockspergroup={1,2,[5 6],[3 4 7]};
-            colorsspergroup={'r','b','c','m'};
+            blockspergroup={1,6,[4 7]};
+            colorsspergroup={'r','c','m'};
             perturbation='inactivation';
             target='dPul';
             stream='LFPx';
@@ -80,10 +80,24 @@ for whattoplot= [4]
             FigName_Long1=['R peak triggered' stream 'average, r=task, c=task_pert, m=rest_pert ' target perturbation];
             %             y_lim=[-7*10^-6 5*10^-6];
             y_lim=[];
+        
         case 7
             
             session='20190404';
             blockspergroup={[1 2 4],[3 5]};
+            colorsspergroup={'r','b'};
+            perturbation='control';
+            target='dPul';
+            stream='LFPx';
+            FigName_Long1=['R peak triggered' stream 'average, r=task, b=notask ' target perturbation];
+            %             y_lim=[-7*10^-6 5*10^-6];
+            y_lim=[];
+            
+             
+        case 8
+            
+            session='20190417';
+            blockspergroup={[1 3 4],2};
             colorsspergroup={'r','b'};
             perturbation='control';
             target='dPul';
@@ -133,12 +147,17 @@ for whattoplot= [4]
             
         end
         
+        
         datatemp.time{b}=0:1/LFP_SR:(size(datatemp.trial{b},2)-1)/LFP_SR;
         Rpeak_idx=round((out(b).Rpeak_t)*LFP_SR)+1;
         n_chans=size(datatemp.trial{b},1);
         
         datatemp.trial{b}(n_chans+1,:)=false(1,size(datatemp.trial{b},2));
+        if ~isnan(out(b).Rpeak_t)
         datatemp.trial{b}(n_chans+1,Rpeak_idx)=true;
+        else
+            continue
+        end
     end
     
     
@@ -149,7 +168,7 @@ for whattoplot= [4]
     
     datatemp.label{end+1}='Rpeaks';
     datatemp.fsample=LFP_SR;
-    
+  
     datasim=datatemp;
     n_iterations=100;
     for b=1:numel(datasim.trial)
