@@ -1,6 +1,7 @@
 function bsa_Rpeak_STA
 
 % variant using FieldTrip
+% by Lukas
 
 %clear all
 plot_permutations=1;
