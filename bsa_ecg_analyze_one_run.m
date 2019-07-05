@@ -68,7 +68,7 @@ segment_overlap                 = 50;  % s
 
 
 ecgSignal = detrend(ecgSignal);
-
+%% create a butterworth filter order selection
 Fn  = Fs/2;                                                 % Nyquist Frequency (Hz)
 Wp  = 40/Fn;                                                % Passband Frequency (Normalised)
 Ws  = 100/Fn;                                               % Stopband Frequency (Normalised)
@@ -82,7 +82,7 @@ Rs  = 150;                                                  % Stopband Ripple (d
 % freqz(sos,512,Fs);
 % title(sprintf('n = %d Butterworth Lowpass Filter',n))
 
-% Filter raw ECG using filtfilt from fieldtrip
+% Filter raw ECG using filtfilt from Matlab
 ecgFiltered = filtfilt(sos, g, ecgSignal); 
 
 
@@ -203,14 +203,14 @@ diff_peaks = [0 abs(diff(pks))];
 
 appr_ecg_peak2peak_n_samples = mode(abs(diff(locs(idx_wo_outliers)))); % rough number of samples between ecg R peaks
 
-
-
+%% ??
 ecgFiltered_pos = max(ecgFiltered,0);
 [pos_ecg_pks,pos_ecg_locs]=findpeaks(ecgFiltered_pos,'threshold',eps,'minpeakdistance',fix(min_R2R*Fs));
 
 % find ecg peaks closest (in time) to valid energyProfile_tc peaks, within search_segment_n_samples
 search_segment_n_samples = fix(appr_ecg_peak2peak_n_samples/20);
 
+%% seems to be an important step
 maybe_valid_pos_ecg_locs = [];
 for p = 1:length(idx_wo_outliers)
     idx_overlap = intersect( pos_ecg_locs, locs(idx_wo_outliers(p))-search_segment_n_samples : locs(idx_wo_outliers(p))+search_segment_n_samples );
@@ -221,10 +221,10 @@ for p = 1:length(idx_wo_outliers)
     
 end
 
-% R2R intervals
-R2R = [NaN diff(t(maybe_valid_pos_ecg_locs))]; % 
-median_R2R = median(R2R);
-mode_R2R = mode(R2R);
+%% R2R intervals
+R2R             = [NaN diff(t(maybe_valid_pos_ecg_locs))]; % 
+median_R2R      = median(R2R);
+mode_R2R        = mode(R2R);
 [hist_R2R,bins] = hist(R2R,[min_R2R:0.01:1]);
 
 
@@ -234,7 +234,13 @@ idx_valid_R2R = find((R2R>0.66*mode_R2R & R2R<1.5*mode_R2R));
 t_valid_R2R = t(maybe_valid_pos_ecg_locs(idx_valid_R2R));
 R2R_valid_before_hamplel = R2R(idx_valid_R2R);
 
-% remove outliers from R2R
+%% remove outliers from R2R
+%That is, a data point is declared an outlier and replaced if it lies more 
+% than some number t of MAD scale estimates from the median of its neighbors; 
+% the replacement value used in this procedure is the median.
+% [YY, I, Y0, LB, UB, ADX, NO] = hampel(X, Y, DX, T, varargin)
+% Why T =10? 
+% why hampel_T of 4?
 [YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hamplel,10,hampel_T);
 idx_to_delete = [];
 idx_to_delete_after_outliers = [];
@@ -259,16 +265,17 @@ if sum(idx_outliers_hampel), % there are outliers
     
 end
 
-
+%R-peaks
 idx_valid_R = unique([idx_valid_R2R idx_valid_R2R-1]); % add start of each valid R2R interval to valid R peaks
 R_valid_locs = maybe_valid_pos_ecg_locs(idx_valid_R);
+%R2Rinterval
+R2R_valid_locs  = maybe_valid_pos_ecg_locs(idx_valid_R2R);
+R2R_valid       = R2R(idx_valid_R2R);
 
-R2R_valid_locs = maybe_valid_pos_ecg_locs(idx_valid_R2R);
-R2R_valid = R2R(idx_valid_R2R);
-
-median_R2R_valid = median(R2R_valid);
-mode_R2R_valid = mode(R2R_valid);
-[hist_R2R_valid,bins] = hist(R2R_valid,bins);
+%%  CALCULATE VARIABLES
+median_R2R_valid        = median(R2R_valid);
+mode_R2R_valid          = mode(R2R_valid);
+[hist_R2R_valid,bins]   = hist(R2R_valid,bins);
 
 R2R_valid_bpm           = 60./R2R_valid;
 mean_R2R_valid_bpm      = mean(R2R_valid_bpm);
@@ -390,7 +397,8 @@ if TOPLOT
  
        
     
-    
+    %Graph - 
+    %pks = 
     ha2 = subplot(4,4,[5:8]);
     plot(t,energyProfile_tc,'g'); hold on
     set(gca,'Xlim',[0 max(t)]);
@@ -469,11 +477,11 @@ end % of if TOPLOT
 
 function scales = wavelet_init_scales(minFreq, maxFreq, scalesPerDecade)
 MorletFourierFactor = 4*pi/(6+sqrt(2+6^2));
-sc0 = 1/(maxFreq*MorletFourierFactor); % we do not consider frequencies above maxFreq
-scMax = 1/(minFreq*MorletFourierFactor); % we do not consider frequencies below minFreq
-ds = 1/scalesPerDecade;
-nSc =  fix(log2(scMax/sc0)/ds);
-scales = {sc0, ds, nSc}; % we use default formula for scales: sc0*2.^((0:nSc-1)*ds)
+sc0                 = 1/(maxFreq*MorletFourierFactor); % we do not consider frequencies above maxFreq
+scMax               = 1/(minFreq*MorletFourierFactor); % we do not consider frequencies below minFreq
+ds                  = 1/scalesPerDecade;
+nSc                 =  fix(log2(scMax/sc0)/ds);
+scales              = {sc0, ds, nSc}; % we use default formula for scales: sc0*2.^((0:nSc-1)*ds)
 
 function energyProfile_tc = get_energy_profile(sig,waveName,sca)
 cwtstruct = cwtft(sig, 'wavelet', waveName, 'scales', sca);

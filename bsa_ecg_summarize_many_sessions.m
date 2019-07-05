@@ -1,4 +1,4 @@
-function bsa_ecg_summarize_many_sessions(path_SaveFig, sessions, inactivation_sessions, targetBrainArea)
+function bsa_ecg_summarize_many_sessions(path_SaveFig, sessions, inactivation_sessions, targetBrainArea, Path_addtoDropbox)
 %bsa_ecg_summarize_many_sessions  - summarize ECG analysis across several sessions
 %
 % USAGE:
@@ -249,7 +249,7 @@ for indBlock =  1:   length(Blocks) %indBlock =  Blocks
 end
 
 if ismember(session_name,inactivation_sessions)
-    ind_ina_Blocks = ind_ina + 1;
+    ind_ina_Blocks = ind_ina_Blocks + 1;
     S_Blocks_ina(ind_ina_Blocks) = S_Blocks;
     %% create a table for Inactivation sessions
     TableBlocks_Inac = [];
@@ -356,10 +356,12 @@ save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_
 
 save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Control_' , targetBrainArea],'S_con');
 save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Inactivation_' , targetBrainArea],'S_ina');
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Control_', targetBrainArea ],'S_Blocks_ina');
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation_' , targetBrainArea],'S_Blocks_con');
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Control_', targetBrainArea ],'S_Blocks_con');
+save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation_' , targetBrainArea],'S_Blocks_ina');
 save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_', targetBrainArea ],'S_Blocks2');
 
+save([Path_addtoDropbox filesep 'Table_HeartrateVaribility_PerSession_' , targetBrainArea ],'Table');
+writetable(Table, [Path_addtoDropbox filesep 'Table_HeartrateVaribility_PerSession_' , targetBrainArea ], 'Delimiter', ' ')
 
 
 

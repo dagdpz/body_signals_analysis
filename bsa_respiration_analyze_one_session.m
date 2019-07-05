@@ -1,12 +1,12 @@
-function out = bsa_ecg_analyze_one_session(session_path,pathExcel,varargin)
-%bsa_ecg_analyze_one_session  - analyzing ECG in one session (in multiple runs/blocks)
+function out = bsa_respiration_analyze_one_session(session_path,varargin)
+%bsa_respiration_analyze_one_session  - analyzing ECG in one session (in multiple runs/blocks)
 %
 % USAGE:
-% out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131');
-% out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190221','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190221');
-% out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190131\bodysignals_without_behavior','',false,'dataOrigin','TDT');
+% out = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131');
+% out = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190221','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190221');
+% out = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190304','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190304');
 
-% out = bsa_ecg_analyze_one_session(session_path,'',false,'dataOrigin','TDT','sessionInfo',ses);
+% out = bsa_respiration_analyze_one_session(session_path,'',false,'dataOrigin','TDT','sessionInfo',ses);
 %
 % INPUTS:
 %		session_path		- Path to session data
@@ -72,6 +72,7 @@ ses = par.sessionInfo;
 
 %% which run is task and which is rest? information stored in the excel-sheet or behavior file
 
+pathExcel = 'Y:\Logs\Inactivation\Cornelius\Cornelius_Inactivation_log_since201901.xlsx'; 
 table = readtable(pathExcel);
   ses.injection       =   table.injection(table.date == str2num(session_name))'
   ses.run             =   table.run(table.date == str2num(session_name))'
@@ -87,6 +88,9 @@ table = readtable(pathExcel);
       load([session_path filesep 'bodysignals_wo_behavior.mat']);
       Fs        = dat.ECG_SR;
       ECG       = dat.ECG;
+      CAP       = dat.CAP;
+      POX       = dat.POX;
+
       n_blocks  = length(dat.ECG);
       ses.type  =   table.tasktype(table.date == str2num(session_name))';
       ses.type  =  ses.type(~ses.block == 0); 
@@ -112,7 +116,7 @@ table = readtable(pathExcel);
 disp(['Found ' num2str(n_blocks) ' blocks in the TDT-Dataset']);
 disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
 if  ~sum(~ses.block == 0) ==  n_blocks
-      error('Error. \Number of Block to be anlyzed from exce-sheet does not match the number of Blocks from the TDT-datasets.')
+      error('Error. \Number of Block to be anlyzed from excel-sheet does not match the number of Blocks from the TDT-datasets.')
 end
     
 %%
@@ -130,18 +134,27 @@ for r = 1:n_blocks, % for each run/block
      
      if strcmp(par.dataOrigin, 'TDT'),
          ecgSignal   = double(ECG{r});
+         capSignal   = double(CAP{r});
+         poxSignal   = double(POX{r});
+
      else
-         ecg = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(r).name], 1); % get ecg only
-         ecgSignal   = ecg.ECG1;
-         Fs          = ecg.Fs;
+         OUT = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(r).name]); % get ecg only
+         ecgSignal   = OUT.ECG1;
+         capSignal   = OUT.CAP1;
+         poxSignal   = OUT.POX1;
+
+         Fs          = OUT.Fs;
      end
+     
+     %ECG
      out(r) = bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r));
      print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
      if ~par.keepRunFigs
          close(out(r).hf);
      end
-   
-   
+    % respiration
+        out(r) = bsa_respiration_analyze_one_run(capSignal,Fs,1,sprintf('block%02d',r));
+
 end
 
 save([par.saveResults filesep session_name '_ecg.mat'],'out','par','ses','session_name','session_path');

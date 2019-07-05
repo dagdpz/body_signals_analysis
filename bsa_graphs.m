@@ -13,7 +13,7 @@ load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_
 load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Injection_',targetBrainArea ]);
 
 
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'MultComp_PValues_HeartrateVaribility_PerSession_',targetBrainArea ]);
+load(['C:\Users\kkaduk\Dropbox\DAG\Kristin\', 'MultComp_PValues_HeartrateVaribility_PerSession_',targetBrainArea ]);
 Tabl_MultComp = struct2table(tabl_MultCom_pValues_Data); 
  DVs =   unique(Tabl_MultComp.Variable); 
 
@@ -40,7 +40,7 @@ count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
  Ymin = min([C1{:}]);
  Ymax = max([C1{:}]);
 
- line([3.5 3.5],[Ymin Ymax],'Color',[0 0 0])
+ line([3.5 3.5],[Ymin Ymax],'Color',[0 0 0],'HandleVisibility','off')
  %text(3.5,Ymax -10,'Inactivation','fontsize',15)
  
   MeanForBlock_Task_Control_Task = MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pre_task'),:);
@@ -69,7 +69,7 @@ close all;
 
 
 
- %% Session   
+ %% Session - task    
 figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
 set(gcf,'Name',DVs{ind_DV});
 [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]);
@@ -124,6 +124,63 @@ print(h,[path_SaveFig filesep targetBrainArea '_' DVs{ind_DV}], '-dpng')
 close all;
 
 
+ %% Session - Rest    
+figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
+set(gcf,'Name',DVs{ind_DV});
+[Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]);
+% ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
+Name_DV = strsplit(char(DVs{ind_DV}), '_');
+title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
+ylabel(char(DVs{ind_DV}),'fontsize',20,'fontweight','b' , 'Interpreter', 'none');
+
+
+max_yValue = Ymax +80; 
+min_yValue = Ymin -20; 
+if min_yValue < 0; min_yValue = 0; end;
+set(gca,'ylim',[min_yValue max_yValue]); 
+
+text(1.5 ,max_yValue -10,'Control','fontsize',20)
+text(1 ,max_yValue -20,'rest','fontsize',15)
+text(3 ,max_yValue -20,'task','fontsize',15)
+
+text(6.5,max_yValue -10,'Inactivation','fontsize',20)
+text(6 ,max_yValue -20,'rest','fontsize',15)
+text(8 ,max_yValue -20,'task','fontsize',15)
+
+
+% add STATISTIC: line for the comparison && stars for significance
+%Row1 =find(sum([strcmp(Stat.Experiment_Comp1, 'Control'), strcmp(Stat.Injection_Comp1, 'pst'),strcmp(Stat.TaskType_Comp1, 'task')],2)== 3);
+Stat = Tabl_MultComp(strcmp(Tabl_MultComp.Variable, DVs{ind_DV}),:);
+Row(1) =find(sum([strcmp(Stat.Comparison1, 'Control,pre,rest'), strcmp(Stat.Comparison2, 'Injection,pre,rest')],2)== 2);
+Row(2) =find(sum([strcmp(Stat.Comparison1, 'Control,pst,rest'), strcmp(Stat.Comparison2, 'Injection,pst,rest')],2)== 2);
+Row(3) =find(sum([strcmp(Stat.Comparison1, 'Injection,pre,rest'), strcmp(Stat.Comparison2, 'Injection,pst,rest')],2)== 2);
+Row(4) =find(sum([strcmp(Stat.Comparison1, 'Control,pre,rest'), strcmp(Stat.Comparison2, 'Control,pst,rest')],2)== 2);
+
+Stat(Row,:)
+Contrast(1,:) = [1,6];
+Contrast(2,:) = [2,7];
+Contrast(3,:) = [6,7];
+Contrast(4,:) = [1,2];
+
+Y_C(1) = max_yValue -  50;
+Y_C(2) = max_yValue -60;
+Y_C(3) = max_yValue -80;
+Y_C(4) = max_yValue -80;
+% Y_C(1) = max_yValue - ( (max_yValue/3) -20);
+% Y_C(2) = max_yValue - ( (max_yValue/3) -40)%60;
+% Y_C(3) = max_yValue - ( (max_yValue/3) -60)%80;
+% Y_C(4) = max_yValue - ( (max_yValue/3) -80)%80;
+
+%Y = [nanmean([S_con.mean_R2R_bpm.pre_rest]),nanmean([S_con.mean_R2R_bpm.pst_rest]),nanmean([S_con.mean_R2R_bpm.pre_task]),nanmean([S_con.mean_R2R_bpm.pst_task])]
+%Y = [200 , 210, 220, 230,200 , 210, 220, 230 ];
+for NrContrasts = 1: 4
+sigline(Contrast(NrContrasts,:),char(Stat.Star(Row(NrContrasts))),Y_C(NrContrasts)); hold on; 
+end
+h = [];
+h(1) = figure(1); 
+path_SaveFig = 'Y:\Projects\PhysiologicalRecording\Figures\ECG'; 
+print(h,[path_SaveFig filesep targetBrainArea '_' DVs{ind_DV} '_Rest'], '-dpng')
+close all;
 
 
 
@@ -166,17 +223,39 @@ ha(6) = subplot(3,3,6);
 BarGraph_one_var_pre_post_rest_task([S_con.hfPower],[S_ina.hfPower]);
 title('High freq power');
 
+
+
+%% To understand better the powerspectrum
+% % %%Time specifications:
+%    Fs = 8000;                   % samples per second
+%    dt = 1/Fs;                   % seconds per sample
+%    StopTime = 60;             % seconds
+%    t = (0:dt:StopTime-dt)';     % seconds
+%    %%Sine wave:
+%    Fc = 0.05;                     % hertz
+%    x = cos(2*pi*Fc*t);
+%    % Plot the signal versus time:
+%    figure;set(gcf,'Name',num2str(Fc));
+% 
+%    plot(t,x);
+%    xlabel('time (in seconds)');
+%    title('Signal versus Time');
+%    zoom xon;
+% %    
+   %%
 ha(7) = subplot(3,3,7);
 title('Power spectrum control');
 
 con_b_col = [0.4667    0.6745    0.1882];
 con_d_col = [0.0706    0.2118    0.1412];
-ina_b_col = [0.5137    0.3804    0.4824];
-ina_d_col = [0.3490    0.2000    0.3294];
+ina_b_col = [0          0.7   0.9];
+ina_d_col = [0          0    0.9];
+
 
 freq_ = [S_con.freq];
 freq = mean([freq_.pre_rest],2);
-f = find(freq>0.05 & freq <= 0.6);
+f = find(freq>0.04 & freq <= 0.6);%f = find(freq>0.05 & freq <= 0.6);
+
 movwin = 5;
 
 Pxx_con_ = [S_con.Pxx];
@@ -201,14 +280,15 @@ Pxx_con_pst_task_se = sterr([Pxx_con_.pst_task],2);
 % plot(freq(f),Pxx_con_pst_rest_m(f),'Color',con_d_col,'LineWidth',2);
 % plot(freq(f),Pxx_con_pst_task_m(f),'Color',con_d_col,'LineWidth',4);
 
-plot(freq(f),movingmean(Pxx_con_pre_rest_m(f),movwin,[],[]),'Color',con_b_col,'LineWidth',2); hold on
-plot(freq(f),movingmean(Pxx_con_pre_task_m(f),movwin,[],[]),'Color',con_b_col,'LineWidth',4);
-plot(freq(f),movingmean(Pxx_con_pst_rest_m(f),movwin,[],[]),'Color',con_d_col,'LineWidth',2);
-plot(freq(f),movingmean(Pxx_con_pst_task_m(f),movwin,[],[]),'Color',con_d_col,'LineWidth',4);
+plot(freq(f),movingmean(Pxx_con_pre_rest_m(f),movwin,[],[]),'.','Color',con_b_col,'LineWidth',2); hold on
+plot(freq(f),movingmean(Pxx_con_pre_task_m(f),movwin,[],[]),    'Color',con_b_col,'LineWidth',4);
+plot(freq(f),movingmean(Pxx_con_pst_rest_m(f),movwin,[],[]),'.','Color',con_d_col,'LineWidth',2);
+plot(freq(f),movingmean(Pxx_con_pst_task_m(f),movwin,[],[]),    'Color',con_d_col,'LineWidth',4);
 
 ylim = get(gca,'Ylim');
 line([0.15 0.15],[ylim(1) ylim(2)]);
 line([0.5 0.5],[ylim(1) ylim(2)]);
+
 
 
 ha(8) = subplot(3,3,8);
@@ -224,10 +304,9 @@ Pxx_ina_pre_task_se = sterr([Pxx_ina_.pre_task],2);
 Pxx_ina_pst_rest_se = sterr([Pxx_ina_.pst_rest],2);
 Pxx_ina_pst_task_se = sterr([Pxx_ina_.pst_task],2);
 
-
-plot(freq(f),movingmean(Pxx_ina_pre_rest_m(f),movwin,[],[]),'Color',ina_b_col,'LineWidth',2); hold on
+plot(freq(f),movingmean(Pxx_ina_pre_rest_m(f),movwin,[],[]),'.','Color',ina_b_col,'LineWidth',2); hold on
 plot(freq(f),movingmean(Pxx_ina_pre_task_m(f),movwin,[],[]),'Color',ina_b_col,'LineWidth',4);
-plot(freq(f),movingmean(Pxx_ina_pst_rest_m(f),movwin,[],[]),'Color',ina_d_col,'LineWidth',2);
+plot(freq(f),movingmean(Pxx_ina_pst_rest_m(f),movwin,[],[]),'.','Color',ina_d_col,'LineWidth',2);
 plot(freq(f),movingmean(Pxx_ina_pst_task_m(f),movwin,[],[]),'Color',ina_d_col,'LineWidth',4);
 
 ylim = get(gca,'Ylim');
@@ -257,11 +336,15 @@ ina_d_col = [0          0    0.9];
 % plot(  1, nanmean([Block.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
 % plot(  2, nanmean([Block.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col); 
 if  strcmp(Experiment, 'Control')
-plot(   Block(1:3),Variable(1:3), '-o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',con_b_col); hold on; 
-plot(   Block(4:end),Variable(4:end), '-o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',con_d_col); hold on; 
+plot(   Block(1:3),Variable(1:3), '-','color',[0 0 0] ,'LineWidth',2,'color',con_b_col, 'DisplayName','Pre Control'); hold on; 
+plot(   Block(4:end),Variable(4:end), '-','color',[0 0 0] ,'LineWidth',2,'color',con_d_col, 'DisplayName','Post Control'); hold on; 
+ %h.Color(4)=0.3;  % 70% transparent
+  %p.Color(4)=0.8;  % 70% transparent
+
 elseif  strcmp(Experiment, 'Injection')
-plot(   Block(1:3),Variable(1:3), '-o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',ina_b_col); hold on; 
-plot(   Block(4:end),Variable(4:end), '-o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',ina_d_col); hold on; 
+plot(   Block(1:3),Variable(1:3), '-','color',[0 0 0] ,'LineWidth',2,'color',ina_b_col, 'DisplayName','Pre Inactivation'); hold on; 
+plot(   Block(4:end),Variable(4:end), '-','color',[0 0 0] ,'LineWidth',2,'color',ina_d_col, 'DisplayName','Post Inactivation'); hold on; 
+legend('show','Location','best')
  end
 
 
@@ -280,22 +363,22 @@ ina_d_col = abs([0          0    0.9] +count_ina);
 % plot(  1, nanmean([Block.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
 % plot(  2, nanmean([Block.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col); 
 if  strcmp(Experiment, 'Control')
-plot(   1:length([Block.pre_task_idx]),[Variable.pre_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_b_col); hold on; 
-plot(   4:(length([Block.pst_task_idx])+3),[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_d_col) ;
+plot(   1:length([Block.pre_task_idx]),[Variable.pre_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on; 
+plot(   4:(length([Block.pst_task_idx])+3),[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
 count_con = count_con + [0 0.15 0.15]; 
 text(1:length([Block.pre_task_idx]),[Variable.pre_task],num2str(count_c),'fontsize',15)
 text(4:(length([Block.pst_task_idx])+3),[Variable.pst_task],num2str(count_c),'fontsize',15)
 count_c = count_c +1; 
 elseif  strcmp(Experiment, 'Injection')
 
- plot(   1:length([Block.pre_task_idx]),[Variable.pre_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_b_col); hold on; 
- plot(   4:(length([Block.pst_task_idx])+3),[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_d_col) ;
+ plot(   1:length([Block.pre_task_idx]),[Variable.pre_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on; 
+ plot(   4:(length([Block.pst_task_idx])+3),[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
 count_ina = count_ina - [0  0.1 0.1]; 
 
 text(1:length([Block.pre_task_idx]),[Variable.pre_task],num2str(count_i),'fontsize',15)
 text(  4:(length([Block.pst_task_idx])+3),[Variable.pst_task],num2str(count_i),'fontsize',15)
 count_i = count_i +1; 
-%+(min([Variable.pst_task])/3)
+
 end
 
 
