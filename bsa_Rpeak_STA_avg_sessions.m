@@ -2,13 +2,14 @@ function bsa_Rpeak_STA_avg_sessions
 
 %this function loads and calculate average STA across sessions (manual
 %input at the moment -> needs to define which sessions\blocks for which
-%condition. needs to change bsa_Rpeak_STA format and then this one to make
-%input automatic
+%condition (e.g task, rest). needs to change bsa_Rpeak_STA format and then this one to make
+%input automatic from settings file
 %% input
 
 %Specific inputs
 
 monkey='Magnus';
+normalization = 1;
 
 %MIP dataset
 target='MIP';
@@ -20,15 +21,15 @@ group.rest = [1 2];
 group.task_pert = [2 2];
 group.rest_pert = [2 3];
 
-% %dPul dataset
+% % dPul dataset
 % target='dPul';
-% sessions={'20190131','20190213','20190404'};
+% sessions={'20190131','20190213','20190404','20190130'};
 % % group_per_session={[1:2],[1:3]};
 % stream = 'LFPx';
-% group.task = [1 1;2 1;3 1]; %[session group;session group] etc...
+% group.task = [1 1;2 1;3 1;4 1]; %[session group;session group] etc...
 % group.rest = [1 2;2 2;3 2];
-% group.task_pert = [];
-% group.rest_pert = [];
+% group.task_pert = [4 2];
+% group.rest_pert = [4 3];
 
 
 
@@ -38,7 +39,7 @@ FigName_Long1=['R peak triggered average' stream ' '...
     'b=rest(n=' num2str(size(group.rest,1)) '), ' ...
     'c=task_pert(n=' num2str(size(group.task_pert,1)) '), ' ...
     'm=rest_pert(n=' num2str(size(group.rest_pert,1)) '), ']; %figure title
-FigName_short1= ['RPeak_trig_' stream '_' target]; %file name
+FigName_short1= ['RPeak_trig_' stream '_' target '_norm_' num2str(normalization)]; %file name
 keys.path_to_save=['Y:\Projects\PhysiologicalRecording\Data\' monkey '\' target '\'];
 if ~exist(keys.path_to_save,'dir'),
     mkdir(keys.path_to_save);
@@ -52,7 +53,18 @@ for n_session = 1:length(sessions)
         sessions{n_session} '_STA.mat']);
     for gr = 1:length(data_to_avg(1,n_session).STA_session.group)
         for ch = 1:length(data_to_avg(1,n_session).STA_session.group{1,1}.chanel)
+            if ~normalization
             concatenate_channels(ch,:) = data_to_avg(1,n_session).STA_session.group{1,gr}.chanel{1,ch}.avg; %concatenate all channels per sessions and per group
+            else
+           % format and calculate mean and std for each sites
+            trials_mat=[];
+            trials_mat = permute(data_to_avg(1,n_session).STA_session.group{1,gr}.chanel{1,ch}.trial,[1 3 2]);
+            concatenate_trials.session{1,n_session}.group{1,gr}.channel(ch,:) =  reshape(trials_mat',[],1);
+            average_per_channels.session{1,n_session}.group{1,gr}.channel(ch,:) = nanmean(concatenate_trials.session{1,n_session}.group{1,gr}.channel(ch,:));
+            std_per_channels.session{1,n_session}.group{1,gr}.channel(ch,:)=  nanstd(concatenate_trials.session{1,n_session}.group{1,gr}.channel(ch,:));
+            concatenate_channels(ch,:) = ((data_to_avg(1,n_session).STA_session.group{1,gr}.chanel{1,ch}.avg...
+                - average_per_channels.session{1,n_session}.group{1,gr}.channel(ch,1))/std_per_channels.session{1,n_session}.group{1,gr}.channel(ch,1));
+            end
         end
         avg_across_sites.session{1,n_session}.group{1,gr} = nanmean(concatenate_channels,1); %calculate average across sites
     end
@@ -60,10 +72,12 @@ end
 
 
 %from here not elegant solutions to concatenate blocks across sessions from
-%same condition and calculate the average and plot
+%same condition, calculate the average and plot
 
 h1=figure('outerposition',[0 0 1900 1200],'name', FigName_Long1);
+xlim([-0.25 0.25])
 hold on
+
 
 if~isempty(group.task)
     for n_blocks = 1:size(group.task,1)
