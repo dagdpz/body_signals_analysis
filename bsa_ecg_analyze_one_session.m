@@ -77,11 +77,13 @@ table = readtable(pathExcel);
   ses.run             =   table.run(table.date == str2num(session_name))'
   ses.block           =   table.block(table.date == str2num(session_name))'
   ses.tasktype_str    =   table.task(table.date == str2num(session_name))'
+  ses.tasktype        =   table.tasktype(table.date == str2num(session_name))'
+
   ses.brain_area      =   table.target(table.date == str2num(session_name))'
-  ses.dosage          =   table.dosage(table.date == str2num(session_name))'
+  ses.dosage          =   table.dosage(table.date == str2num(session_name))';
   
   ses.injection(ses.block == 0) = num2cell(nan(1,sum(ses.block == 0))); 
-  ses.first_inj_block =  min(ses.block(strcmp(ses.injection , 'Post'))) 
+  ses.first_inj_block =  min(ses.block(strcmp(ses.injection , 'Post'))) ;
   
   if strcmp(par.dataOrigin, 'TDT'),
       load([session_path filesep 'bodysignals_wo_behavior.mat']);
@@ -95,11 +97,14 @@ table = readtable(pathExcel);
       combined_matfiles=dir([session_path filesep '*.mat']);
       n_blocks = length(combined_matfiles);
       
+      %How to differentiate between task vs rest?
       for indBlock = 1: n_blocks
           load([session_path filesep combined_matfiles(indBlock).name])
-          if task.type == 2 && all(trial(1).task.reward.time_neutral > [0.15 0.15])%&& numel(trial) > 10
+          %Problem: Calibration task using saccades is not a task? or is
+          %it?
+          if task.type == 2 && numel(trial) > 25 % all(trial(1).task.reward.time_neutral > [0.15 0.15])&&
               ses.type(indBlock)   =    1;
-          elseif task.type == 1 && all(trial(1).task.reward.time_neutral == [0 0]) %&& numel(trial) > 10;
+          elseif task.type == 1 && all(trial(1).task.reward.time_neutral == [0 0]) ;
               ses.type(indBlock)   =    0;
           else
               ses.type(indBlock)   =    -2;

@@ -1,0 +1,60 @@
+Overview - How do we analyze the ECG-data?
+
+bsa_ecg_analyze_one_run.m
+
+## LITERATURE
+https://de.mathworks.com/matlabcentral/answers/270238-how-can-i-filter-ecg-signals-with-high-motion-artifact
+% (or see also https://de.mathworks.com/matlabcentral/answers/364788-ecg-signal-artifact-removing)
+
+########################## STEPS TO PREPROCESS THE ECG-DATA  ##########################
+segment_length                  = 300; % s (set to 0 if no segmentation) -- segment signal prior to wavelet transform
+segment_overlap                 = 50;  % s 
+
+1) detrending
+
+
+2) butterworth filter 
+Fn  = Fs/2;                                                 % Nyquist Frequency (Hz)
+Wp  = 40/Fn;                                                % Passband Frequency (Normalised)
+Ws  = 100/Fn;                                               % Stopband Frequency (Normalised)
+Rp  = 1;                                                    % Passband Ripple (dB)
+Rs  = 150;                                                  % Stopband Ripple (dB)
+
+
+3) Wavelet transformation
+rangeOfInterest = [1 12]; % Hz
+
+% prepare parameters for the wavelet transform: we expect our heart rate to be in certain range
+minFreq = rangeOfInterest(1);
+maxFreq = rangeOfInterest(2);
+scalesPerDecade = 32;
+
+4) Find peak by defining 
+min_R2R                         = 0.25; %s
+minpeakdistance 		= min_R2R*Fs  
+minpeakheight = eP_tc_minpeakheight_med_prop*median(energyProfile_tc)
+eP_tc_minpeakheight_med_prop    = 0.33; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
+
+5) Detection and remove outlier
+5.1.  using median of the absolute differences
+MAD_sensitivity_p2p_diff        = 3; %
+
+5.2. only positive peaks
+
+5.4 
+idx_valid_R2R = find((R2R>0.66*mode_R2R & R2R<1.5*mode_R2R));
+
+5.3. Hampel:nonlinear data cleaning filter - identifies local outlier in atime-series
+% Why T =10? 
+% Why hampel_T of 4?
+hampel_T                        = 4; % threshold for hamplel outlier detection
+
+####################################################
+Time Domain (sd, rMSSD)
+- How to cope with different time?
+sd -> divide by n
+rMSSD ? 
+
+
+Frequency Domain (HF, LF)
+Fast-Fourier Transformation or Autoregression or Time Frequency Analysis/Wavelets

@@ -234,13 +234,10 @@ idx_valid_R2R = find((R2R>0.66*mode_R2R & R2R<1.5*mode_R2R));
 t_valid_R2R = t(maybe_valid_pos_ecg_locs(idx_valid_R2R));
 R2R_valid_before_hamplel = R2R(idx_valid_R2R);
 
-%% remove outliers from R2R
-%That is, a data point is declared an outlier and replaced if it lies more 
-% than some number t of MAD scale estimates from the median of its neighbors; 
-% the replacement value used in this procedure is the median.
+%% remove outliers from R2R using hampel
 % [YY, I, Y0, LB, UB, ADX, NO] = hampel(X, Y, DX, T, varargin)
 % Why T =10? 
-% why hampel_T of 4?
+% Why hampel_T of 4?
 [YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hamplel,10,hampel_T);
 idx_to_delete = [];
 idx_to_delete_after_outliers = [];
