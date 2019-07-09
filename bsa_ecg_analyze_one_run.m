@@ -187,20 +187,18 @@ range_energyProfile_tc = max(energyProfile_tc) - min(energyProfile_tc);
 diff_peaks = [0 abs(diff(pks))];
 
 
-% remove outliers based on the difference between peaks
+% remove outliers based on the difference between amplitude of peaks
 [data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,MAD_sensitivity_p2p_diff);
 
 
 appr_ecg_peak2peak_n_samples = mode(abs(diff(locs(idx_wo_outliers)))); % rough number of samples between ecg R peaks
 
-%% ??
+% rectify - leave only positive values
 ecgFiltered_pos = max(ecgFiltered,0);
 [pos_ecg_pks,pos_ecg_locs]=findpeaks(ecgFiltered_pos,'threshold',eps,'minpeakdistance',fix(min_R2R*Fs));
 
 % find ecg peaks closest (in time) to valid energyProfile_tc peaks, within search_segment_n_samples
 search_segment_n_samples = fix(appr_ecg_peak2peak_n_samples/20);
-
-%% seems to be an important step
 maybe_valid_pos_ecg_locs = [];
 for p = 1:length(idx_wo_outliers)
     idx_overlap = intersect( pos_ecg_locs, locs(idx_wo_outliers(p))-search_segment_n_samples : locs(idx_wo_outliers(p))+search_segment_n_samples );
