@@ -3,7 +3,7 @@
 % 1) vector with sessions & monkey to have only one line
 %%
 pathExcel = 'Y:\Logs\Inactivation\Cornelius\Cornelius_Inactivation_log_since201901.xlsx'; 
-
+settings_path = [cd, '\settings\','bsa_settings_Cornelius2019.m'];
 % Load and save TDT data without behavior
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190201', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190124\bodysignals_without_behavior');
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190121', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190129\bodysignals_without_behavior');
@@ -40,16 +40,17 @@ out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Corne
  out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190424',pathExcel,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190424');
  out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190429',pathExcel,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190429');
  out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190430',pathExcel,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190430');
- out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190508',pathExcel,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190508');
- out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190509',pathExcel,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190509');
+ out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190508',pathExcel,settings_path,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190508');
+ out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190509',pathExcel,settings_path,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190509');
 
   %% CURIUS
   pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx'; 
+    settings_path = [cd, '\settings\','bsa_settings_Curius2019.m'];
 
-    out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190625',pathExcel,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190625');
-    out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190703',pathExcel,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190703');
-    out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190701',pathExcel,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190701');
-    out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190705',pathExcel,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190705');
+    out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190625',pathExcel,settings_path,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190625');
+    out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190703',pathExcel,settings_path,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190703');
+    out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190701',pathExcel,settings_path,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190701');
+    out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190705',pathExcel,settings_path,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190705');
 
   
   

@@ -38,6 +38,7 @@ function out = bsa_ecg_analyze_one_session(session_path,pathExcel,settings_path,
 %4) Plot & save as PDFs
 %%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%%
 
+run(settings_path)
 warning off;
 
 % define default arguments and their potential values
@@ -143,7 +144,7 @@ for r = 1:n_blocks, % for each run/block
         ecgSignal   = ecg.ECG1;
         Fs          = ecg.Fs;
     end
-    out(r) = bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r));
+    out(r) = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',r));
     print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
     if ~par.keepRunFigs
         close(out(r).hf);

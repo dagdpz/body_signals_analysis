@@ -1,4 +1,4 @@
-function out = bsa_ecg_analyze_one_run(ecgSignal,Fs,TOPLOT,FigInfo)
+function out = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,TOPLOT,FigInfo)
 %bsa_ecg_analyze_one_run  - analyses ECG in one run/block
 %
 % USAGE:
@@ -55,18 +55,13 @@ if nargin < 4,
     FigInfo = '';
 end
 
+run(settings_path)
+
+
 n_samples       = length(ecgSignal);
 t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sample is time 0! (not 1/Fs)
 
-% properties for the ECG detection
-min_R2R                         = 0.25; % s
-eP_tc_minpeakheight_med_prop    = 0.33; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
-MAD_sensitivity_p2p_diff        = 3;
-hampel_T                        = 4; % threshold for hamplel outlier detection
-segment_length                  = 300; % s (set to 0 if no segmentation) -- segment signal prior to wavelet transform
-segment_overlap                 = 50;  % s 
-
-
+% Step1: detrending
 ecgSignal = detrend(ecgSignal);
 %% create a butterworth filter order selection
 Fn  = Fs/2;                                                 % Nyquist Frequency (Hz)
@@ -119,11 +114,6 @@ if 0 % Debug
 end
 
 
-rangeOfInterest = [1 12]; % Hz
-% prepare parameters for the wavelet transform: we expect our heart rate to be in certain range
-minFreq = rangeOfInterest(1);
-maxFreq = rangeOfInterest(2);
-scalesPerDecade = 32;
 
 waveName = {'morl', []};
 % we ignore components outside of the doubled range of interest
@@ -229,7 +219,7 @@ mode_R2R        = mode(R2R);
 
 
 % invalidate all R2R less than 0.66 of mode and more than 1.5 of mode
-idx_valid_R2R = find((R2R>0.66*mode_R2R & R2R<1.5*mode_R2R));
+idx_valid_R2R = find((R2R> minFactor_RS2Mode*mode_R2R & R2R< maxFactor_RS2Mode *mode_R2R));
 
 t_valid_R2R = t(maybe_valid_pos_ecg_locs(idx_valid_R2R));
 R2R_valid_before_hamplel = R2R(idx_valid_R2R);
