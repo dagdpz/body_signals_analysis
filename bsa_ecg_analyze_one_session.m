@@ -1,4 +1,4 @@
-function out = bsa_ecg_analyze_one_session(session_path,pathExcel,varargin)
+function out = bsa_ecg_analyze_one_session(session_path,pathExcel,settings_path,varargin)
 %bsa_ecg_analyze_one_session  - analyzing ECG in one session (in multiple runs/blocks)
 %
 % USAGE:
@@ -10,7 +10,9 @@ function out = bsa_ecg_analyze_one_session(session_path,pathExcel,varargin)
 %
 % INPUTS:
 %		session_path		- Path to session data
-%		varargin (optional) - see % define default arguments and their potential values                     
+%       pathExcel           - excel file
+%       settings_path       - mfile with specific session/monkey settings
+%		varargin (optional) - see % define default arguments and their potential values
 %
 % OUTPUTS:
 %		out                 - see struct
@@ -31,10 +33,10 @@ function out = bsa_ecg_analyze_one_session(session_path,pathExcel,varargin)
 % ADDITIONAL INFO:
 % What is the function doing?
 %1) loads the created mat-file from bsa_read_and_save_TDT_data_without_behavior.m
-%2) bsa_concatenate_trials_body_signals 
+%2) bsa_concatenate_trials_body_signals
 %3) bsa_ecg_analyze_one_run -> preprocessing the ECG, create R-R intervals
 %4) Plot & save as PDFs
-%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%%
 
 warning off;
 
@@ -65,88 +67,89 @@ session_name = session_path(session_name_idx(1):session_name_idx(1)+7);
 
 
 if ~exist(par.saveResults,'dir'),
-   mkdir(par.saveResults); 
+    mkdir(par.saveResults);
 end
 
 ses = par.sessionInfo;
 
-%% which run is task and which is rest? information stored in the excel-sheet or behavior file
+%% which run is task and which is rest? information stored in the excel-sheet (manual input) and behavior file
+% excel file will have a priority so that one can manually exclude some runs
 
 table = readtable(pathExcel);
-  ses.injection       =   table.injection(table.date == str2num(session_name))'
-  ses.run             =   table.run(table.date == str2num(session_name))'
-  ses.block           =   table.block(table.date == str2num(session_name))'
-  ses.tasktype_str    =   table.task(table.date == str2num(session_name))'
-  ses.tasktype        =   table.tasktype(table.date == str2num(session_name))'
+ses.injection       =   table.injection(table.date == str2num(session_name))';
+ses.run             =   table.run(table.date == str2num(session_name))';
+ses.block           =   table.block(table.date == str2num(session_name))';
+ses.tasktype_str    =   table.task(table.date == str2num(session_name))';
+ses.tasktype        =   table.tasktype(table.date == str2num(session_name))';
 
-  ses.brain_area      =   table.target(table.date == str2num(session_name))'
-  ses.dosage          =   table.dosage(table.date == str2num(session_name))';
-  
-  ses.injection(ses.block == 0) = num2cell(nan(1,sum(ses.block == 0))); 
-  ses.first_inj_block =  min(ses.block(strcmp(ses.injection , 'Post'))) ;
-  
-  if strcmp(par.dataOrigin, 'TDT'),
-      load([session_path filesep 'bodysignals_wo_behavior.mat']);
-      Fs        = dat.ECG_SR;
-      ECG       = dat.ECG;
-      n_blocks  = length(dat.ECG);
-      ses.type  =   table.tasktype(table.date == str2num(session_name))';
-      ses.type  =  ses.type(~ses.block == 0); 
-       
-  else
-      combined_matfiles=dir([session_path filesep '*.mat']);
-      n_blocks = length(combined_matfiles);
-      
-      %How to differentiate between task vs rest?
-      for indBlock = 1: n_blocks
-          load([session_path filesep combined_matfiles(indBlock).name])
-          %Problem: Calibration task using saccades is not a task? or is
-          %it?
-          if task.type == 2 && numel(trial) > 25 % all(trial(1).task.reward.time_neutral > [0.15 0.15])&&
-              ses.type(indBlock)   =    1;
-          elseif task.type == 1 && all(trial(1).task.reward.time_neutral == [0 0]) ;
-              ses.type(indBlock)   =    0;
-          else
-              ses.type(indBlock)   =    -2;
-          end
-          
-      end
-      
-  end
+ses.brain_area      =   table.target(table.date == str2num(session_name))';
+ses.dosage          =   table.dosage(table.date == str2num(session_name))';
+
+ses.injection(ses.block == 0) = num2cell(nan(1,sum(ses.block == 0)));
+ses.first_inj_block =  min(ses.block(strcmp(ses.injection , 'Post'))) ;
+
+if strcmp(par.dataOrigin, 'TDT'),
+    load([session_path filesep 'bodysignals_wo_behavior.mat']);
+    Fs        = dat.ECG_SR;
+    ECG       = dat.ECG;
+    n_blocks  = length(dat.ECG);
+    ses.type  =   table.tasktype(table.date == str2num(session_name))';
+    ses.type  =  ses.type(~ses.block == 0);
+    
+else
+    combined_matfiles=dir([session_path filesep '*.mat']);
+    n_blocks = length(combined_matfiles);
+    
+    % How to differentiate between task vs rest?
+    for indBlock = 1: n_blocks
+        load([session_path filesep combined_matfiles(indBlock).name])
+     
+        % TODO: make compatible with different tasks 
+        if task.type == 2 && numel(trial) > 25 % exclude short runs and calibration
+            ses.type(indBlock)   =    1; % task
+        elseif task.type == 1 && all(trial(1).task.reward.time_neutral == [0 0]) ;
+            ses.type(indBlock)   =    0; % rest
+        else
+            ses.type(indBlock)   =    -2;
+        end
+        
+    end
+    
+end
 
 disp(['Found ' num2str(n_blocks) ' blocks in the TDT-Dataset']);
 disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
 if  ~sum(~ses.block == 0) ==  n_blocks
-      error('Error. \Number of Block to be anlyzed from exce-sheet does not match the number of Blocks from the TDT-datasets.')
+    error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
 end
-    
+
 %%
 for r = 1:n_blocks, % for each run/block
     
     % first check if to skip the block
     if ~isempty(ses),
         if ses.type(r) == -2 || isnan(ses.type(r)) ,
-           disp(sprintf('Skipping block %d',r));
-           continue
+            disp(sprintf('Skipping block %d',r));
+            continue
         end
-    end   
-     
-     disp(sprintf('Processing block %d',r));
-     
-     if strcmp(par.dataOrigin, 'TDT'),
-         ecgSignal   = double(ECG{r});
-     else
-         ecg = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(r).name], 1); % get ecg only
-         ecgSignal   = ecg.ECG1;
-         Fs          = ecg.Fs;
-     end
-     out(r) = bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r));
-     print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
-     if ~par.keepRunFigs
-         close(out(r).hf);
-     end
-   
-   
+    end
+    
+    disp(sprintf('Processing block %d',r));
+    
+    if strcmp(par.dataOrigin, 'TDT'),
+        ecgSignal   = double(ECG{r});
+    else
+        ecg = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(r).name], 1); % get ecg only
+        ecgSignal   = ecg.ECG1;
+        Fs          = ecg.Fs;
+    end
+    out(r) = bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r));
+    print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
+    if ~par.keepRunFigs
+        close(out(r).hf);
+    end
+    
+    
 end
 
 save([par.saveResults filesep session_name '_ecg.mat'],'out','par','ses','session_name','session_path');
@@ -186,7 +189,7 @@ ylabel('SD of R2R interval (bpm)');
 
 ha(4) = subplot(4,1,4);
 plot(blks(rest_idx),[out(rest_idx).lfPower],'ro','MarkerFaceColor',restMFC); hold on;
-plot(blks(task_idx),[out(task_idx).lfPower],'ro','MarkerFaceColor',taskMFC); 
+plot(blks(task_idx),[out(task_idx).lfPower],'ro','MarkerFaceColor',taskMFC);
 plot(blks(rest_idx),[out(rest_idx).hfPower],'go','MarkerFaceColor',restMFC);
 plot(blks(task_idx),[out(task_idx).hfPower],'go','MarkerFaceColor',taskMFC);
 legend({'lf rest','lf task','hf rest','hf task'},'location','Best');
@@ -195,7 +198,7 @@ ylabel('LF and HF power (ms^2)');
 
 
 if ~isempty(ses),
-   
+    
     for ax = 1:length(ha),
         axes(ha(ax));
         ig_add_vertical_line(ses.first_inj_block -0.5);
