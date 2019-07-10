@@ -38,8 +38,13 @@ function out = bsa_ecg_analyze_one_session(session_path,pathExcel,settings_path,
 %4) Plot & save as PDFs
 %%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%%
 
-run(settings_path);
 warning off;
+
+% make settings work from any computer (settings_path relative to location of bsa toolbox) 
+mfullpath = mfilename('fullpath');
+mpathname = fileparts(mfullpath);
+run([mpathname filesep 'settings' filename settings_path]);
+
 
 % define default arguments and their potential values
 def_saveResults = session_path; % 1st optional argument (directory to save results, if empty then save to session_path)

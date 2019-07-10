@@ -45,7 +45,9 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_T
 
 %% CURIUS
 pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx';
-settings_path = [cd, '\settings\','bsa_settings_Curius2019.m'];
+
+% settings_path = [cd, '\settings\','bsa_settings_Curius2019.m'];
+settings_path = ['bsa_settings_Curius2019.m']; % full path will be complemented in bsa_ecg_analyze_one_session
 
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190625',pathExcel,settings_path,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190625');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190703',pathExcel,settings_path,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190703');
