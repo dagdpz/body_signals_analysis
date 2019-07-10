@@ -1,4 +1,4 @@
-% settings for BSA analysis, Cornelius dPul/vPul inactivation - ECG, 2019
+% settings for BSA analysis, Curius dPul/vPul inactivation - ECG, 2019
 
 
 

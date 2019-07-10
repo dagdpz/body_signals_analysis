@@ -117,24 +117,24 @@ end
 
 waveName = {'morl', []};
 % we ignore components outside of the doubled range of interest
-minFreq = wv_rangeOfInterest(1);
-maxFreq = wv_rangeOfInterest(2);
-sca = wavelet_init_scales(minFreq/2, 2*maxFreq, wv_scalesPerDecade);
+minFreq = set.wv_rangeOfInterest(1);
+maxFreq = set.wv_rangeOfInterest(2);
+sca = wavelet_init_scales(minFreq/2, 2*maxFreq, set.wv_scalesPerDecade);
 
-if ~segment_length || t(end) < segment_length, % process entire block at once - can be very slow for large blocks
+if ~set.segment_length || t(end) < set.segment_length, % process entire block at once - can be very slow for large blocks
     sig = struct('val',ecgFiltered, 'period', 1/Fs);
        
     energyProfile_tc = get_energy_profile(sig,waveName,sca);
     n_segments = 0;
     
 else % chop to segments
-    n_segment = round2(segment_length*Fs,2); % round to even
-    n_overlap = round2(segment_overlap*Fs,2);
+    n_segment = round2(set.segment_length*Fs,2); % round to even
+    n_overlap = round2(set.segment_overlap*Fs,2);
     % energyProfile_tc = zeros(1,n_samples);
     
     seg_ind = buffer(1:n_samples,n_segment,n_overlap,'nodelay');
     n_segments = size(seg_ind,2);
-    disp(sprintf('chopping to %d segments of %.1f s with %.1f s overlap',n_segments,segment_length,segment_overlap));
+    disp(sprintf('chopping to %d segments of %.1f s with %.1f s overlap',n_segments,set.segment_length,set.segment_overlap));
     for s = 1:n_segments, % for each segment
         ind = seg_ind(:,s);
         ind = ind(ind>0); % only important for the last segment
@@ -151,7 +151,7 @@ else % chop to segments
 %         if s == size(seg_ind,2)-1, % one before last segment
 %             ind_last = seg_ind(:,s+1);
 %             ind_last = ind_last(ind_last>0);
-%             if numel(ind_last) < fix(segment_length*Fs)/3, % last segment is shorter than 1/3 of desired segment length
+%             if numel(ind_last) < fix(set.segment_length*Fs)/3, % last segment is shorter than 1/3 of desired segment length
 %                 ind = [ind; ind_last]; % add last short segment to the previous segment
 %             end
 %         end
@@ -183,24 +183,24 @@ end
 % plot(t,energyProfile_tc - energyProfile_tc_smoothed,'r');
 
 range_energyProfile_tc = max(energyProfile_tc) - min(energyProfile_tc);
-[pks,locs]=findpeaks(energyProfile_tc,'threshold',eps,'minpeakdistance',fix(min_R2R*Fs),'minpeakheight',eP_tc_minpeakheight_med_prop*median(energyProfile_tc));
+[pks,locs]=findpeaks(energyProfile_tc,'threshold',eps,'minpeakdistance',fix(set.min_R2R*Fs),'minpeakheight',set.eP_tc_minpeakheight_med_prop*median(energyProfile_tc));
 
 
 diff_peaks = [0 abs(diff(pks))];
 
 
 % remove outliers based on the difference between amplitude of peaks
-[data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,MAD_sensitivity_p2p_diff);
+[data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,set.MAD_sensitivity_p2p_diff);
 
 
 appr_ecg_peak2peak_n_samples = mode(abs(diff(locs(idx_wo_outliers)))); % rough number of samples between ecg R peaks
 
 % rectify - leave only positive values
 ecgFiltered_pos = max(ecgFiltered,0);
-[pos_ecg_pks,pos_ecg_locs]=findpeaks(ecgFiltered_pos,'threshold',eps,'minpeakdistance',fix(min_R2R*Fs));
+[pos_ecg_pks,pos_ecg_locs]=findpeaks(ecgFiltered_pos,'threshold',eps,'minpeakdistance',fix(set.min_R2R*Fs));
 
 % find ecg peaks closest (in time) to valid energyProfile_tc peaks, within search_segment_n_samples
-search_segment_n_samples = fix(appr_ecg_peak2peak_n_samples*Settings.fraction_R2R_look4peak);
+search_segment_n_samples = fix(appr_ecg_peak2peak_n_samples* set.fraction_R2R_look4peak);
 maybe_valid_pos_ecg_locs = [];
 for p = 1:length(idx_wo_outliers)
     idx_overlap = intersect( pos_ecg_locs, locs(idx_wo_outliers(p))-search_segment_n_samples : locs(idx_wo_outliers(p))+search_segment_n_samples );
@@ -215,10 +215,10 @@ end
 R2R             = [NaN diff(t(maybe_valid_pos_ecg_locs))]; % 
 median_R2R      = median(R2R);
 mode_R2R        = mode(R2R);
-[hist_R2R,bins] = hist(R2R,[min_R2R:0.01:1]);
+[hist_R2R,bins] = hist(R2R,[set.min_R2R:0.01:1]);
 
 % invalidate all R2R less than minFactor_R2RMode (e.g. 0.66) of mode and more than maxFactor_R2RMode (e.g. 1.5) of mode
-idx_valid_R2R = find((R2R> minFactor_R2RMode*mode_R2R & R2R< maxFactor_R2RMode *mode_R2R));
+idx_valid_R2R = find((R2R> set.minFactor_R2RMode*mode_R2R & R2R<  set.maxFactor_R2RMode *mode_R2R));
 
 t_valid_R2R = t(maybe_valid_pos_ecg_locs(idx_valid_R2R));
 R2R_valid_before_hamplel = R2R(idx_valid_R2R);
@@ -227,7 +227,7 @@ R2R_valid_before_hamplel = R2R(idx_valid_R2R);
 % [YY, I, Y0, LB, UB, ADX, NO] = hampel(X, Y, DX, T, varargin)
 % Why T =10? 
 % Why hampel_T of 4?
-[YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hamplel,hampel_DX,hampel_T);
+[YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hamplel, set.hampel_DX, set.hampel_T);
 idx_to_delete = [];
 idx_to_delete_after_outliers = [];
 
@@ -390,7 +390,7 @@ if TOPLOT
     set(gca,'Xlim',[0 max(t)]);
     plot(t(locs),pks,'k.','MarkerSize',6);
     plot(t(locs(idx_outliers)),pks(idx_outliers),'bx');
-    plot([t(1) t(end)],[eP_tc_minpeakheight_med_prop*median(energyProfile_tc) eP_tc_minpeakheight_med_prop*median(energyProfile_tc)],'k:');
+    plot([t(1) t(end)],[set.eP_tc_minpeakheight_med_prop*median(energyProfile_tc) set.eP_tc_minpeakheight_med_prop*median(energyProfile_tc)],'k:');
     
    
     
