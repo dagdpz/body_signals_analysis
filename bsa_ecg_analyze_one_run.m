@@ -117,7 +117,9 @@ end
 
 waveName = {'morl', []};
 % we ignore components outside of the doubled range of interest
-sca = wavelet_init_scales(minFreq/2, 2*maxFreq, scalesPerDecade);
+minFreq = wv_rangeOfInterest(1);
+maxFreq = wv_rangeOfInterest(2);
+sca = wavelet_init_scales(minFreq/2, 2*maxFreq, wv_scalesPerDecade);
 
 if ~segment_length || t(end) < segment_length, % process entire block at once - can be very slow for large blocks
     sig = struct('val',ecgFiltered, 'period', 1/Fs);
@@ -198,7 +200,7 @@ ecgFiltered_pos = max(ecgFiltered,0);
 [pos_ecg_pks,pos_ecg_locs]=findpeaks(ecgFiltered_pos,'threshold',eps,'minpeakdistance',fix(min_R2R*Fs));
 
 % find ecg peaks closest (in time) to valid energyProfile_tc peaks, within search_segment_n_samples
-search_segment_n_samples = fix(appr_ecg_peak2peak_n_samples/Settings.subsettingSegment_ForPeakDetection);
+search_segment_n_samples = fix(appr_ecg_peak2peak_n_samples*Settings.fraction_R2R_look4peak);
 maybe_valid_pos_ecg_locs = [];
 for p = 1:length(idx_wo_outliers)
     idx_overlap = intersect( pos_ecg_locs, locs(idx_wo_outliers(p))-search_segment_n_samples : locs(idx_wo_outliers(p))+search_segment_n_samples );
@@ -215,9 +217,8 @@ median_R2R      = median(R2R);
 mode_R2R        = mode(R2R);
 [hist_R2R,bins] = hist(R2R,[min_R2R:0.01:1]);
 
-
-% invalidate all R2R less than 0.66 of mode and more than 1.5 of mode
-idx_valid_R2R = find((R2R> minFactor_RS2Mode*mode_R2R & R2R< maxFactor_RS2Mode *mode_R2R));
+% invalidate all R2R less than minFactor_R2RMode (e.g. 0.66) of mode and more than maxFactor_R2RMode (e.g. 1.5) of mode
+idx_valid_R2R = find((R2R> minFactor_R2RMode*mode_R2R & R2R< maxFactor_R2RMode *mode_R2R));
 
 t_valid_R2R = t(maybe_valid_pos_ecg_locs(idx_valid_R2R));
 R2R_valid_before_hamplel = R2R(idx_valid_R2R);

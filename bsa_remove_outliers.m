@@ -8,7 +8,7 @@ function [data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue]
 %
 % INPUTS:
 %		data                - data with outliers
-%		sensitivityFactor   - 
+%		sensitivityFactor   - larger value -> less sensitive (i.e. less outliers)
 %
 % OUTPUTS:
 %		data_wo_outliers		- data without outliers (outliers are replaced by NaNs)
