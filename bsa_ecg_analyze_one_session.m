@@ -11,7 +11,7 @@ function out = bsa_ecg_analyze_one_session(session_path,pathExcel,settings_path,
 % INPUTS:
 %		session_path		- Path to session data
 %       pathExcel           - excel file
-%       settings_path       - mfile with specific session/monkey settings
+%       settings_path       - full path to mfile with specific session/monkey settings
 %		varargin (optional) - see % define default arguments and their potential values
 %
 % OUTPUTS:
@@ -38,7 +38,7 @@ function out = bsa_ecg_analyze_one_session(session_path,pathExcel,settings_path,
 %4) Plot & save as PDFs
 %%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%%
 
-run(settings_path)
+run(settings_path);
 warning off;
 
 % define default arguments and their potential values
@@ -51,12 +51,15 @@ def_sessionInfo = [];           % 4 optional argument pair (can be defined in bs
 
 p = inputParser; % in order of arguments
 addRequired(p, 'session_path',@ischar);
+addRequired(p, 'pathExcel',@ischar);
+addRequired(p, 'settings_path',@ischar);
+
 addOptional(p, 'saveResults',def_saveResults,@ischar);
 addOptional(p, 'keepRunFigs',def_keepRunFigs,@islogical);
 addParameter(p,'dataOrigin',def_dataOrigin,chk_dataOrigin);
 addParameter(p,'sessionInfo',def_sessionInfo,@isstruct);
 
-parse(p,session_path,varargin{:});
+parse(p,session_path,pathExcel,settings_path,varargin{:});
 par = p.Results;
 
 if isempty(par.saveResults),
@@ -118,14 +121,14 @@ else
     
 end
 
-disp(['Found ' num2str(n_blocks) ' blocks in the TDT-Dataset']);
+disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
 disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
 if  ~sum(~ses.block == 0) ==  n_blocks
     error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
 end
 
 %%
-for r = 1:n_blocks, % for each run/block
+for r = 15% r = 1:n_blocks, % for each run/block
     
     % first check if to skip the block
     if ~isempty(ses),
@@ -169,6 +172,7 @@ else
     restMFC = [0.8 0.8 0.8];
 end
 
+return;
 
 ig_figure('Name',[session_path '->' par.saveResults],'Position',[200 200 900 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
 ha(1) = subplot(4,1,1);
