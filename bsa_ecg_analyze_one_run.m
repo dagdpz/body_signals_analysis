@@ -219,6 +219,9 @@ mode_R2R        = mode(R2R);
 
 % invalidate all R2R less than minFactor_R2RMode (e.g. 0.66) of mode and more than maxFactor_R2RMode (e.g. 1.5) of mode
 idx_valid_R2R = find((R2R> set.minFactor_R2RMode*mode_R2R & R2R<  set.maxFactor_R2RMode *mode_R2R));
+detectedOutlier1 = 1-length(idx_valid_R2R)/length(R2R); 
+disp(['Percentage of outlier of R2R detected using R2RMode:', num2str(detectedOutlier1) ])
+
 
 t_valid_R2R = t(maybe_valid_pos_ecg_locs(idx_valid_R2R));
 R2R_valid_before_hamplel = R2R(idx_valid_R2R);
@@ -250,6 +253,9 @@ if sum(idx_outliers_hampel), % there are outliers
     idx_valid_R2R(idx_to_delete) = []; % delete outliers, and also next R2R after each outlier, if it is consecutive
     
 end
+detectedOutlier2 = 1-length(idx_valid_R2R)/length(R2R); 
+disp(['Percentage of outlier of R2R detected using R2RMode & Hampel :', num2str(detectedOutlier2) ])
+
 
 %R-peaks
 idx_valid_R = unique([idx_valid_R2R idx_valid_R2R-1]); % add start of each valid R2R interval to valid R peaks
