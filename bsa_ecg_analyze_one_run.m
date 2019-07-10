@@ -227,7 +227,7 @@ R2R_valid_before_hamplel = R2R(idx_valid_R2R);
 % [YY, I, Y0, LB, UB, ADX, NO] = hampel(X, Y, DX, T, varargin)
 % Why T =10? 
 % Why hampel_T of 4?
-[YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hamplel,10,hampel_T);
+[YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hamplel,hampel_DX,hampel_T);
 idx_to_delete = [];
 idx_to_delete_after_outliers = [];
 
