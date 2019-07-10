@@ -198,7 +198,7 @@ ecgFiltered_pos = max(ecgFiltered,0);
 [pos_ecg_pks,pos_ecg_locs]=findpeaks(ecgFiltered_pos,'threshold',eps,'minpeakdistance',fix(min_R2R*Fs));
 
 % find ecg peaks closest (in time) to valid energyProfile_tc peaks, within search_segment_n_samples
-search_segment_n_samples = fix(appr_ecg_peak2peak_n_samples/20);
+search_segment_n_samples = fix(appr_ecg_peak2peak_n_samples/Settings.subsettingSegment_ForPeakDetection);
 maybe_valid_pos_ecg_locs = [];
 for p = 1:length(idx_wo_outliers)
     idx_overlap = intersect( pos_ecg_locs, locs(idx_wo_outliers(p))-search_segment_n_samples : locs(idx_wo_outliers(p))+search_segment_n_samples );
