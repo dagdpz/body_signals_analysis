@@ -2,10 +2,11 @@ function out = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,TOPLOT,FigInfo
 %bsa_ecg_analyze_one_run  - analyses ECG in one run/block
 %
 % USAGE:
-% out = bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r));
+% out = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',r));
 %
 % INPUTS:
 %		ecgSignal		- ECG
+%       settings_path   - full path to mfile with specific session/monkey settings
 %		Fs              - sampling rate (Hz)
 %       TOPLOT          - plot figure
 %       FigInfo         - info for figure

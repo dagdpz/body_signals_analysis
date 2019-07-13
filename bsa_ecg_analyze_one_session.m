@@ -1,17 +1,14 @@
-function out = bsa_ecg_analyze_one_session(session_path,pathExcel,settings_path,varargin)
+function out = bsa_ecg_analyze_one_session(session_path,pathExcel,settings_filename,varargin)
 %bsa_ecg_analyze_one_session  - analyzing ECG in one session (in multiple runs/blocks)
 %
 % USAGE:
-% out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131');
-% out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190221','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190221');
-% out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190131\bodysignals_without_behavior','',false,'dataOrigin','TDT');
-
+%out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190625','Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx','bsa_settings_Curius2019.m','Y:\Projects\PhysiologicalRecording\Data\Curius\20190625');
 % out = bsa_ecg_analyze_one_session(session_path,'',false,'dataOrigin','TDT','sessionInfo',ses);
 %
 % INPUTS:
 %		session_path		- Path to session data
 %       pathExcel           - excel file
-%       settings_path       - full path to mfile with specific session/monkey settings
+%       settings_filename   - name of the mfile with specific session/monkey settings
 %		varargin (optional) - see % define default arguments and their potential values
 %
 % OUTPUTS:
@@ -43,24 +40,27 @@ warning off;
 % make settings work from any computer (settings_path relative to location of bsa toolbox) 
 mfullpath = mfilename('fullpath');
 mpathname = fileparts(mfullpath);
-run([mpathname filesep 'settings' filename settings_path]);
+settings_path = [mpathname filesep 'settings' filesep settings_filename]; 
+run(settings_path);
 
 
 % define default arguments and their potential values
 def_saveResults = session_path; % 1st optional argument (directory to save results, if empty then save to session_path)
 def_keepRunFigs = false;        % 2nd optional argument
-def_dataOrigin = 'combined';    % 3rd optional argument pair
-val_dataOrigin = {'combined','TDT'};
-chk_dataOrigin = @(x) any(validatestring(x,val_dataOrigin));
+val_keepRunFigs = {'keepRunFigs',false};
+chk_keepRunFigs = @(x) islogical(x);
+def_dataOrigin  = 'combined';    % 3rd optional argument pair
+val_dataOrigin  = {'combined','TDT'};
+chk_dataOrigin  = @(x) any(validatestring(x,val_dataOrigin));
 def_sessionInfo = [];           % 4 optional argument pair (can be defined in bsa_ecg_analyze_many_sessions)
 
 p = inputParser; % in order of arguments
 addRequired(p, 'session_path',@ischar);
 addRequired(p, 'pathExcel',@ischar);
-addRequired(p, 'settings_path',@ischar);
+addRequired(p, 'settings_filename',@ischar);
 
 addOptional(p, 'saveResults',def_saveResults,@ischar);
-addOptional(p, 'keepRunFigs',def_keepRunFigs,@islogical);
+addOptional(p, 'keepRunFigs',def_keepRunFigs,chk_keepRunFigs);
 addParameter(p,'dataOrigin',def_dataOrigin,chk_dataOrigin);
 addParameter(p,'sessionInfo',def_sessionInfo,@isstruct);
 
