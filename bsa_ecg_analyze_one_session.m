@@ -107,33 +107,34 @@ if strcmp(par.dataOrigin, 'TDT'),
     
 else
     combined_matfiles=dir([session_path filesep '*.mat']);
-    n_blocks = length(combined_matfiles);
+    n_blocks = length(combined_matfiles);    
+end
+
+% disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
+% disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
+% if  ~sum(~ses.block == 0) ==  n_blocks
+%     error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
+% end
+
+%%
+for r = 1:n_blocks, % for each run/block
     
-    % How to differentiate between task vs rest?
-    for indBlock = 1: n_blocks
-        load([session_path filesep combined_matfiles(indBlock).name])
+    
+    
+    if ~strcmp(par.dataOrigin, 'TDT'),
+
+    
+      load([session_path filesep combined_matfiles(r).name])
      
         % TODO: make compatible with different tasks 
         if task.type == 2 && numel(trial) > 25 % exclude short runs and calibration
-            ses.type(indBlock)   =    1; % task
+            ses.type(r)   =    1; % task
         elseif task.type == 1 && all(trial(1).task.reward.time_neutral == [0 0]) ;
-            ses.type(indBlock)   =    0; % rest
+            ses.type(r)   =    0; % rest
         else
-            ses.type(indBlock)   =    -2;
+            ses.type(r)   =    -2;
         end
-        
     end
-    
-end
-
-disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
-disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
-if  ~sum(~ses.block == 0) ==  n_blocks
-    error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
-end
-
-%%
-for r = 15% r = 1:n_blocks, % for each run/block
     
     % first check if to skip the block
     if ~isempty(ses),
@@ -152,7 +153,7 @@ for r = 15% r = 1:n_blocks, % for each run/block
         ecgSignal   = ecg.ECG1;
         Fs          = ecg.Fs;
     end
-    out(r) = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',r));
+   [ out(r), Tab_outlier(r) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',r));
     print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
     if ~par.keepRunFigs
         close(out(r).hf);
@@ -161,8 +162,10 @@ for r = 15% r = 1:n_blocks, % for each run/block
     
 end
 
-save([par.saveResults filesep session_name '_ecg.mat'],'out','par','ses','session_name','session_path');
+save([par.saveResults filesep session_name '_ecg.mat'],'out','Tab_outlier','par','ses','session_name','session_path');
 
+% How many outliers where there for all runs & specific? 
+%Tab_outlier.
 
 blks = 1:n_blocks;
 taskMFC = [0.3922    0.4745    0.6353];
@@ -177,7 +180,7 @@ else
     restMFC = [0.8 0.8 0.8];
 end
 
-return;
+%return;
 
 ig_figure('Name',[session_path '->' par.saveResults],'Position',[200 200 900 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
 ha(1) = subplot(4,1,1);

@@ -2,8 +2,11 @@ Todo-Liste
 Please write the task, the status (open, inprogress, DONE) and who is working on it. 
 
 (1, open) behavior file should match excel sheet entries, excel sheet has priorities
-IMPORTANT! Don't load each dataset for this information because it takes time
+IMPORTANT! 
+- Don't load each dataset for this information because it takes time
+- define in Settings
 
 (2,DONE) update USAGE, INPUT for keepRunFigure
 
-(3,open) legend for the first graph in bsa_ecg_analyze_one_session.m
+(3,DONE) legend for the first graph in bsa_ecg_analyze_one_session.m
+(4, open) display the number of outliers to check if the change in settings improved something

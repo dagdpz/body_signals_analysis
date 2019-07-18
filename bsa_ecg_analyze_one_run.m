@@ -1,4 +1,4 @@
-function out = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,TOPLOT,FigInfo)
+function [out,Tab_outlier] = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,TOPLOT,FigInfo)
 %bsa_ecg_analyze_one_run  - analyses ECG in one run/block
 %
 % USAGE:
@@ -185,6 +185,7 @@ end
 
 range_energyProfile_tc = max(energyProfile_tc) - min(energyProfile_tc);
 [pks,locs]=findpeaks(energyProfile_tc,'threshold',eps,'minpeakdistance',fix(Set.min_R2R*Fs),'minpeakheight',Set.eP_tc_minpeakheight_med_prop*median(energyProfile_tc));
+Tab_outlier.NrRpeaks_orig    = length(pks); 
 
 
 diff_peaks = [0 abs(diff(pks))];
@@ -192,17 +193,17 @@ diff_peaks = [0 abs(diff(pks))];
 
 % remove outliers based on the difference between amplitude of peaks
 [data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,Set.MAD_sensitivity_p2p_diff);
-
+Tab_outlier.outlier = length(idx_outliers);
 
 appr_ecg_peak2peak_n_samples = mode(abs(diff(locs(idx_wo_outliers)))); % rough number of samples between ecg R peaks
 
 % rectify - leave only positive values
-ecgFiltered_pos = max(ecgFiltered,0);
-[pos_ecg_pks,pos_ecg_locs]=findpeaks(ecgFiltered_pos,'threshold',eps,'minpeakdistance',fix(Set.min_R2R*Fs));
+ecgFiltered_pos             = max(ecgFiltered,0);
+[pos_ecg_pks,pos_ecg_locs]  = findpeaks(ecgFiltered_pos,'threshold',eps,'minpeakdistance',fix(Set.min_R2R*Fs));
 
 % find ecg peaks closest (in time) to valid energyProfile_tc peaks, within search_segment_n_samples
-search_segment_n_samples = fix(appr_ecg_peak2peak_n_samples* Set.fraction_R2R_look4peak);
-maybe_valid_pos_ecg_locs = [];
+search_segment_n_samples    = fix(appr_ecg_peak2peak_n_samples* Set.fraction_R2R_look4peak);
+maybe_valid_pos_ecg_locs    = [];
 for p = 1:length(idx_wo_outliers)
     idx_overlap = intersect( pos_ecg_locs, locs(idx_wo_outliers(p))-search_segment_n_samples : locs(idx_wo_outliers(p))+search_segment_n_samples );
     
@@ -220,21 +221,23 @@ mode_R2R        = mode(R2R);
 
 % invalidate all R2R less than minFactor_R2RMode (e.g. 0.66) of mode and more than maxFactor_R2RMode (e.g. 1.5) of mode
 idx_valid_R2R = find((R2R> Set.minFactor_R2RMode*mode_R2R & R2R<  Set.maxFactor_R2RMode *mode_R2R));
-detectedOutliers_mode = 1-length(idx_valid_R2R)/length(R2R); 
+detectedOutliers_mode = 100-((length(idx_valid_R2R)/length(R2R))*100); 
 disp(['Fraction of R2R outliers detected using deviations from R2R mode: ', num2str(detectedOutliers_mode) ])
+Tab_outlier.outlier_Mode_abs = length(R2R)-length(idx_valid_R2R);
+Tab_outlier.outlier_Mode_pct = round( 100-((length(idx_valid_R2R)/length(R2R))*100) ,4); 
 
-
-t_valid_R2R = t(maybe_valid_pos_ecg_locs(idx_valid_R2R));
-R2R_valid_before_hamplel = R2R(idx_valid_R2R);
-
+t_valid_R2R                         = t(maybe_valid_pos_ecg_locs(idx_valid_R2R));
+R2R_valid_before_hampel            = R2R(idx_valid_R2R);
+Tab_outlier.NrR2R_beforehampel    = length(R2R_valid_before_hampel); 
 %% remove outliers from R2R using hampel
-[YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hamplel, Set.hampel_DX, Set.hampel_T);
+[YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hampel, Set.hampel_DX, Set.hampel_T);
 idx_to_delete = [];
 idx_to_delete_after_outliers = [];
+Tab_outlier.outliers_hampel_abs = sum(idx_outliers_hampel);
 
 if sum(idx_outliers_hampel), % there are outliers
-    
     idx_outliers_hampel = find(idx_outliers_hampel); % convert to numbers
+
     for k = 1:length(idx_outliers_hampel),
         idx_to_delete = [idx_to_delete idx_outliers_hampel(k)];
         
@@ -251,17 +254,26 @@ if sum(idx_outliers_hampel), % there are outliers
     idx_valid_R2R(idx_to_delete) = []; % delete outliers, and also next R2R after each outlier, if it is consecutive
     
 end
-detectedOutlier2 = 1-length(idx_valid_R2R)/length(R2R); 
+detectedOutlier2                = 100-((length(idx_valid_R2R)/length(R2R))*100); 
 disp(['Fraction of R2R outliers detected using deviations from R2R mode and Hampel: ', num2str(detectedOutlier2) ])
 
+Tab_outlier.outliers_delete_abs = length(idx_to_delete);
 
+Tab_outlier.outliers_hampel_pct = 100- (((length(idx_valid_R2R)+Tab_outlier.outlier_Mode_abs)/length(R2R))*100) ;
 
 %R-peaks
-idx_valid_R = unique([idx_valid_R2R idx_valid_R2R-1]); % add start of each valid R2R interval to valid R peaks
-R_valid_locs = maybe_valid_pos_ecg_locs(idx_valid_R);
+idx_valid_R     = unique([idx_valid_R2R idx_valid_R2R-1]); % add start of each valid R2R interval to valid R peaks
+R_valid_locs    = maybe_valid_pos_ecg_locs(idx_valid_R);
 %R2Rinterval
 R2R_valid_locs  = maybe_valid_pos_ecg_locs(idx_valid_R2R);
 R2R_valid       = R2R(idx_valid_R2R);
+
+Tab_outlier.NrRpeaks_valid    = length(R_valid_locs); 
+Tab_outlier.NrR2R_valid       = length(R2R_valid); 
+Tab_outlier.outliers_all_abs    = Tab_outlier.outliers_delete_abs  +   Tab_outlier.outlier_Mode_abs    + Tab_outlier.outlier;
+Tab_outlier.outliers_all_pct    = (Tab_outlier.outliers_all_abs/Tab_outlier.NrRpeaks_orig)*100;
+disp(['Nr of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outliers_all_abs) ])
+disp(['Fraction of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outliers_all_pct) ])
 
 %%  CALCULATE VARIABLES
 median_R2R_valid        = median(R2R_valid);
@@ -312,8 +324,13 @@ if length(R2R_valid_locs)>1,
     % you can then take the ratio of lf, hf, etc. to totPower * 100 to get the percentages etc.    
 end
 
-% output
+%% How "much time of the run" was deleted related to the detection of outlier?
+Tab_outlier.durationRun_s       = max(t);
+Tab_outlier.durationOutlier_s   = max(t)-sum(R2R(idx_valid_R2R));
 
+
+
+display(Tab_outlier)
 if length(R2R_valid) < 100,
     out.Rpeak_t                 = NaN;
     out.Rpeak_sample            = NaN;
@@ -354,6 +371,10 @@ else
     out.totPower                = totPower;
 end
 
+
+
+
+
 out.hf = [];
 
 if TOPLOT
@@ -368,10 +389,12 @@ if TOPLOT
     plot(t,ecgSignal,'b'); hold on;
     plot(t,ecgFiltered,'g');    
     plot(t(locs(idx_wo_outliers)),ecgFiltered(locs(idx_wo_outliers)),'ko','MarkerSize',6);
-    plot(t(locs(idx_outliers)),ecgFiltered(locs(idx_outliers)),'bx');
     plot(t(maybe_valid_pos_ecg_locs),ecgFiltered(maybe_valid_pos_ecg_locs),'kv','MarkerSize',6,'MarkerEdgeColor',[0.5 0.5 0.5]);
-    plot(t(R_valid_locs),ecgFiltered(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6); % valid R peaks
+     % valid R peaks
+    plot(t(R_valid_locs),ecgFiltered(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
+    %valid R2R intervals
     plot(t(R2R_valid_locs),ecgFiltered(R2R_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
+    plot(t(locs(idx_outliers)),ecgFiltered(locs(idx_outliers)),'bx');
    
     
     plot([t(R2R_valid_locs(idx_valid_R2R_consec)) - R2R_valid(idx_valid_R2R_consec); t(R2R_valid_locs(idx_valid_R2R_consec))], ...
@@ -384,25 +407,32 @@ if TOPLOT
     set(gca,'Xlim',[0 max(t)]);
     xlabel('Time (s)');
     title(sprintf('ECG: %d valid peaks, %d valid R2R intervals',length(R_valid_locs),length(R2R_valid_locs)));
-    
+    if isempty(idx_outliers)
+    legend({'ecgSignal','ecgFiltered','allPeaks','only posPeaks','valid Peaks','valid R2Rinterval'},'location','Best');
+    else
+    legend({'ecgSignal','ecgFiltered','allPeaks','posPeaks','valid Rpeaks','valid R2Rinterval','outlier.diff Peaks'},'location','Best');
+    end
  
-       
+    
     ha2 = subplot(4,4,[5:8]);
     plot(t,energyProfile_tc,'g'); hold on
     set(gca,'Xlim',[0 max(t)]);
     plot(t(locs),pks,'k.','MarkerSize',6);
     plot(t(locs(idx_outliers)),pks(idx_outliers),'bx');
     plot([t(1) t(end)],[Set.eP_tc_minpeakheight_med_prop*median(energyProfile_tc) Set.eP_tc_minpeakheight_med_prop*median(energyProfile_tc)],'k:');
-    
-   
+    if isempty(idx_outliers)
+        legend({'energyProfile_tc','peaks','outlier.diff Peaks'},'location','Best');
+    else
+        legend({'energyProfile_tc','peaks'},'location','Best');
+    end
     
     ha3 = subplot(4,4,[9:12]);
     plot(t(R2R_valid_locs),R2R_valid,'m.'); hold on
     set(gca,'Xlim',[0 max(t)]);
     plot(t(R2R_valid_locs(idx_valid_R2R_consec)),R2R_valid(idx_valid_R2R_consec),'k.','MarkerSize',6); hold on
     % plot(t(R2R_valid_locs(idx_valid_R2R_consec)),R2R_valid(idx_valid_R2R_consec) - R2R_diff(idx_valid_R2R_consec-1),'ks','MarkerSize',3);
-    plot(t_valid_R2R(idx_to_delete_after_outliers),R2R_valid_before_hamplel(idx_to_delete_after_outliers),'cx'); hold on
-    plot(t_valid_R2R(idx_outliers_hampel),R2R_valid_before_hamplel(idx_outliers_hampel),'rx'); hold on
+    plot(t_valid_R2R(idx_to_delete_after_outliers),R2R_valid_before_hampel(idx_to_delete_after_outliers),'cx'); hold on
+    plot(t_valid_R2R(idx_outliers_hampel),R2R_valid_before_hampel(idx_outliers_hampel),'rx'); hold on
     
     if R2R_valid_spectrum,
         % plot(t_interp,BPS,'y','Color',[0.4706    0.3059    0.4471]);
