@@ -287,8 +287,9 @@ std_R2R_valid_bpm       = std(R2R_valid_bpm);
 
 
 % find consecutive R2Rs
-idx_valid_R2R_consec = find([NaN diff(t(R2R_valid_locs))]<1.5*mode_R2R_valid);
+idx_valid_R2R_consec = find([NaN diff(t(R2R_valid_locs))]< Set.maxFactor_R2RMode * mode_R2R_valid);
 R2R_valid_bpm_consec = R2R_valid_bpm(idx_valid_R2R_consec);
+Tab_outlier.R2R_consec = numel(idx_valid_R2R_consec);
 
 % RMSSD ("root mean square of successive differences")
 % the square root of the mean of the squares of the successive differences between ***adjacent*** intervals
@@ -392,11 +393,11 @@ if TOPLOT
     plot(t(maybe_valid_pos_ecg_locs),ecgFiltered(maybe_valid_pos_ecg_locs),'kv','MarkerSize',6,'MarkerEdgeColor',[0.5 0.5 0.5]);
      % valid R peaks
     plot(t(R_valid_locs),ecgFiltered(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
-    %valid R2R intervals
+    %valid R2R intervals -> filled TRIANGLE
     plot(t(R2R_valid_locs),ecgFiltered(R2R_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
     plot(t(locs(idx_outliers)),ecgFiltered(locs(idx_outliers)),'bx');
    
-    
+    %line for 
     plot([t(R2R_valid_locs(idx_valid_R2R_consec)) - R2R_valid(idx_valid_R2R_consec); t(R2R_valid_locs(idx_valid_R2R_consec))], ...
          [ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec)); ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec))],'k');
  

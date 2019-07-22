@@ -1,27 +1,23 @@
-function bsa_graphs(targetBrainArea)
+function bsa_graphs(monkey,targetBrainArea,path_SaveFig)
 close all; 
 %% dorsal pulvinar
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Control_' ,targetBrainArea])
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Control_',targetBrainArea ])
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep, 'Structure_HeartrateVaribility_PerSession_Control_' ,targetBrainArea])
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep, 'Structure_HeartrateVaribility_PerSessionPerBlock_Control_',targetBrainArea ])
 
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation_',targetBrainArea ])
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Inactivation_' ,targetBrainArea])
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_' ,targetBrainArea])
-
-
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Control_',targetBrainArea ]);
-load(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Injection_',targetBrainArea ]);
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep, 'Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation_',targetBrainArea ])
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep, 'Structure_HeartrateVaribility_PerSession_Inactivation_' ,targetBrainArea])
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep, 'Structure_HeartrateVaribility_PerSessionPerBlock_' ,targetBrainArea])
 
 
-load(['C:\Users\kkaduk\Dropbox\DAG\Kristin\', 'MultComp_PValues_HeartrateVaribility_PerSession_',targetBrainArea ]);
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep, 'Table_MeanForBlock_Task_Control_',targetBrainArea ]);
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep, 'Table_MeanForBlock_Task_Injection_',targetBrainArea ]);
+
+
+load(['C:\Users\kkaduk\Dropbox\DAG\Kristin\Statistic\body_signal_analysis\', monkey, filesep, 'MultComp_PValues_HeartrateVaribility_PerSession_',targetBrainArea ]);
 Tabl_MultComp = struct2table(tabl_MultCom_pValues_Data); 
- DVs =   unique(Tabl_MultComp.Variable); 
+DVs =   unique(Tabl_MultComp.Variable); 
 
 
-
-%% ventral pulvinar
-
-%%each Variable has one figure
 
 for ind_DV = 1: length(DVs)
     Stat = []; 
@@ -63,7 +59,6 @@ xlabel('Blocks','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
 
 h = [];
 h(1) = figure(1); 
-path_SaveFig = 'Y:\Projects\PhysiologicalRecording\Figures\ECG'; 
 print(h,[path_SaveFig filesep targetBrainArea '_Blocks_' DVs{ind_DV} ], '-dpng')
 close all;
 
@@ -101,7 +96,7 @@ Row(2) =find(sum([strcmp(Stat.Comparison1, 'Control,pst,task'), strcmp(Stat.Comp
 Row(3) =find(sum([strcmp(Stat.Comparison1, 'Injection,pre,task'), strcmp(Stat.Comparison2, 'Injection,pst,task')],2)== 2);
 Row(4) =find(sum([strcmp(Stat.Comparison1, 'Control,pre,task'), strcmp(Stat.Comparison2, 'Control,pst,task')],2)== 2);
 
-Stat(Row,:)
+% Stat(Row,:)
 Contrast(1,:) = [3,8];
 Contrast(2,:) = [4,9];
 Contrast(3,:) = [8,9];
@@ -115,11 +110,10 @@ Y_C(4) = max_yValue -80;
 %Y = [nanmean([S_con.mean_R2R_bpm.pre_rest]),nanmean([S_con.mean_R2R_bpm.pst_rest]),nanmean([S_con.mean_R2R_bpm.pre_task]),nanmean([S_con.mean_R2R_bpm.pst_task])]
 %Y = [200 , 210, 220, 230,200 , 210, 220, 230 ];
 for NrContrasts = 1: 4
-sigline(Contrast(NrContrasts,:),char(Stat.Star(Row(NrContrasts))),Y_C(NrContrasts)); hold on; 
+ext_sigline(Contrast(NrContrasts,:),char(Stat.Star(Row(NrContrasts))),Y_C(NrContrasts)); hold on; 
 end
 h = [];
-h(1) = figure(1); 
-path_SaveFig = 'Y:\Projects\PhysiologicalRecording\Figures\ECG'; 
+h(1) = figure(1);
 print(h,[path_SaveFig filesep targetBrainArea '_' DVs{ind_DV}], '-dpng')
 close all;
 
@@ -178,7 +172,6 @@ sigline(Contrast(NrContrasts,:),char(Stat.Star(Row(NrContrasts))),Y_C(NrContrast
 end
 h = [];
 h(1) = figure(1); 
-path_SaveFig = 'Y:\Projects\PhysiologicalRecording\Figures\ECG'; 
 print(h,[path_SaveFig filesep targetBrainArea '_' DVs{ind_DV} '_Rest'], '-dpng')
 close all;
 
@@ -319,7 +312,6 @@ set(ha([7 8]),'Xlim',[0 0.6]);
 %for i = 1:12
     h(1) = figure(1); 
 %end  
-path_SaveFig = 'Y:\Projects\PhysiologicalRecording\Figures\ECG'; 
 savefig(h, [path_SaveFig filesep  'OverviewBarGraph_Heartratevariability.fig'])
 print(h,[path_SaveFig filesep targetBrainArea '_OverviewBarGraph_Heartratevariability'], '-dpng')
 

@@ -47,7 +47,7 @@ run(settings_path);
 % define default arguments and their potential values
 def_saveResults = session_path; % 1st optional argument (directory to save results, if empty then save to session_path)
 def_keepRunFigs = false;        % 2nd optional argument
-val_keepRunFigs = {'keepRunFigs',false};
+val_keepRunFigs = {'keepRunFigs',true};
 chk_keepRunFigs = @(x) islogical(x);
 def_dataOrigin  = 'combined';    % 3rd optional argument pair
 val_dataOrigin  = {'combined','TDT'};
@@ -180,7 +180,7 @@ else
     restMFC = [0.8 0.8 0.8];
 end
 
-%return;
+return; %
 
 ig_figure('Name',[session_path '->' par.saveResults],'Position',[200 200 900 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
 ha(1) = subplot(4,1,1);

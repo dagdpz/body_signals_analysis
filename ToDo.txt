@@ -10,3 +10,16 @@ IMPORTANT!
 
 (3,DONE) legend for the first graph in bsa_ecg_analyze_one_session.m
 (4, open) display the number of outliers to check if the change in settings improved something
+(5, open) upate Concept_Analyses
+(6, open) preprocessing graph y-axis run
+
+(6, open) bsa_graphs ... update USAGE for inputs
+(7, open) differentiate the function from preprocessing & prepare Variable for Stat & Graph
+
+
+(8, open) Further analysis: 
+free choice bias vs ECG (percentage change between pre & post for each session, pool of pre - pool of post), 
+breathing, 
+adapt statistic for behavior & add for Blocks
+probability of a heartbeat happens locked to a specific event
+analyse different target positions
