@@ -7,7 +7,7 @@ plot_permutations=0;
 from_raw=0;
 monkey='Magnus';
 
-for whattoplot= [8]
+for whattoplot= [6]
     switch whattoplot
         
         case 1
@@ -72,12 +72,12 @@ for whattoplot= [8]
         case 6
             
             session='20190320';
-            blockspergroup={1,[2 3 4 6],[5 7]}; % block are shifted here (e.g. 2 means 3 cause no combined files for block 2 (no task)
-            colorsspergroup={'r','c','m'};
-            perturbation='inactivation';
+            blockspergroup={[1 2 3 4 6],[5 7]}; % block are shifted here (e.g. 2 means 3 cause no combined files for block 2 (no task)
+            colorsspergroup={'r','b'};
+            perturbation='control';
             target='MIP';
             stream='LFPx';
-            FigName_Long1=['R peak triggered' stream 'average, r=task, c=task_pert, m=rest_pert ' target perturbation];
+            FigName_Long1=['R peak triggered' stream 'average, r=task, b=rest ' target perturbation];
             %             y_lim=[-7*10^-6 5*10^-6];
             y_lim=[];
         
@@ -260,7 +260,7 @@ for whattoplot= [8]
     save([keys.path_to_save filesep session_name '_STA.mat'],'STA_session');
     set(h1, 'Paperunits','centimeters','PaperSize', wanted_papersize,'PaperPositionMode', 'manual','PaperPosition', [0 0 wanted_papersize])
     mtit(h1,  [FigName_Long1 ], 'xoff', 0, 'yoff', 0.05, 'color', [0 0 0], 'fontsize', 14,'Interpreter', 'none');
-    set(h1,'Color','white')
-    export_fig(h1, [keys.path_to_save filesep FigName_short1], '-pdf') % pdf by run
+%     set(h1,'Color','white')
+    export_fig(h1, [keys.path_to_save filesep FigName_short1], '-pdf','transparent') % pdf by run
 end
 end
