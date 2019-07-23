@@ -17,19 +17,20 @@ sessions={'20190208','20190320'};
 % group_per_session={[1:2],[1:3]};
 stream = 'LFPx';
 group.task = [1 1;2 1]; %[session group;session group] etc...
-group.rest = [1 2];
-group.task_pert = [2 2];
-group.rest_pert = [2 3];
+group.rest = [1 2;2 2];
+group.task_pert = [];
+group.rest_pert = [];
 
 % % dPul dataset
 % target='dPul';
-% sessions={'20190131','20190213','20190404','20190130'};
+% % sessions={'20190131','20190213','20190404','20190130'};
 % % group_per_session={[1:2],[1:3]};
+% sessions={'20190131','20190213','20190130'};
 % stream = 'LFPx';
-% group.task = [1 1;2 1;3 1;4 1]; %[session group;session group] etc...
-% group.rest = [1 2;2 2;3 2];
-% group.task_pert = [4 2];
-% group.rest_pert = [4 3];
+% group.task = [1 1;2 1;3 1]; %[session group;session group] etc...
+% group.rest = [1 2;2 2];
+% group.task_pert = [3 2];
+% group.rest_pert = [3 3];
 
 
 
@@ -75,7 +76,7 @@ end
 %same condition, calculate the average and plot
 
 h1=figure('outerposition',[0 0 1900 1200],'name', FigName_Long1);
-xlim([-0.25 0.25])
+xlim([-0.4 0.4])
 hold on
 
 
@@ -120,8 +121,8 @@ set(0,'DefaultTextInterpreter','none');
 wanted_papersize= [40 25];
 set(h1, 'Paperunits','centimeters','PaperSize', wanted_papersize,'PaperPositionMode', 'manual','PaperPosition', [0 0 wanted_papersize])
 mtit(h1,  [FigName_Long1 ], 'xoff', 0, 'yoff', 0.05, 'color', [0 0 0], 'fontsize', 14,'Interpreter', 'none');
-set(h1,'Color','white')
-export_fig(h1, [keys.path_to_save filesep FigName_short1], '-pdf') % pdf by run
+% set(h1,'Color','white')
+export_fig(h1, [keys.path_to_save filesep FigName_short1], '-pdf', 'transparent') % pdf by run
 
 
 end
