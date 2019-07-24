@@ -1,4 +1,32 @@
 function bsa_graphs(monkey,targetBrainArea,path_SaveFig)
+%Todo:
+% How to input better all the different datasets
+%USAGE:
+% bsa_behavior_ECG(monkey,behavior_Data,targetBrainArea,path_SaveFig);
+%
+% INPUTS:
+%		monkey              - Path to session data
+%       behavior_Data       - excel file
+%       targetBrainArea     - name of the mfile with specific session/monkey settings
+%		path_SaveFig        - see % define default arguments and their potential values
+%
+% OUTPUTS:
+%		display & saves graphs
+%
+% REQUIRES:	Igtools, ext_sigline
+%
+%
+% Author(s):	I.Kagan, DAG, DPZ
+% URL:		http://www.dpz.eu/dag
+%
+% Change log:
+% 20190226:	Created function (Igor Kagan)
+% ...
+% $Revision: 1.0 $  $Date: 2019-02-26 14:22:52 $
+
+% ADDITIONAL INFO:
+
+
 close all; 
 %% dorsal pulvinar
 load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep, 'Structure_HeartrateVaribility_PerSession_Control_' ,targetBrainArea])
@@ -39,10 +67,10 @@ count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
  line([3.5 3.5],[Ymin Ymax],'Color',[0 0 0],'HandleVisibility','off')
  %text(3.5,Ymax -10,'Inactivation','fontsize',15)
  
-  MeanForBlock_Task_Control_Task = MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pre_task'),:);
-  MeanForBlock_Task_Control_Task = [MeanForBlock_Task_Control_Task; MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pst_task'),:)];
-  MeanForBlock_Task_Injection_Task = MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pre_task'),:);
-  Table_MeanForBlock_Task_Injection_Task = [MeanForBlock_Task_Injection_Task; MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pst_task'),:)];
+  MeanForBlock_Task_Control_Task            = MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pre_task'),:);
+  MeanForBlock_Task_Control_Task            = [MeanForBlock_Task_Control_Task; MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pst_task'),:)];
+  MeanForBlock_Task_Injection_Task          = MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pre_task'),:);
+  Table_MeanForBlock_Task_Injection_Task    = [MeanForBlock_Task_Injection_Task; MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pst_task'),:)];
 
  % eine Funktion die zuerst Control plotted se
  VarName = [ 'mean_', DVs{ind_DV}] ;

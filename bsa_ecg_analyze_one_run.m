@@ -328,10 +328,9 @@ end
 %% How "much time of the run" was deleted related to the detection of outlier?
 Tab_outlier.durationRun_s       = max(t);
 Tab_outlier.durationOutlier_s   = max(t)-sum(R2R(idx_valid_R2R));
-
-
-
 display(Tab_outlier)
+
+
 if length(R2R_valid) < 100,
     out.Rpeak_t                 = NaN;
     out.Rpeak_sample            = NaN;

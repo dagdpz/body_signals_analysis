@@ -53,6 +53,7 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190705',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190705');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190717',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190717');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190719',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190719');
+out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190723',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190723');
 
 
 
@@ -106,5 +107,5 @@ bsa_graphs(monkey,targetBrainArea,path_SaveFig)
 monkey = 'Cornelius'; 
 targetBrainArea = 'dPul';
 path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\ECG_behavior']; 
-behavior_Data = ['Y:\Projects\PhysiologicalRecording\Figures\', monkey,'\Inactivation_20190124_20190129_20190201_20190207_20190214_20190228_20190314\Behavior_Inactivation_20190502-1403.mat']; 
+behavior_Data = ['Y:\Projects\PhysiologicalRecording\Figures\', monkey,'\behavior\Inactivation_20190124_20190129_20190201_20190207_20190214_20190228_20190314\Behavior_Inactivation_20190502-1403.mat']; 
 bsa_behavior_ECG(monkey,behavior_Data,targetBrainArea,path_SaveFig)

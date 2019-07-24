@@ -1,5 +1,10 @@
 % settings for BSA analysis, Curius dPul/vPul inactivation - ECG, 2019
-
+%Define different characteristics to identify different conditions
+Set.task.Type       = 2; 
+Set.task.reward     = 2; 
+Set.task.mintrials  = 25; 
+Set.rest.Type       = 1; 
+Set.rest.reward     = [0 0]; 
 
 
 Set.segment_length                  = 300; % s (Set to 0 if no segmentation) -- segment length prior to wavelet transform

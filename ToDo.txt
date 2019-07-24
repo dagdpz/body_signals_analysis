@@ -6,10 +6,7 @@ IMPORTANT!
 - Don't load each dataset for this information because it takes time
 - define in Settings
 
-(2,DONE) update USAGE, INPUT for keepRunFigure
-
-(3,DONE) legend for the first graph in bsa_ecg_analyze_one_session.m
-(4, open) display the number of outliers to check if the change in settings improved something
+(4, DONE) display the number of outliers to check if the change in settings improved something
 (5, open) upate Concept_Analyses
 (6, open) preprocessing graph y-axis run
 
@@ -23,3 +20,6 @@ breathing,
 adapt statistic for behavior & add for Blocks
 probability of a heartbeat happens locked to a specific event
 analyse different target positions
+
+(2,DONE) update USAGE, INPUT for keepRunFigure
+(3,DONE) legend for the first graph in bsa_ecg_analyze_one_session.m

@@ -110,62 +110,58 @@ else
     n_blocks = length(combined_matfiles);    
 end
 
-% disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
-% disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
-% if  ~sum(~ses.block == 0) ==  n_blocks
-%     error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
-% end
+%Is there a difference between excel-sheet information & saved data-files?
+%
+ disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
+ disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
+ if  ~sum(~ses.block == 0) ==  n_blocks
+     error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
+     return %terminate the script
+ end
 
 %%
-for r = 1:n_blocks, % for each run/block
-    
-    
+for i_block = 1:n_blocks, % for each run/block
     
     if ~strcmp(par.dataOrigin, 'TDT'),
-
-    
-      load([session_path filesep combined_matfiles(r).name])
-     
-        % TODO: make compatible with different tasks 
-        if task.type == 2 && numel(trial) > 25 % exclude short runs and calibration
-            ses.type(r)   =    1; % task
-        elseif task.type == 1 && all(trial(1).task.reward.time_neutral == [0 0]) ;
-            ses.type(r)   =    0; % rest
+      load([session_path filesep combined_matfiles(i_block).name])
+        if task.type == Set.task.Type && numel(trial) > Set.task.mintrials % exclude short runs and calibration
+            ses.type(i_block)   =    1; % task
+        elseif task.type == Set.rest.Type && all(trial(1).task.reward.time_neutral == Set.rest.reward) ;
+            ses.type(i_block)   =    0; % rest
         else
-            ses.type(r)   =    -2;
+            ses.type(i_block)   =    -2;
         end
     end
     
     % first check if to skip the block
     if ~isempty(ses),
-        if ses.type(r) == -2 || isnan(ses.type(r)) ,
-            disp(sprintf('Skipping block %d',r));
+        if ses.type(i_block) == -2 || isnan(ses.type(i_block)) ,
+            disp(sprintf('Skipping block %d',i_block));
             continue
         end
     end
     
-    disp(sprintf('Processing block %d',r));
+    disp(sprintf('Processing block %d',i_block));
     
     if strcmp(par.dataOrigin, 'TDT'),
-        ecgSignal   = double(ECG{r});
+        ecgSignal   = double(ECG{i_block});
     else
-        ecg = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(r).name], 1); % get ecg only
+        ecg = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(i_block).name], 1); % get ecg only
         ecgSignal   = ecg.ECG1;
         Fs          = ecg.Fs;
     end
-   [ out(r), Tab_outlier(r) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',r));
-    print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
+   [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',i_block));
+    print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],i_block),'-dpng','-r0');
     if ~par.keepRunFigs
-        close(out(r).hf);
+        close(out(i_block).hf);
     end
     
     
 end
 
+
 save([par.saveResults filesep session_name '_ecg.mat'],'out','Tab_outlier','par','ses','session_name','session_path');
 
-% How many outliers where there for all runs & specific? 
-%Tab_outlier.
 
 blks = 1:n_blocks;
 taskMFC = [0.3922    0.4745    0.6353];
@@ -180,7 +176,7 @@ else
     restMFC = [0.8 0.8 0.8];
 end
 
-return; %
+%return; %
 
 ig_figure('Name',[session_path '->' par.saveResults],'Position',[200 200 900 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
 ha(1) = subplot(4,1,1);
