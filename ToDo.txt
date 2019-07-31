@@ -12,7 +12,7 @@ IMPORTANT!
 
 (6, open) bsa_graphs ... update USAGE for inputs
 (7, open) differentiate the function from preprocessing & prepare Variable for Stat & Graph
-
+(8, open) average session plot for ECG - x-axis real time
 
 (8, open) Further analysis: 
 free choice bias vs ECG (percentage change between pre & post for each session, pool of pre - pool of post), 

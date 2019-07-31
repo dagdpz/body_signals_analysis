@@ -85,14 +85,27 @@ ses = par.sessionInfo;
 % excel file will have a priority so that one can manually exclude some runs
 
 table = readtable(pathExcel);
+ses.monkey       =   table.monkey(table.date == str2num(session_name))';
+ses.date            =   table.date(table.date == str2num(session_name))';
+ses.experiment      =   table.experiment(table.date == str2num(session_name))';
+
 ses.injection       =   table.injection(table.date == str2num(session_name))';
+ses.brain_area      =   table.brain_area(table.date == str2num(session_name))';
+ses.hemisphere      =   table.hemisphere(table.date == str2num(session_name))';
+ses.x_grid          =   table.x_grid(table.date == str2num(session_name))';
+ses.y_grid          =   table.y_grid(table.date == str2num(session_name))';
+ses.concentration_mg_ml          =   table.concentration_mg_ml(table.date == str2num(session_name))';
+ses.volume_ul       =   table.volume_ul(table.date == str2num(session_name))';
+ses.substance       =   table.substance(table.date == str2num(session_name))';
+ses.depthfromTheTopOfTheGrid      =   table.depthfromTheTopOfTheGrid_mm(table.date == str2num(session_name))';
+ses.injection_method              =   table.injection_method(table.date == str2num(session_name))';
+ses.ePhys      =   table.ePhys(table.date == str2num(session_name))';
+
 ses.run             =   table.run(table.date == str2num(session_name))';
 ses.block           =   table.block(table.date == str2num(session_name))';
 ses.tasktype_str    =   table.task(table.date == str2num(session_name))';
 ses.tasktype        =   table.tasktype(table.date == str2num(session_name))';
 
-ses.brain_area      =   table.target(table.date == str2num(session_name))';
-ses.dosage          =   table.dosage(table.date == str2num(session_name))';
 
 ses.injection(ses.block == 0) = num2cell(nan(1,sum(ses.block == 0)));
 ses.first_inj_block =  min(ses.block(strcmp(ses.injection , 'Post'))) ;
@@ -114,9 +127,8 @@ end
 %
  disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
  disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
- if  ~sum(~ses.block == 0) ==  n_blocks
+ if  ~(sum(~ses.block == 0)  ==  n_blocks)
      error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
-     return %terminate the script
  end
 
 %%
@@ -151,7 +163,7 @@ for i_block = 1:n_blocks, % for each run/block
         Fs          = ecg.Fs;
     end
    [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',i_block));
-    print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],i_block),'-dpng','-r0');
+    print(out(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],i_block),'-dpng','-r0');
     if ~par.keepRunFigs
         close(out(i_block).hf);
     end

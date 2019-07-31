@@ -54,6 +54,8 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190717',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190717');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190719',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190719');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190723',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190723');
+out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190726',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190726');
+out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190729',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190729');
 
 
 

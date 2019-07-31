@@ -220,15 +220,17 @@ mode_R2R        = mode(R2R);
 [hist_R2R,bins] = hist(R2R,[Set.min_R2R:0.01:1]);
 
 % invalidate all R2R less than minFactor_R2RMode (e.g. 0.66) of mode and more than maxFactor_R2RMode (e.g. 1.5) of mode
-idx_valid_R2R = find((R2R> Set.minFactor_R2RMode*mode_R2R & R2R<  Set.maxFactor_R2RMode *mode_R2R));
-detectedOutliers_mode = 100-((length(idx_valid_R2R)/length(R2R))*100); 
+idx_valid_R2R         = find((R2R> Set.minFactor_R2RMode*mode_R2R | R2R <  Set.maxFactor_R2RMode *mode_R2R));
+idx_Invalid_R2R       = find((R2R< Set.minFactor_R2RMode*mode_R2R | R2R >  Set.maxFactor_R2RMode *mode_R2R));
+
+detectedOutliers_mode = (length(idx_Invalid_R2R)/length(R2R))*100; 
 disp(['Fraction of R2R outliers detected using deviations from R2R mode: ', num2str(detectedOutliers_mode) ])
-Tab_outlier.outlier_Mode_abs = length(R2R)-length(idx_valid_R2R);
-Tab_outlier.outlier_Mode_pct = round( 100-((length(idx_valid_R2R)/length(R2R))*100) ,4); 
+Tab_outlier.outlier_Mode_abs = length(idx_Invalid_R2R);
+Tab_outlier.outlier_Mode_pct = round((length(idx_Invalid_R2R)/length(R2R))*100 ,4); 
 
 t_valid_R2R                         = t(maybe_valid_pos_ecg_locs(idx_valid_R2R));
-R2R_valid_before_hampel            = R2R(idx_valid_R2R);
-Tab_outlier.NrR2R_beforehampel    = length(R2R_valid_before_hampel); 
+R2R_valid_before_hampel             = R2R(idx_valid_R2R);
+Tab_outlier.NrR2R_beforehampel      = length(R2R_valid_before_hampel); 
 %% remove outliers from R2R using hampel
 [YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hampel, Set.hampel_DX, Set.hampel_T);
 idx_to_delete = [];
@@ -327,7 +329,7 @@ end
 
 %% How "much time of the run" was deleted related to the detection of outlier?
 Tab_outlier.durationRun_s       = max(t);
-Tab_outlier.durationOutlier_s   = max(t)-sum(R2R(idx_valid_R2R));
+Tab_outlier.duration_NotValidSegments_s   = max(t)-sum(R2R(idx_valid_R2R));
 display(Tab_outlier)
 
 
