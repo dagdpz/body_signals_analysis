@@ -1,4 +1,4 @@
-function bsa_behavior_ECG(monkey,behavior_Data,targetBrainArea,path_SaveFig)
+function bsa_graphs_ecg_behavior(monkey,behavior_Data,targetBrainArea,path_SaveFig)
 
 %% ToDO
 % add different variables

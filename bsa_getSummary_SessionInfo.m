@@ -1,10 +1,11 @@
 function bsa_getSummary_SessionInfo(session_path, pathExcel )
-session_path = 'Y:\Projects\PhysiologicalRecording\Data\Curius';
-pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx';
+
 % check in the folder the monkey which sessions
 SessionName         = dir([session_path filesep '201*']);
 Table_SessionInfo   = [];
 PreviousSavedTable  = dir([session_path filesep '*.mat']);
+Table_AllAnalyzedSessions = 0; 
+
 
 if ~isempty(PreviousSavedTable) % there is a file & there is THE table
     %& %check if table includes all sessions in this directionary
@@ -14,11 +15,16 @@ if ~isempty(PreviousSavedTable) % there is a file & there is THE table
      %file
 
     idx=find(ismember(Table_SessionInfo.date ,    {SessionName.name}));
-    length(Table_SessionInfo.date)
-    length( {SessionName.name})
+    if length(Table_SessionInfo.date)~= length( {SessionName.name})
+        Table_AllAnalyzedSessions = 0; 
+    else
+        Table_AllAnalyzedSessions = 1;
+    end
+end
 
 
-else %no file with table -> create the table OR not all sessions included
+if  isempty(PreviousSavedTable) || Table_AllAnalyzedSessions == 0; 
+  %no file with table -> create the table OR not all sessions included
     %open the excel sheet
     
     table = readtable(pathExcel);
