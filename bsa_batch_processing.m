@@ -58,10 +58,15 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190729',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190729');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190801',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190801');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190802',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190802');
+out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190804',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190804');
 
 %% create Table to have the information for a session as overview
 session_path = 'Y:\Projects\PhysiologicalRecording\Data\Curius';
 pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx';
+
+session_path = 'Y:\Projects\PhysiologicalRecording\Data\Cornelius';
+pathExcel = 'Y:\Logs\Inactivation\Cornelius\Cornelius_Inactivation_log_since201901.xlsx';
+
 bsa_getSummary_SessionInfo(session_path, pathExcel )
 
 %% dorsal pulvinar
