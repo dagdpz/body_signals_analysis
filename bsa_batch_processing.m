@@ -43,6 +43,9 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_T
 out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190508',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190508');
 out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190509',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190509');
 
+bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190808', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190808\bodysignals_without_behavior');
+out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190808\bodysignals_without_behavior',pathExcel,settings_filename,'',false,'dataOrigin','TDT');
+
 %% CURIUS
 pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx';
 settings_filename = 'bsa_settings_Curius2019.m'; % full path will be complemented in bsa_ecg_analyze_one_session
@@ -59,6 +62,9 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190801',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190801');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190802',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190802');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190804',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190804');
+out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190806',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190806');
+out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190807',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190807');
+out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190808',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190808');
 
 %% create Table to have the information for a session as overview
 session_path = 'Y:\Projects\PhysiologicalRecording\Data\Curius';
@@ -120,4 +126,4 @@ monkey = 'Cornelius';
 targetBrainArea = 'dPul';
 path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\ECG_behavior']; 
 behavior_Data = ['Y:\Projects\PhysiologicalRecording\Figures\', monkey,'\behavior\Inactivation_20190124_20190129_20190201_20190207_20190214_20190228_20190314\Behavior_Inactivation_20190502-1403.mat']; 
-bsa_behavior_ECG(monkey,behavior_Data,targetBrainArea,path_SaveFig)
+bsa_graphs_ecg_behavior(monkey,behavior_Data,targetBrainArea,path_SaveFig)

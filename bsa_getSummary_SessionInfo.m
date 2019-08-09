@@ -36,8 +36,8 @@ if  isempty(PreviousSavedTable) || Table_AllAnalyzedSessions == 0;
         table_session =  table(table.date == session_name(i_Sess),:);
         if  (sum(strcmp(table_session.volume_ul , table_session.volume_ul(1)) == 0 ) > 0) || ...
                 (sum(strcmp(table_session.experiment , table_session.experiment(1)) == 0 ) > 0)  || ...
-                (sum(strcmp(table_session.depthfromTheTopOfTheGrid_mm , table_session.depthfromTheTopOfTheGrid_mm(1)) == 0 ) > 0)
-            disp([ 'the entries for this session ' num2str(session_name(i_Sess)) ' vary between runs'])
+                (sum((table_session.depthfromTheTopOfTheGrid_mm == table_session.depthfromTheTopOfTheGrid_mm(1)) == 0 ) > 0)
+            disp([ 'the entries for this session id ' num2str(i_Sess) ' ' num2str(session_name(i_Sess)) ' vary between runs'])
             %Which Variable?
             %
         else
@@ -46,14 +46,14 @@ if  isempty(PreviousSavedTable) || Table_AllAnalyzedSessions == 0;
             t(i_Sess).experiment     =  table_session.experiment{1}  ;
             t(i_Sess).brain_area     =  table_session.brain_area{1}  ;
             t(i_Sess).hemisphere     =  table_session.hemisphere{1}  ;
-            t(i_Sess).x_grid         =  table_session.x_grid{1}  ;
-            t(i_Sess).y_grid         =  table_session.y_grid{1}  ;
+            t(i_Sess).x_grid         =  table_session.x_grid(1)  ;
+            t(i_Sess).y_grid         =  table_session.y_grid(1)  ;
             t(i_Sess).concentration_mg_ml =  table_session.concentration_mg_ml(1)  ;
             t(i_Sess).volume_ul      =  table_session.volume_ul{1}  ;
             t(i_Sess).substance      =  table_session.substance{1}  ;
-            t(i_Sess).depthfromTheTopOfTheGrid_mm =  table_session.depthfromTheTopOfTheGrid_mm{1}  ;
+            t(i_Sess).depthfromTheTopOfTheGrid_mm =  table_session.depthfromTheTopOfTheGrid_mm(1)  ;
             t(i_Sess).injection_method =  table_session.injection_method{1}  ;
-            t(i_Sess).ePhys          =  table_session.ePhys{1}  ;
+            t(i_Sess).ePhys          =  table_session.ePhys(1)  ;
             t(i_Sess).nrRuns         =  max(table_session.run)  ;
             t(i_Sess).nrBlock        =  max(table_session.block) ;
             

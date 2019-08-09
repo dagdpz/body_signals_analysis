@@ -83,9 +83,10 @@ ses = par.sessionInfo;
 
 %% which run is task and which is rest? information stored in the excel-sheet (manual input) and behavior file
 % excel file will have a priority so that one can manually exclude some runs
-
-table = readtable(pathExcel);
-ses.monkey       =   table.monkey(table.date == str2num(session_name))';
+if ~isempty(pathExcel)
+    table = readtable(pathExcel);
+    if  sum(table.date == str2num(session_name)) > 0
+ses.monkey          =   table.monkey(table.date == str2num(session_name))';
 ses.date            =   table.date(table.date == str2num(session_name))';
 ses.experiment      =   table.experiment(table.date == str2num(session_name))';
 
@@ -99,25 +100,28 @@ ses.volume_ul       =   table.volume_ul(table.date == str2num(session_name))';
 ses.substance       =   table.substance(table.date == str2num(session_name))';
 ses.depthfromTheTopOfTheGrid      =   table.depthfromTheTopOfTheGrid_mm(table.date == str2num(session_name))';
 ses.injection_method              =   table.injection_method(table.date == str2num(session_name))';
-ses.ePhys      =   table.ePhys(table.date == str2num(session_name))';
+ses.ePhys           =   table.ePhys(table.date == str2num(session_name))';
 
 ses.run             =   table.run(table.date == str2num(session_name))';
 ses.block           =   table.block(table.date == str2num(session_name))';
 ses.tasktype_str    =   table.task(table.date == str2num(session_name))';
 ses.tasktype        =   table.tasktype(table.date == str2num(session_name))';
 
-
 ses.injection(ses.block == 0) = num2cell(nan(1,sum(ses.block == 0)));
 ses.first_inj_block =  min(ses.block(strcmp(ses.injection , 'Post'))) ;
+    else
+        disp([pathExcel ,'   Excel-File does not include this date  ' , num2str(session_name)])
+    end
+end
 
 if strcmp(par.dataOrigin, 'TDT'),
     load([session_path filesep 'bodysignals_wo_behavior.mat']);
     Fs        = dat.ECG_SR;
     ECG       = dat.ECG;
     n_blocks  = length(dat.ECG);
-    ses.type  =   table.tasktype(table.date == str2num(session_name))';
+    if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
     ses.type  =  ses.type(~ses.block == 0);
-    
+    end
 else
     combined_matfiles=dir([session_path filesep '*.mat']);
     n_blocks = length(combined_matfiles);    
@@ -125,11 +129,14 @@ end
 
 %Is there a difference between excel-sheet information & saved data-files?
 %
- disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
- disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
- if  ~(sum(~ses.block == 0)  ==  n_blocks)
-     error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
- end
+disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
+if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
+    disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
+    
+    if  ~(sum(~ses.block == 0)  ==  n_blocks)
+        error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
+    end
+end
 
 %%
 for i_block = 1:n_blocks, % for each run/block
