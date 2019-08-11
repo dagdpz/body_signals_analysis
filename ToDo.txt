@@ -1,17 +1,9 @@
 Todo-Liste
 Please write the task, the status (open, inprogress, DONE) and who is working on it. 
 
-(1, open) behavior file should match excel sheet entries, excel sheet has priorities
-IMPORTANT! 
-- Don't load each dataset for this information because it takes time
-- define task in Settings
-
-(4, DONE) display the number of outliers to check if the change in settings improved something
 (5, open) update Concept_Analyses
-
 (7, open) differentiate the function from preprocessing & prepare Variable for Stat & Graph
 (8, open) average session plot for ECG - x-axis real time
-
 (8, open) Further analysis: 
 free choice bias vs ECG -> visual aspects: add volume, 
 breathing, 
@@ -19,6 +11,13 @@ adapt statistic for behavior & add for Blocks
 probability of a heartbeat happens locked to a specific event
 analyse different target positions
 
+----------------------------------------------------------------
+(1, DONE) behavior file should match excel sheet entries, excel sheet has priorities
+IMPORTANT! 
+- Don't load each dataset for this information because it takes time
+- define task in Settings
 (2,DONE) update USAGE, INPUT for keepRunFigure
 (3,DONE) legend for the first graph in bsa_ecg_analyze_one_session.m
+(4, DONE) display the number of outliers to check if the change in settings improved something
+
 (6, DONE) bsa_graphs ... update USAGE for inputs

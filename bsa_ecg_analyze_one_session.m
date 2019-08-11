@@ -128,15 +128,15 @@ end
 %% Is there a difference between excel-sheet information & saved data-files?
 disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
 if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
-    disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
+    disp(['Found ' num2str(sum(~or(ses.block == 0 ,ses.tasktype == -2))) ' blocks in the excel sheet']);
     
-    if  ~(sum(~ses.block == 0)  ==  n_blocks)
+    if  ~(sum(~or(ses.block == 0 ,ses.tasktype == -2))  ==  n_blocks)
         error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
     end
 end
 
 %%
-for i_block = 1:n_blocks, % for each run/block
+for i_block = 15:n_blocks, % for each run/block
     
     % get the information about the task or rest
     if ~strcmp(par.dataOrigin, 'TDT'),
@@ -152,6 +152,9 @@ for i_block = 1:n_blocks, % for each run/block
         % check if the information contained in the behavior-file is the same as in the Excel-sheet input
         if  ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0 &&  ~(ses.type(i_block) == -2)
             if ses.type(i_block) == ses.tasktype(ses.block == i_block)
+            elseif  ses.tasktype(ses.block == i_block) == -2
+                disp(['Block ' num2str(i_block) ' is excluded because of a -2 in the Excel-sheet'])
+                ses.type(i_block) = -2; 
             else
                 error(['Condition does not match!! Excel-sheet colum tasktype is not identical with the information from behavior file in Block' num2str(i_block)])
             end

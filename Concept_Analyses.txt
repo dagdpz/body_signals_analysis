@@ -11,29 +11,18 @@ segment_length                  = 300; % s (set to 0 if no segmentation) -- segm
 segment_overlap                 = 50;  % s 
 
 1) detrending
-
-
-2) butterworth filter 
-Fn  = Fs/2;                                                 % Nyquist Frequency (Hz)
-Wp  = 40/Fn;                                                % Passband Frequency (Normalised)
-Ws  = 100/Fn;                                               % Stopband Frequency (Normalised)
-Rp  = 1;                                                    % Passband Ripple (dB)
-Rs  = 150;                                                  % Stopband Ripple (dB)
-
-
+2) butterworth filter similar to a low-pass filter
+we use the function filtfilt  because its not shifting the phase
 3) Wavelet transformation
-rangeOfInterest = [1 12]; % Hz
+averages the frequency for each time period
+not explanation why we use this time window..
 
-% prepare parameters for the wavelet transform: we expect our heart rate to be in certain range
-minFreq = rangeOfInterest(1);
-maxFreq = rangeOfInterest(2);
-scalesPerDecade = 32;
-
-4) Find peak by defining 
-min_R2R                         = 0.25; %s
-minpeakdistance 		= min_R2R*Fs  
-minpeakheight = eP_tc_minpeakheight_med_prop*median(energyProfile_tc)
+4) Find peak by defined by the following settings:
+threshold
+min_R2R                 = 0.25; %s
+minpeakdistance 		= min_R2R*Fs  (in samples & not in time)
 eP_tc_minpeakheight_med_prop    = 0.33; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
+minpeakheight = eP_tc_minpeakheight_med_prop*median(energyProfile_tc)
 
 5) Detection and remove outlier
 5.1.  using median of the absolute differences
