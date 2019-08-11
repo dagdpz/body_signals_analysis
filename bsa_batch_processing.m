@@ -65,6 +65,10 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190806',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190806');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190807',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190807');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190808',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190808');
+out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190809',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190809');
+
+out = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190808',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190808');
+
 
 %% create Table to have the information for a session as overview
 session_path = 'Y:\Projects\PhysiologicalRecording\Data\Curius';

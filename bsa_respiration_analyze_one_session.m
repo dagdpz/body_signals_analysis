@@ -1,16 +1,15 @@
-function out = bsa_respiration_analyze_one_session(session_path,varargin)
-%bsa_respiration_analyze_one_session  - analyzing ECG in one session (in multiple runs/blocks)
+function out = bsa_respiration_analyze_one_session(session_path,pathExcel,settings_filename,varargin)
+%bsa_ecg_analyze_one_session  - analyzing ECG in one session (in multiple runs/blocks)
 %
 % USAGE:
-% out = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131');
-% out = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190221','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190221');
-% out = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190304','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190304');
-
+%out = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190625','Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx','bsa_settings_Curius2019.m','Y:\Projects\PhysiologicalRecording\Data\Curius\20190625');
 % out = bsa_respiration_analyze_one_session(session_path,'',false,'dataOrigin','TDT','sessionInfo',ses);
 %
 % INPUTS:
 %		session_path		- Path to session data
-%		varargin (optional) - see % define default arguments and their potential values                     
+%       pathExcel           - excel file
+%       settings_filename   - name of the mfile with specific session/monkey settings
+%		varargin (optional) - see % define default arguments and their potential values
 %
 % OUTPUTS:
 %		out                 - see struct
@@ -31,29 +30,41 @@ function out = bsa_respiration_analyze_one_session(session_path,varargin)
 % ADDITIONAL INFO:
 % What is the function doing?
 %1) loads the created mat-file from bsa_read_and_save_TDT_data_without_behavior.m
-%2) bsa_concatenate_trials_body_signals 
+%2) bsa_concatenate_trials_body_signals
 %3) bsa_ecg_analyze_one_run -> preprocessing the ECG, create R-R intervals
 %4) Plot & save as PDFs
-%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%%
 
 warning off;
+
+% make settings work from any computer (settings_path relative to location of bsa toolbox)
+mfullpath = mfilename('fullpath');
+mpathname = fileparts(mfullpath);
+settings_path = [mpathname filesep 'settings' filesep settings_filename];
+run(settings_path);
+
 
 % define default arguments and their potential values
 def_saveResults = session_path; % 1st optional argument (directory to save results, if empty then save to session_path)
 def_keepRunFigs = false;        % 2nd optional argument
-def_dataOrigin = 'combined';    % 3rd optional argument pair
-val_dataOrigin = {'combined','TDT'};
-chk_dataOrigin = @(x) any(validatestring(x,val_dataOrigin));
+val_keepRunFigs = {'keepRunFigs',true};
+chk_keepRunFigs = @(x) islogical(x);
+def_dataOrigin  = 'combined';    % 3rd optional argument pair
+val_dataOrigin  = {'combined','TDT'};
+chk_dataOrigin  = @(x) any(validatestring(x,val_dataOrigin));
 def_sessionInfo = [];           % 4 optional argument pair (can be defined in bsa_ecg_analyze_many_sessions)
 
 p = inputParser; % in order of arguments
 addRequired(p, 'session_path',@ischar);
+addRequired(p, 'pathExcel',@ischar);
+addRequired(p, 'settings_filename',@ischar);
+
 addOptional(p, 'saveResults',def_saveResults,@ischar);
-addOptional(p, 'keepRunFigs',def_keepRunFigs,@islogical);
+addOptional(p, 'keepRunFigs',def_keepRunFigs,chk_keepRunFigs);
 addParameter(p,'dataOrigin',def_dataOrigin,chk_dataOrigin);
 addParameter(p,'sessionInfo',def_sessionInfo,@isstruct);
 
-parse(p,session_path,varargin{:});
+parse(p,session_path,pathExcel,settings_path,varargin{:});
 par = p.Results;
 
 if isempty(par.saveResults),
@@ -65,25 +76,46 @@ session_name = session_path(session_name_idx(1):session_name_idx(1)+7);
 
 
 if ~exist(par.saveResults,'dir'),
-   mkdir(par.saveResults); 
+    mkdir(par.saveResults);
 end
 
 ses = par.sessionInfo;
 
 %% which run is task and which is rest? information stored in the excel-sheet or behavior file
+%% which run is task and which is rest? information stored in the excel-sheet (manual input) and behavior file
+% excel file will have a priority so that one can manually exclude some runs
+if ~isempty(pathExcel)
+    table = readtable(pathExcel);
+    if  sum(table.date == str2num(session_name)) > 0
+        ses.monkey          =   table.monkey(table.date == str2num(session_name))';
+        ses.date            =   table.date(table.date == str2num(session_name))';
+        ses.experiment      =   table.experiment(table.date == str2num(session_name))';
+        
+        ses.injection       =   table.injection(table.date == str2num(session_name))';
+        ses.brain_area      =   table.brain_area(table.date == str2num(session_name))';
+        ses.hemisphere      =   table.hemisphere(table.date == str2num(session_name))';
+        ses.x_grid          =   table.x_grid(table.date == str2num(session_name))';
+        ses.y_grid          =   table.y_grid(table.date == str2num(session_name))';
+        ses.concentration_mg_ml          =   table.concentration_mg_ml(table.date == str2num(session_name))';
+        ses.volume_ul       =   table.volume_ul(table.date == str2num(session_name))';
+        ses.substance       =   table.substance(table.date == str2num(session_name))';
+        ses.depthfromTheTopOfTheGrid      =   table.depthfromTheTopOfTheGrid_mm(table.date == str2num(session_name))';
+        ses.injection_method              =   table.injection_method(table.date == str2num(session_name))';
+        ses.ePhys           =   table.ePhys(table.date == str2num(session_name))';
+        
+        ses.run             =   table.run(table.date == str2num(session_name))';
+        ses.block           =   table.block(table.date == str2num(session_name))';
+        ses.tasktype_str    =   table.task(table.date == str2num(session_name))';
+        ses.tasktype        =   table.tasktype(table.date == str2num(session_name))';
+        
+        ses.injection(ses.block == 0) = num2cell(nan(1,sum(ses.block == 0)));
+        ses.first_inj_block =  min(ses.block(strcmp(ses.injection , 'Post'))) ;
+    else
+        disp([pathExcel ,'   Excel-File does not include this date  ' , num2str(session_name)])
+    end
+end
 
-pathExcel = 'Y:\Logs\Inactivation\Cornelius\Cornelius_Inactivation_log_since201901.xlsx'; 
-table = readtable(pathExcel);
-  ses.injection       =   table.injection(table.date == str2num(session_name))'
-  ses.run             =   table.run(table.date == str2num(session_name))'
-  ses.block           =   table.block(table.date == str2num(session_name))'
-  ses.tasktype_str    =   table.task(table.date == str2num(session_name))'
-  ses.brain_area      =   table.target(table.date == str2num(session_name))'
-  ses.dosage          =   table.dosage(table.date == str2num(session_name))'
-  
-  ses.injection(ses.block == 0) = num2cell(nan(1,sum(ses.block == 0))); 
-  ses.first_inj_block =  min(ses.block(strcmp(ses.injection , 'Post'))) 
-  
+%%
   if strcmp(par.dataOrigin, 'TDT'),
       load([session_path filesep 'bodysignals_wo_behavior.mat']);
       Fs        = dat.ECG_SR;
@@ -92,68 +124,92 @@ table = readtable(pathExcel);
       POX       = dat.POX;
 
       n_blocks  = length(dat.ECG);
-      ses.type  =   table.tasktype(table.date == str2num(session_name))';
-      ses.type  =  ses.type(~ses.block == 0); 
+     
        
   else
       combined_matfiles=dir([session_path filesep '*.mat']);
       n_blocks = length(combined_matfiles);
-      
-      for indBlock = 1: n_blocks
-          load([session_path filesep combined_matfiles(indBlock).name])
-          if task.type == 2 && all(trial(1).task.reward.time_neutral > [0.15 0.15])%&& numel(trial) > 10
-              ses.type(indBlock)   =    1;
-          elseif task.type == 1 && all(trial(1).task.reward.time_neutral == [0 0]) %&& numel(trial) > 10;
-              ses.type(indBlock)   =    0;
-          else
-              ses.type(indBlock)   =    -2;
-          end
-          
-      end
-      
+     
+               
   end
-
-disp(['Found ' num2str(n_blocks) ' blocks in the TDT-Dataset']);
-disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
-if  ~sum(~ses.block == 0) ==  n_blocks
-      error('Error. \Number of Block to be anlyzed from excel-sheet does not match the number of Blocks from the TDT-datasets.')
+%% Is there a difference between excel-sheet information & saved data-files?
+disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
+if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
+    disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
+    
+    if  ~(sum(~ses.block == 0)  ==  n_blocks)
+        error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
+    end
 end
     
 %%
-for r = 1:n_blocks, % for each run/block
+for i_block = 1:n_blocks, % for each run/block
     
-    % first check if to skip the block
-    if ~isempty(ses),
-        if ses.type(r) == -2 || isnan(ses.type(r)) ,
-           disp(sprintf('Skipping block %d',r));
-           continue
+   % get the information about the task or rest
+    if ~strcmp(par.dataOrigin, 'TDT'),
+        load([session_path filesep combined_matfiles(i_block).name])
+        if task.type == Set.task.Type && numel(trial) > Set.task.mintrials % exclude short runs and calibration
+            ses.type(i_block)   =    1; % task
+        elseif task.type == Set.rest.Type && all(trial(1).task.reward.time_neutral == Set.rest.reward) ;
+            ses.type(i_block)   =    0; % rest
+        else
+            ses.type(i_block)   =    -2;
         end
-    end   
-     
-     disp(sprintf('Processing block %d',r));
+        
+        % check if the information contained in the behavior-file is the same as in the Excel-sheet input
+        if  ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0 &&  ~(ses.type(i_block) == -2)
+            if ses.type(i_block) == ses.tasktype(ses.block == i_block)
+            else
+                error(['Condition does not match!! Excel-sheet colum tasktype is not identical with the information from behavior file in Block' num2str(i_block)])
+            end
+        end
+        
+    else
+        if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
+            ses.type  =  table.tasktype(table.date == str2num(session_name))';
+            ses.type  =  ses.type(~ses.block == 0);
+        end
+    end
+    
+    
+   
+    
+    %% first check if to skip the block
+    if ~isempty(ses),
+        if ses.type(i_block) == -2 || isnan(ses.type(i_block)) ,
+            disp(sprintf('Skipping block %d',i_block));
+            continue
+        end
+    end
+    
+     disp(sprintf('Processing block %d',i_block));
      
      if strcmp(par.dataOrigin, 'TDT'),
-         ecgSignal   = double(ECG{r});
-         capSignal   = double(CAP{r});
-         poxSignal   = double(POX{r});
+         ecgSignal   = double(ECG{i_block});
+         capSignal   = double(CAP{i_block});
+         poxSignal   = double(POX{i_block});
 
      else
-         OUT = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(r).name]); % get ecg only
+         OUT = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(i_block).name]); 
          ecgSignal   = OUT.ECG1;
          capSignal   = OUT.CAP1;
          poxSignal   = OUT.POX1;
 
          Fs          = OUT.Fs;
      end
+ 
+      % respiration
+        [ out_respiration(i_block), Tab_outlier(i_block) ]= bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,1,sprintf('block%02d',i_block));
+
      
-     %ECG
-     out(r) = bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r));
-     print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
-     if ~par.keepRunFigs
-         close(out(r).hf);
-     end
-    % respiration
-        out(r) = bsa_respiration_analyze_one_run(capSignal,Fs,1,sprintf('block%02d',r));
+   %ECG
+    [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',i_block));
+    print(out(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],i_block),'-dpng','-r0');
+    if ~par.keepRunFigs
+        close(out(i_block).hf);
+    end
+    
+   
 
 end
 

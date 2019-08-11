@@ -37,10 +37,10 @@ function out = bsa_ecg_analyze_one_session(session_path,pathExcel,settings_filen
 
 warning off;
 
-% make settings work from any computer (settings_path relative to location of bsa toolbox) 
+% make settings work from any computer (settings_path relative to location of bsa toolbox)
 mfullpath = mfilename('fullpath');
 mpathname = fileparts(mfullpath);
-settings_path = [mpathname filesep 'settings' filesep settings_filename]; 
+settings_path = [mpathname filesep 'settings' filesep settings_filename];
 run(settings_path);
 
 
@@ -86,49 +86,46 @@ ses = par.sessionInfo;
 if ~isempty(pathExcel)
     table = readtable(pathExcel);
     if  sum(table.date == str2num(session_name)) > 0
-ses.monkey          =   table.monkey(table.date == str2num(session_name))';
-ses.date            =   table.date(table.date == str2num(session_name))';
-ses.experiment      =   table.experiment(table.date == str2num(session_name))';
-
-ses.injection       =   table.injection(table.date == str2num(session_name))';
-ses.brain_area      =   table.brain_area(table.date == str2num(session_name))';
-ses.hemisphere      =   table.hemisphere(table.date == str2num(session_name))';
-ses.x_grid          =   table.x_grid(table.date == str2num(session_name))';
-ses.y_grid          =   table.y_grid(table.date == str2num(session_name))';
-ses.concentration_mg_ml          =   table.concentration_mg_ml(table.date == str2num(session_name))';
-ses.volume_ul       =   table.volume_ul(table.date == str2num(session_name))';
-ses.substance       =   table.substance(table.date == str2num(session_name))';
-ses.depthfromTheTopOfTheGrid      =   table.depthfromTheTopOfTheGrid_mm(table.date == str2num(session_name))';
-ses.injection_method              =   table.injection_method(table.date == str2num(session_name))';
-ses.ePhys           =   table.ePhys(table.date == str2num(session_name))';
-
-ses.run             =   table.run(table.date == str2num(session_name))';
-ses.block           =   table.block(table.date == str2num(session_name))';
-ses.tasktype_str    =   table.task(table.date == str2num(session_name))';
-ses.tasktype        =   table.tasktype(table.date == str2num(session_name))';
-
-ses.injection(ses.block == 0) = num2cell(nan(1,sum(ses.block == 0)));
-ses.first_inj_block =  min(ses.block(strcmp(ses.injection , 'Post'))) ;
+        ses.monkey          =   table.monkey(table.date == str2num(session_name))';
+        ses.date            =   table.date(table.date == str2num(session_name))';
+        ses.experiment      =   table.experiment(table.date == str2num(session_name))';
+        
+        ses.injection       =   table.injection(table.date == str2num(session_name))';
+        ses.brain_area      =   table.brain_area(table.date == str2num(session_name))';
+        ses.hemisphere      =   table.hemisphere(table.date == str2num(session_name))';
+        ses.x_grid          =   table.x_grid(table.date == str2num(session_name))';
+        ses.y_grid          =   table.y_grid(table.date == str2num(session_name))';
+        ses.concentration_mg_ml          =   table.concentration_mg_ml(table.date == str2num(session_name))';
+        ses.volume_ul       =   table.volume_ul(table.date == str2num(session_name))';
+        ses.substance       =   table.substance(table.date == str2num(session_name))';
+        ses.depthfromTheTopOfTheGrid      =   table.depthfromTheTopOfTheGrid_mm(table.date == str2num(session_name))';
+        ses.injection_method              =   table.injection_method(table.date == str2num(session_name))';
+        ses.ePhys           =   table.ePhys(table.date == str2num(session_name))';
+        
+        ses.run             =   table.run(table.date == str2num(session_name))';
+        ses.block           =   table.block(table.date == str2num(session_name))';
+        ses.tasktype_str    =   table.task(table.date == str2num(session_name))';
+        ses.tasktype        =   table.tasktype(table.date == str2num(session_name))';
+        
+        ses.injection(ses.block == 0) = num2cell(nan(1,sum(ses.block == 0)));
+        ses.first_inj_block =  min(ses.block(strcmp(ses.injection , 'Post'))) ;
     else
         disp([pathExcel ,'   Excel-File does not include this date  ' , num2str(session_name)])
     end
 end
 
+%%
 if strcmp(par.dataOrigin, 'TDT'),
     load([session_path filesep 'bodysignals_wo_behavior.mat']);
     Fs        = dat.ECG_SR;
     ECG       = dat.ECG;
     n_blocks  = length(dat.ECG);
-    if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
-    ses.type  =  ses.type(~ses.block == 0);
-    end
 else
     combined_matfiles=dir([session_path filesep '*.mat']);
-    n_blocks = length(combined_matfiles);    
+    n_blocks = length(combined_matfiles);
 end
 
-%Is there a difference between excel-sheet information & saved data-files?
-%
+%% Is there a difference between excel-sheet information & saved data-files?
 disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
 if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
     disp(['Found ' num2str(sum(~ses.block == 0)) ' blocks in the excel sheet']);
@@ -141,8 +138,9 @@ end
 %%
 for i_block = 1:n_blocks, % for each run/block
     
+    % get the information about the task or rest
     if ~strcmp(par.dataOrigin, 'TDT'),
-      load([session_path filesep combined_matfiles(i_block).name])
+        load([session_path filesep combined_matfiles(i_block).name])
         if task.type == Set.task.Type && numel(trial) > Set.task.mintrials % exclude short runs and calibration
             ses.type(i_block)   =    1; % task
         elseif task.type == Set.rest.Type && all(trial(1).task.reward.time_neutral == Set.rest.reward) ;
@@ -150,9 +148,26 @@ for i_block = 1:n_blocks, % for each run/block
         else
             ses.type(i_block)   =    -2;
         end
+        
+        % check if the information contained in the behavior-file is the same as in the Excel-sheet input
+        if  ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0 &&  ~(ses.type(i_block) == -2)
+            if ses.type(i_block) == ses.tasktype(ses.block == i_block)
+            else
+                error(['Condition does not match!! Excel-sheet colum tasktype is not identical with the information from behavior file in Block' num2str(i_block)])
+            end
+        end
+        
+    else
+        if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
+            ses.type  =  table.tasktype(table.date == str2num(session_name))';
+            ses.type  =  ses.type(~ses.block == 0);
+        end
     end
     
-    % first check if to skip the block
+    
+   
+    
+    %% first check if to skip the block
     if ~isempty(ses),
         if ses.type(i_block) == -2 || isnan(ses.type(i_block)) ,
             disp(sprintf('Skipping block %d',i_block));
@@ -169,7 +184,7 @@ for i_block = 1:n_blocks, % for each run/block
         ecgSignal   = ecg.ECG1;
         Fs          = ecg.Fs;
     end
-   [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',i_block));
+    [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',i_block));
     print(out(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],i_block),'-dpng','-r0');
     if ~par.keepRunFigs
         close(out(i_block).hf);
