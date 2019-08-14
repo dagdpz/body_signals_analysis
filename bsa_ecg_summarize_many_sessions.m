@@ -1,4 +1,4 @@
-function bsa_ecg_summarize_many_sessions(path_SaveFig, sessions, inactivation_sessions, targetBrainArea, Path_addtoDropbox)
+function bsa_ecg_summarize_many_sessions(path_SaveFig, sessions, inactivation_sessions, targetBrainArea, Path_addtoDropbox, monkey)
 %bsa_ecg_summarize_many_sessions  - summarize ECG analysis across several sessions
 %
 % USAGE:
@@ -167,7 +167,7 @@ else
         TableInac.DependentVariable  = Experiment;
         
         Experiment(:) = {'Control'};
-            S_Blocks2(s).Experiment = {'Control'};
+        S_Blocks2(s).Experiment = {'Control'};
 
         TableInac.Experiment         = Experiment;
         Experiment(:) = {session_name};
@@ -186,9 +186,15 @@ end
 %
 S_Blocks = [];Blocks =[];
 Blocks = sort([task_idx' , rest_idx']);
-for indBlock =  1:   length(Blocks) %indBlock =  Blocks
+indBlock = 1;
+for iBlock =  1:   length(Blocks) %indBlock =  Blocks
 
-    NrBlock = Blocks(indBlock); 
+    %check if structure is empty & adapt a different adding mechanism
+  %  isempty() 
+    NrBlock = Blocks(iBlock);
+    
+   if  isempty(out(NrBlock).std_R2R_valid_bpm)
+   else
     S_Blocks.Block(indBlock).Block = NrBlock;
     S_Blocks.Block(indBlock).NrBlock = indBlock;
 
@@ -243,9 +249,10 @@ for indBlock =  1:   length(Blocks) %indBlock =  Blocks
     end
     S_Blocks.Block(indBlock).Date               = session_name;
    
-  
-    
-    
+             indBlock = indBlock +1;
+
+   end %if to detect empty-Blocks
+
 end
 
 if ismember(session_name,inactivation_sessions)
@@ -343,25 +350,26 @@ MeanForBlock_Task_Control.Experiment = repmat(TableBlocks_Control.Experiment(1),
 MeanForBlock_Task_Injection.Experiment = repmat(TableBlocks_Injection.Experiment(1), size(MeanForBlock_Task_Injection,1),1);
 
 %% save Data-Structures to plot
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSession_' , targetBrainArea ],'Table');
-writetable(Table, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSession_', targetBrainArea], 'Delimiter', ' ')
+ mkdir(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions'])
+save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey ,'_Table_HeartrateVaribility_PerSession_' , targetBrainArea ],'Table');
+writetable(Table, ['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\', monkey, '_Table_HeartrateVaribility_PerSession_', targetBrainArea], 'Delimiter', ' ')
 
-writetable(TableBlocks, ['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSessionPerBlock_', targetBrainArea], 'Delimiter', ' ')
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_HeartrateVaribility_PerSessionPerBlocks_' , targetBrainArea],'TableBlocks');
+writetable(TableBlocks, ['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\' monkey,'_Table_HeartrateVaribility_PerSessionPerBlock_', targetBrainArea], 'Delimiter', ' ')
+save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\', monkey, '_Table_HeartrateVaribility_PerSessionPerBlocks_' , targetBrainArea],'TableBlocks');
 
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Control_', targetBrainArea ],'MeanForBlock_Task_Control');
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Table_MeanForBlock_Task_Injection_' , targetBrainArea],'MeanForBlock_Task_Injection');
+save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey '_Table_MeanForBlock_Task_Control_', targetBrainArea ],'MeanForBlock_Task_Control');
+save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey ,'_Table_MeanForBlock_Task_Injection_' , targetBrainArea],'MeanForBlock_Task_Injection');
 
 
 
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Control_' , targetBrainArea],'S_con');
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSession_Inactivation_' , targetBrainArea],'S_ina');
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Control_', targetBrainArea ],'S_Blocks_con');
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation_' , targetBrainArea],'S_Blocks_ina');
-save(['Y:\Projects\PhysiologicalRecording\Data\Cornelius\', 'Structure_HeartrateVaribility_PerSessionPerBlock_', targetBrainArea ],'S_Blocks2');
+save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey, '_Structure_HeartrateVaribility_PerSession_Control_' , targetBrainArea],'S_con');
+save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey, '_Structure_HeartrateVaribility_PerSession_Inactivation_' , targetBrainArea],'S_ina');
+save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey, '_Structure_HeartrateVaribility_PerSessionPerBlock_Control_', targetBrainArea ],'S_Blocks_con');
+save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey, '_Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation_' , targetBrainArea],'S_Blocks_ina');
+save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey, '_Structure_HeartrateVaribility_PerSessionPerBlock_', targetBrainArea ],'S_Blocks2');
 
-save([Path_addtoDropbox filesep 'Table_HeartrateVaribility_PerSession_' , targetBrainArea ],'Table');
-writetable(Table, [Path_addtoDropbox filesep 'Table_HeartrateVaribility_PerSession_' , targetBrainArea ], 'Delimiter', ' ')
+save([Path_addtoDropbox ,filesep, monkey, filesep ,monkey, '_Table_HeartrateVaribility_PerSession_' , targetBrainArea ],'Table');
+writetable(Table, [Path_addtoDropbox ,filesep, monkey, filesep,monkey, '_Table_HeartrateVaribility_PerSession_' , targetBrainArea ], 'Delimiter', ' ')
 
 
 

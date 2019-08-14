@@ -128,15 +128,15 @@ end
 %% Is there a difference between excel-sheet information & saved data-files?
 disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
 if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
-    disp(['Found ' num2str(sum(~or(ses.block == 0 ,ses.tasktype == -2))) ' blocks in the excel sheet']);
-    
-    if  ~(sum(~or(ses.block == 0 ,ses.tasktype == -2))  ==  n_blocks)
+    BlockExcel = sum(~ses.block == 0 ); 
+    disp(['Found ' num2str(BlockExcel ) ' blocks in the excel sheet']);
+    if  ~(BlockExcel  ==  n_blocks) %~(sum(~or(ses.block == 0 ,ses.tasktype == -2))  ==  n_blocks)
         error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
     end
 end
 
 %%
-for i_block = 15:n_blocks, % for each run/block
+for i_block = 1 :n_blocks, % for each run/block
     
     % get the information about the task or rest
     if ~strcmp(par.dataOrigin, 'TDT'),
@@ -144,19 +144,27 @@ for i_block = 15:n_blocks, % for each run/block
         if task.type == Set.task.Type && numel(trial) > Set.task.mintrials % exclude short runs and calibration
             ses.type(i_block)   =    1; % task
         elseif task.type == Set.rest.Type && all(trial(1).task.reward.time_neutral == Set.rest.reward) ;
-            ses.type(i_block)   =    0; % rest
+            ses.type(i_block)   =    0; % rest  
         else
             ses.type(i_block)   =    -2;
         end
         
+     NrBlock = combined_matfiles(i_block).name(end-5: end-4);
+     NrBlock = str2num(NrBlock);
         % check if the information contained in the behavior-file is the same as in the Excel-sheet input
-        if  ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0 &&  ~(ses.type(i_block) == -2)
-            if ses.type(i_block) == ses.tasktype(ses.block == i_block)
-            elseif  ses.tasktype(ses.block == i_block) == -2
-                disp(['Block ' num2str(i_block) ' is excluded because of a -2 in the Excel-sheet'])
-                ses.type(i_block) = -2; 
+        if  ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0 %&&  ~(ses.type(i_block) == -2)
+            
+            if ses.type(i_block) == ses.tasktype(ses.block == NrBlock)
+                
+            elseif  ses.tasktype(ses.block == NrBlock) == -2
+                disp(['Block ' num2str(NrBlock) ' is excluded because of a -2 in the Excel-sheet'])
+                ses.type(i_block) = -2;   
+            elseif ses.type(i_block) == -2  && task.type ~= Set.task.Type &&  ses.tasktype(ses.block == i_block) ~= -2 && numel(trial) > Set.task.mintrials
+                disp(['Condition does not match!! Excel-sheet colum tasktype ' num2str(ses.tasktype(ses.block == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(i_block)])
+                ses.type(i_block) =  ses.tasktype(ses.block == i_block);
+                disp('overwrote the information from behavior file with excel-sheet')
             else
-                error(['Condition does not match!! Excel-sheet colum tasktype is not identical with the information from behavior file in Block' num2str(i_block)])
+                disp(['Condition does not match!! Excel-sheet colum tasktype' num2str(ses.tasktype(ses.block == NrBlock)  ) 'is not identical with the information from behavior file'  num2str(ses.type(i_block) ) 'in Block' num2str(i_block)])
             end
         end
         
