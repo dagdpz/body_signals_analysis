@@ -224,7 +224,9 @@ idx_valid_R2R         = find((R2R> Set.minFactor_R2RMode*mode_R2R | R2R <  Set.m
 idx_Invalid_R2R       = find((R2R< Set.minFactor_R2RMode*mode_R2R | R2R >  Set.maxFactor_R2RMode *mode_R2R));
 
 detectedOutliers_mode = (length(idx_Invalid_R2R)/length(R2R))*100; 
+if Set.OutlierModus == 1; 
 disp(['Fraction of R2R outliers detected using deviations from R2R mode: ', num2str(detectedOutliers_mode) ])
+end
 Tab_outlier.outlier_Mode_abs = length(idx_Invalid_R2R);
 Tab_outlier.outlier_Mode_pct = round((length(idx_Invalid_R2R)/length(R2R))*100 ,4); 
 
@@ -257,7 +259,10 @@ if sum(idx_outliers_hampel), % there are outliers
     
 end
 detectedOutlier2                = 100-((length(idx_valid_R2R)/length(R2R))*100); 
+
+if Set.OutlierModus == 1; 
 disp(['Fraction of R2R outliers detected using deviations from R2R mode and Hampel: ', num2str(detectedOutlier2) ])
+end
 
 Tab_outlier.outliers_delete_abs = length(idx_to_delete);
 
@@ -274,8 +279,11 @@ Tab_outlier.NrRpeaks_valid    = length(R_valid_locs);
 Tab_outlier.NrR2R_valid       = length(R2R_valid); 
 Tab_outlier.outliers_all_abs    = Tab_outlier.outliers_delete_abs  +   Tab_outlier.outlier_Mode_abs    + Tab_outlier.outlier;
 Tab_outlier.outliers_all_pct    = (Tab_outlier.outliers_all_abs/Tab_outlier.NrRpeaks_orig)*100;
+if Set.OutlierModus == 1; 
 disp(['Nr of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outliers_all_abs) ])
 disp(['Fraction of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outliers_all_pct) ])
+end
+
 
 %%  CALCULATE VARIABLES
 median_R2R_valid        = median(R2R_valid);
@@ -330,7 +338,9 @@ end
 %% How "much time of the run" was deleted related to the detection of outlier?
 Tab_outlier.durationRun_s       = max(t);
 Tab_outlier.duration_NotValidSegments_s   = max(t)-sum(R2R(idx_valid_R2R));
-%display(Tab_outlier)
+if Set.OutlierModus == 1; 
+display(Tab_outlier)
+end
 
 
 if length(R2R_valid) < 100,

@@ -99,53 +99,53 @@ if 0 % Debug
 end
 
 
+% 
+% waveName = {'morl', []};
+% % we ignore components outside of the doubled range of interest
+% minFreq = Set.cap.wv_rangeOfInterest(1);
+% maxFreq = Set.cap.wv_rangeOfInterest(2);
+% sca = wavelet_init_scales(minFreq/2, 2*maxFreq, Set.wv_scalesPerDecade);
+% 
+% if ~Set.segment_length || t(end) < Set.segment_length, % process entire block at once - can be very slow for large blocks
+%     sig = struct('val',ecgFiltered, 'period', 1/Fs);
+%        
+%     energyProfile_tc = get_energy_profile(sig,waveName,sca);
+%     n_segments = 0;
+%     
+% else % chop to segments
+%     n_segment = round2(Set.segment_length*Fs,2); % round to even
+%     n_overlap = round2(Set.segment_overlap*Fs,2);
+%     % energyProfile_tc = zeros(1,n_samples);
+%     
+%     seg_ind = buffer(1:n_samples,n_segment,n_overlap,'nodelay');
+%     n_segments = size(seg_ind,2);
+%     disp(sprintf('chopping to %d segments of %.1f s with %.1f s overlap',n_segments,Set.segment_length,Set.segment_overlap));
+%     for s = 1:n_segments, % for each segment
+%         ind = seg_ind(:,s);
+%         ind = ind(ind>0); % only important for the last segment
+%         sig = struct('val',ecgFiltered(ind), 'period', 1/Fs);
+%         energyProfile_tc_segm = get_energy_profile(sig,waveName,sca);
+%         if s == 1, % first segment
+%             energyProfile_tc = energyProfile_tc_segm(1:end - n_overlap/2);
+%         elseif s<n_segments,
+%             energyProfile_tc = [energyProfile_tc energyProfile_tc_segm(n_overlap/2+1:end - n_overlap/2)];
+%         else % last segment
+%             energyProfile_tc = [energyProfile_tc energyProfile_tc_segm(n_overlap/2+1:end)];
+%         end
+%         
+% 
+%         
+%     end
+% end
+%     
 
-waveName = {'morl', []};
-% we ignore components outside of the doubled range of interest
-minFreq = Set.cap.wv_rangeOfInterest(1);
-maxFreq = Set.cap.wv_rangeOfInterest(2);
-sca = wavelet_init_scales(minFreq/2, 2*maxFreq, Set.wv_scalesPerDecade);
 
-if ~Set.segment_length || t(end) < Set.segment_length, % process entire block at once - can be very slow for large blocks
-    sig = struct('val',ecgFiltered, 'period', 1/Fs);
-       
-    energyProfile_tc = get_energy_profile(sig,waveName,sca);
-    n_segments = 0;
-    
-else % chop to segments
-    n_segment = round2(Set.segment_length*Fs,2); % round to even
-    n_overlap = round2(Set.segment_overlap*Fs,2);
-    % energyProfile_tc = zeros(1,n_samples);
-    
-    seg_ind = buffer(1:n_samples,n_segment,n_overlap,'nodelay');
-    n_segments = size(seg_ind,2);
-    disp(sprintf('chopping to %d segments of %.1f s with %.1f s overlap',n_segments,Set.segment_length,Set.segment_overlap));
-    for s = 1:n_segments, % for each segment
-        ind = seg_ind(:,s);
-        ind = ind(ind>0); % only important for the last segment
-        sig = struct('val',ecgFiltered(ind), 'period', 1/Fs);
-        energyProfile_tc_segm = get_energy_profile(sig,waveName,sca);
-        if s == 1, % first segment
-            energyProfile_tc = energyProfile_tc_segm(1:end - n_overlap/2);
-        elseif s<n_segments,
-            energyProfile_tc = [energyProfile_tc energyProfile_tc_segm(n_overlap/2+1:end - n_overlap/2)];
-        else % last segment
-            energyProfile_tc = [energyProfile_tc energyProfile_tc_segm(n_overlap/2+1:end)];
-        end
-        
-
-        
-    end
-end
-    
-
-
-Set.cap.min_P2P                         = 0.9; % s
+Set.cap.min_P2P                         = 1.5; % s
 Set.cap.eP_tc_minpeakheight_med_prop    = 0.3; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
 Set.cap.MAD_sensitivity_p2p_diff        = 3; % sensitivity factor for threshold caluclation -  larger value -> less sensitive (i.e. less outliers)
 
-range_energyProfile_tc = max(energyProfile_tc) - min(energyProfile_tc);
-[pks,locs]=findpeaks(energyProfile_tc,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(energyProfile_tc));
+range_energyProfile_tc = max(ecgFiltered) - min(ecgFiltered);
+[pks,locs]=findpeaks(ecgFiltered,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(ecgFiltered));
 Tab_outlier.NrRpeaks_orig    = length(pks); 
 
 
@@ -363,9 +363,7 @@ if TOPLOT
     plot([t(R2R_valid_locs(idx_valid_R2R_consec)) - R2R_valid(idx_valid_R2R_consec); t(R2R_valid_locs(idx_valid_R2R_consec))], ...
          [ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec)); ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec))],'k');
  
-    if n_segments, % mark segment borders
-        ig_add_multiple_vertical_lines(t(seg_ind(1,2:end)),'Color',[0.9294    0.6941    0.1255]);
-    end
+ 
      
     set(gca,'Xlim',[0 max(t)]);
     xlabel('Time (s)');
@@ -376,18 +374,6 @@ if TOPLOT
     legend({'ecgSignal','ecgFiltered','allPeaks','posPeaks','valid Rpeaks','valid P2Pinterval','outlier.diff Peaks'},'location','Best');
     end
  
-    
-    ha2 = subplot(4,4,[5:8]);
-    plot(t,energyProfile_tc,'g'); hold on
-    set(gca,'Xlim',[0 max(t)]);
-    plot(t(locs),pks,'k.','MarkerSize',6);
-    plot(t(locs(idx_outliers)),pks(idx_outliers),'bx');
-    plot([t(1) t(end)],[Set.eP_tc_minpeakheight_med_prop*median(energyProfile_tc) Set.eP_tc_minpeakheight_med_prop*median(energyProfile_tc)],'k:');
-    if isempty(idx_outliers)
-        legend({'energyProfile_tc','peaks','outlier.diff Peaks'},'location','Best');
-    else
-        legend({'energyProfile_tc','peaks'},'location','Best');
-    end
     
     ha3 = subplot(4,4,[9:12]);
     plot(t(R2R_valid_locs),R2R_valid,'m.'); hold on

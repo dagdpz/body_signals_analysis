@@ -8,6 +8,8 @@ Set.task.mintrials2 = 10; % task which are different from the main task
 Set.rest.Type       = 1; 
 Set.rest.reward     = [0 0]; 
 
+Set.OutlierModus = 0; 
+
 
 Set.segment_length                  = 300; % s (Set to 0 if no segmentation) -- segment length prior to wavelet transform
 Set.segment_overlap                 = 50;  % s

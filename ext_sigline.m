@@ -56,11 +56,11 @@ xs=[xs(1);xs(2)];
 plot(xs,[1;1]*y*1.1,'-k', 'LineWidth',2);%line
 %plot(mean(xs), y*1.15, '*k')% the sig star sign
 if lbl
-    text(mean(xs), y*1.14, lbl,'FontSize',18, 'FontWeight','bold')% the sig star sign
+    text(mean(xs), y*1.12, lbl,'FontSize',18, 'FontWeight','bold')% the sig star sign y*1.14
 end
 %, 'HorizontalAlignment','left', 'VerticalAlignment','middle'
-plot([1;1]*xs(1),[y*1.05,y*1.1],'-k', 'LineWidth',2);%left edge drop
-plot([1;1]*xs(2),[y*1.05,y*1.1],'-k', 'LineWidth',2);%right edge drop
+% plot([1;1]*xs(1),[y*1.05,y*1.1],'-k', 'LineWidth',2);%left edge drop
+% plot([1;1]*xs(2),[y*1.05,y*1.1],'-k', 'LineWidth',2);%right edge drop
 hold off
 %--------------------------------------------------------------------------
 % Helper function that Returns the largest single value of ydata in a given

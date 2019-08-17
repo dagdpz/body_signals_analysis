@@ -43,14 +43,17 @@ for s = 1:length(sessions),
 	load([session_path filesep session_name '_ecg.mat']);
 
     % remove -2: skipped sessions
-    ses.type = ses.type(ses.type ~= -2)';
+   % ses.type = ses.type(ses.type ~= -2)';
 %         if isempty(out(indBlock).mean_R2R_valid_bpm)|| isnan(out(indBlock).mean_R2R_valid_bpm)
 %         out(13) = [];
 %          disp(sprintf('removed the skipped block %d',num2str()));
 %     end
+if sum(isnan([out.mean_R2R_valid_bpm])) > 0
+    error('one Block has nan-value')
+end
     rest_idx = [];   task_idx = []; 
-	rest_idx = find(ses.type == 0  & ~isnan([out.mean_R2R_valid_bpm]'));
-    task_idx = find(ses.type == 1 & ~isnan([out.mean_R2R_valid_bpm]'));
+	rest_idx = find(ses.type == 0  ); %& ~isnan([out.mean_R2R_valid_bpm]')
+    task_idx = find(ses.type == 1 ); %& ~isnan([out.mean_R2R_valid_bpm]')
 	pre_rest_idx = 	rest_idx(rest_idx < ses.first_inj_block);
 	pre_task_idx = 	task_idx(task_idx < ses.first_inj_block);
 	pst_rest_idx = 	rest_idx(rest_idx >= ses.first_inj_block);
@@ -185,7 +188,7 @@ end
 % How many Blocks in this session?
 %
 S_Blocks = [];Blocks =[];
-Blocks = sort([task_idx' , rest_idx']);
+Blocks = sort([task_idx , rest_idx]);
 indBlock = 1;
 for iBlock =  1:   length(Blocks) %indBlock =  Blocks
 
@@ -350,7 +353,9 @@ MeanForBlock_Task_Control.Experiment = repmat(TableBlocks_Control.Experiment(1),
 MeanForBlock_Task_Injection.Experiment = repmat(TableBlocks_Injection.Experiment(1), size(MeanForBlock_Task_Injection,1),1);
 
 %% save Data-Structures to plot
+if ~exist(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions'])
  mkdir(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions'])
+end
 save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey ,'_Table_HeartrateVaribility_PerSession_' , targetBrainArea ],'Table');
 writetable(Table, ['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\', monkey, '_Table_HeartrateVaribility_PerSession_', targetBrainArea], 'Delimiter', ' ')
 
