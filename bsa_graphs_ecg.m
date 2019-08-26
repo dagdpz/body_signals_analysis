@@ -46,9 +46,74 @@ Tabl_MultComp = struct2table(tabl_MultCom_pValues_Data);
 DVs =   unique(Tabl_MultComp.Variable);
 
 NoBlocks = 1;
+HR_HRV = 1;
+%% HR & HRV in Sessions
+ind_DV = 3;
+[S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]
+ind_DV = 5;
+ [S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]
+
+    con_b_col = [0.4667    0.6745    0.1882];
+con_d_col = [0.0706    0.2118    0.1412];
+ina_b_col = [0          0.7   0.9];
+ina_d_col = [0          0    0.9];
+
+plot(  1, nanmean([S_con.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
+plot(  2, nanmean([S_con.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col);
+plot(  3, nanmean([S_con.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col);
+plot(  4, nanmean([S_con.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col) ;     
+    
+    
 
 for ind_DV = 1: length(DVs)
     Stat = [];
+    
+     if HR_HRV
+        figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
+        set(gcf,'Name',DVs{ind_DV}); hold on;
+        count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
+        for I_Ses = 1: length(S_Blocks2)
+            [count_con, count_ina, count_c, count_i] = plot_oneVar_Block_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, [S_Blocks2(I_Ses).Block],[S_Blocks2(I_Ses).(DVs{ind_DV})],count_con, count_ina , count_c, count_i );
+            %[Graph, Ymin ,Ymax] =
+            % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
+        end
+        
+        C1 = struct2cell([S_Blocks2(I_Ses).(DVs{ind_DV})]);
+        Ymin = min([C1{:}]);
+        Ymax = max([C1{:}]);
+        
+        line([3.5 3.5],[Ymin Ymax],'Color',[0 0 0],'HandleVisibility','off')
+        %text(3.5,Ymax -10,'Inactivation','fontsize',15)
+        
+        MeanForBlock_Task_Control_Task            = MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pre_task'),:);
+        MeanForBlock_Task_Control_Task            = [MeanForBlock_Task_Control_Task; MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pst_task'),:)];
+        MeanForBlock_Task_Injection_Task          = MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pre_task'),:);
+        Table_MeanForBlock_Task_Injection_Task    = [MeanForBlock_Task_Injection_Task; MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pst_task'),:)];
+        
+        % eine Funktion die zuerst Control plotted se
+        VarName = [ 'mean_', DVs{ind_DV}] ;
+        plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)]);
+        plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)]);
+        
+        
+        Name_DV = strsplit(char(DVs{ind_DV}), '_');
+        title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
+        ylabel(char(DVs{ind_DV}),'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
+        xlabel('Blocks','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
+        
+        
+        
+        h = [];
+        h(1) = figure(1);
+        print(h,[path_SaveFig filesep targetBrainArea '_', monkey,  DVs{ind_DV} '_Blocks_' ], '-dpng')
+        set(h,'Renderer','Painters');
+        set(h,'PaperPositionMode','auto')
+        compl_filename =  [path_SaveFig filesep targetBrainArea '_', monkey,  DVs{ind_DV} '_Blocks.ai'] ;
+        print(h,'-depsc',compl_filename);
+        close all;
+    end
+  
+    
     
     %% Blocks
     if NoBlocks
@@ -98,6 +163,7 @@ for ind_DV = 1: length(DVs)
     
     
     %% Session - task
+    Stat = []; 
     figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
     set(gcf,'Name',DVs{ind_DV});
     [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]);
@@ -116,22 +182,36 @@ for ind_DV = 1: length(DVs)
     if strcmp(DVs{ind_DV} , 'mean_R2R_bpm')
         yaxis = 'heart rate (bpm)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
-        max_yValue = Ymax +40;
+        max_yValue = Ymax+40;
         min_yValue = Ymin -10;
         Y_C(1) = max_yValue -40;
         Y_C(2) = max_yValue -45;
         Y_C(3) = max_yValue -50;
         Y_C(4) = max_yValue -50;
+   elseif    strcmp(DVs{ind_DV} , 'rmssd_R2R_ms')
+        yaxis = 'RMSSD of R2R (ms)';
+        ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
+        Y_C(1) = max_yValue *0.56;
+        Y_C(2) = max_yValue *0.53;
+        Y_C(3) = max_yValue *0.5;
+        Y_C(4) = max_yValue *0.5;
+      elseif    strcmp(DVs{ind_DV} , 'std_R2R_bpm')
+        yaxis = 'std of R2R (bpm)';
+        ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
+        Y_C(1) = max_yValue *0.56;
+        Y_C(2) = max_yValue *0.53;
+        Y_C(3) = max_yValue *0.5;
+        Y_C(4) = max_yValue *0.5;
     elseif strcmp(DVs{ind_DV} , 'hfPower') && strcmp(monkey , 'Curius')
         Y_C(1) = max_yValue *0.56;
         Y_C(2) = max_yValue *0.53;
         Y_C(3) = max_yValue *0.5;
         Y_C(4) = max_yValue *0.5;
     end
-    
-    if Text
-        if min_yValue < 0; min_yValue = 0; end;
+     if min_yValue < 0; min_yValue = 0; end;
         set(gca,'ylim',[min_yValue max_yValue]);
+    if Text
+       
         
         text(1.5 ,max_yValue -10,'Control','fontsize',20)
         text(1 ,max_yValue -20,'rest','fontsize',15)
@@ -149,7 +229,7 @@ for ind_DV = 1: length(DVs)
         Row(3) =find(sum([strcmp(Stat.Comparison1, 'Injection,pre,task'), strcmp(Stat.Comparison2, 'Injection,pst,task')],2)== 2);
         Row(4) =find(sum([strcmp(Stat.Comparison1, 'Control,pre,task'), strcmp(Stat.Comparison2, 'Control,pst,task')],2)== 2);
         
-        % Stat(Row,:)
+         Stat(Row,:)
         Contrast(1,:) = [3,8];
         Contrast(2,:) = [4,9];
         Contrast(3,:) = [8,9];
@@ -175,7 +255,7 @@ for ind_DV = 1: length(DVs)
     [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]);
     % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
     Name_DV = strsplit(char(DVs{ind_DV}), '_');
-    title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
+   % title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
     ylabel(char(DVs{ind_DV}),'fontsize',20,'fontweight','b' , 'Interpreter', 'none');
     
     
@@ -190,22 +270,36 @@ for ind_DV = 1: length(DVs)
     if strcmp(DVs{ind_DV} , 'mean_R2R_bpm')
         yaxis = 'heart rate (bpm)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
-        max_yValue = Ymax +40;
+          max_yValue = Ymax+40;
         min_yValue = Ymin -10;
         Y_C(1) = max_yValue -40;
         Y_C(2) = max_yValue -45;
         Y_C(3) = max_yValue -50;
         Y_C(4) = max_yValue -50;
+        
+    elseif    strcmp(DVs{ind_DV} , 'rmssd_R2R_ms')
+        yaxis = 'RMSSD of R2R (ms)';
+        ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
+        Y_C(1) = max_yValue *0.56;
+        Y_C(2) = max_yValue *0.53;
+        Y_C(3) = max_yValue *0.5;
+        Y_C(4) = max_yValue *0.5;
+     elseif    strcmp(DVs{ind_DV} , 'std_R2R_bpm')
+        yaxis = 'std of R2R (bpm)';
+        ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
+        Y_C(1) = max_yValue *0.56;
+        Y_C(2) = max_yValue *0.53;
+        Y_C(3) = max_yValue *0.5;
+        Y_C(4) = max_yValue *0.5;    
     elseif strcmp(DVs{ind_DV} , 'hfPower') && strcmp(monkey , 'Curius')
         Y_C(1) = max_yValue *0.56;
         Y_C(2) = max_yValue *0.53;
         Y_C(3) = max_yValue *0.5;
         Y_C(4) = max_yValue *0.5;
     end
-    if Text
-        if min_yValue < 0; min_yValue = 0; end;
+      if min_yValue < 0; min_yValue = 0; end;
         set(gca,'ylim',[min_yValue max_yValue]);
-        
+    if Text
         text(1.5 ,max_yValue -10,'Control','fontsize',20)
         text(1 ,max_yValue -20,'rest','fontsize',15)
         text(3 ,max_yValue -20,'task','fontsize',15)

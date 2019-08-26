@@ -50,6 +50,7 @@ for s = 1:length(sessions),
 %     end
 if sum(isnan([out.mean_R2R_valid_bpm])) > 0
     error('one Block has nan-value')
+    %out.mean_R2R_valid_bpm{isnan([out.mean_R2R_valid_bpm])}
 end
     rest_idx = [];   task_idx = []; 
 	rest_idx = find(ses.type == 0  ); %& ~isnan([out.mean_R2R_valid_bpm]')

@@ -251,7 +251,7 @@ xlabel('blocks');
 ylabel('LF and HF power (ms^2)');
 
 
-if ~isempty(ses),
+if ~isempty(ses.first_inj_block),
     
     for ax = 1:length(ha),
         axes(ha(ax));

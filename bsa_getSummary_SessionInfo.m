@@ -13,7 +13,6 @@ if ~isempty(PreviousSavedTable) % there is a file & there is THE table
      load([session_path filesep PreviousSavedTable(2).name])
      %all Dates from the      SessionName.name nare also included in the
      %file
-
     idx=find(ismember(Table_SessionInfo.date ,    {SessionName.name}));
     if length(Table_SessionInfo.date)~= length( {SessionName.name})
         Table_AllAnalyzedSessions = 0; 
@@ -37,7 +36,7 @@ if  isempty(PreviousSavedTable) || Table_AllAnalyzedSessions == 0;
         if  (sum(strcmp(table_session.volume_ul , table_session.volume_ul(1)) == 0 ) > 0) || ...
                 (sum(strcmp(table_session.experiment , table_session.experiment(1)) == 0 ) > 0)  || ...
                 (sum((table_session.depthfromTheTopOfTheGrid_mm == table_session.depthfromTheTopOfTheGrid_mm(1)) == 0 ) > 0)
-            disp([ 'the entries for this session id ' num2str(i_Sess) ' ' num2str(session_name(i_Sess)) ' vary between runs'])
+            disp([ 'the entries for this session id ' num2str(i_Sess) ' ' num2str(session_name(i_Sess)) ' vary between runs. Please check the excel file for inconsistent entries'])
             %Which Variable?
             %
         else
@@ -65,6 +64,8 @@ if  isempty(PreviousSavedTable) || Table_AllAnalyzedSessions == 0;
         
     end %Session
     Table_SessionInfo = struct2table(t);
+    disp(Table_SessionInfo)
+
     save([session_path filesep t(i_Sess).monkey '_Table_SessionInfos' ],'Table_SessionInfo');
     save([session_path filesep t(i_Sess).monkey '_Structure_SessionInfos' ],'t');
     
