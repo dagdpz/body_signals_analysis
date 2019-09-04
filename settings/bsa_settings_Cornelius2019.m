@@ -27,5 +27,7 @@ Set.fraction_R2R_look4peak          = 0.05; % fraction of R2R interval to look f
 Set.hampel_T                        = 4; % threshold for hamplel outlier detection
 Set.hampel_DX                       = 10; % (# R peaks) half width of hampel window for outlier detection
 
+Set.R2R_minValidData = 100; 
+
 
 

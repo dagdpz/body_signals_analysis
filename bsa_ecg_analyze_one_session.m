@@ -103,12 +103,13 @@ if ~isempty(pathExcel)
         ses.ePhys           =   table.ePhys(table.date == str2num(session_name))';
         
         ses.run             =   table.run(table.date == str2num(session_name))';
-        ses.block           =   table.block(table.date == str2num(session_name))';
+        ses.nrblock_combinedFiles =   table.block(table.date == str2num(session_name))';
         ses.tasktype_str    =   table.task(table.date == str2num(session_name))';
         ses.tasktype        =   table.tasktype(table.date == str2num(session_name))';
         
-        ses.injection(ses.block == 0) = num2cell(nan(1,sum(ses.block == 0)));
-        ses.first_inj_block =  min(ses.block(strcmp(ses.injection , 'Post'))) ;
+        % delete runs which 
+        ses.injection(ses.nrblock_combinedFiles == 0) = num2cell(nan(1,sum(ses.nrblock_combinedFiles == 0)));
+        ses.first_inj_block =  min(ses.nrblock_combinedFiles(strcmp(ses.injection , 'Post'))) ;
     else
         disp([pathExcel ,'   Excel-File does not include this date  ' , num2str(session_name)])
     end
@@ -128,16 +129,16 @@ end
 %% Is there a difference between excel-sheet information & saved data-files?
 disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
 if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
-    BlockExcel = sum(~ses.block == 0 ); 
+    BlockExcel = sum(~ses.nrblock_combinedFiles == 0 ); 
     disp(['Found ' num2str(BlockExcel ) ' blocks in the excel sheet']);
-    if  ~(BlockExcel  ==  n_blocks) %~(sum(~or(ses.block == 0 ,ses.tasktype == -2))  ==  n_blocks)
+    if  ~(BlockExcel  ==  n_blocks) %~(sum(~or(ses.nrblock_combinedFiles == 0 ,ses.tasktype == -2))  ==  n_blocks)
         error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
     end
 end
 
 %%
 for i_block = 1 :n_blocks, % for each run/block
-    
+    NrBlock = []; 
     % get the information about the task or rest
     if ~strcmp(par.dataOrigin, 'TDT'),
         load([session_path filesep combined_matfiles(i_block).name])
@@ -154,24 +155,24 @@ for i_block = 1 :n_blocks, % for each run/block
         % check if the information contained in the behavior-file is the same as in the Excel-sheet input
         if  ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0 %&&  ~(ses.type(i_block) == -2)
             
-            if ses.type(i_block) == ses.tasktype(ses.block == NrBlock)
+            if ses.type(i_block) == ses.tasktype(ses.nrblock_combinedFiles == NrBlock)
                 
-            elseif  ses.tasktype(ses.block == NrBlock) == -2
+            elseif  ses.tasktype(ses.nrblock_combinedFiles == NrBlock) == -2
                 disp(['Block ' num2str(NrBlock) ' is excluded because of a -2 in the Excel-sheet'])
                 ses.type(i_block) = -2;   
-            elseif ses.type(i_block) == -2  && task.type ~= Set.task.Type &&  ses.tasktype(ses.block == i_block) ~= -2 && numel(trial) > Set.task.mintrials
-                disp(['Condition does not match!! Excel-sheet colum tasktype ' num2str(ses.tasktype(ses.block == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(i_block)])
-                ses.type(i_block) =  ses.tasktype(ses.block == i_block);
+            elseif ses.type(i_block) == -2  && task.type ~= Set.task.Type &&  ses.tasktype(ses.nrblock_combinedFiles == i_block) ~= -2 && numel(trial) > Set.task.mintrials
+                disp(['Condition does not match!! Excel-sheet colum tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(i_block)])
+                ses.type(i_block) =  ses.tasktype(ses.nrblock_combinedFiles == i_block);
                 disp('overwrote the information from behavior file with excel-sheet')
             else
-                disp(['Condition does not match!! Excel-sheet colum tasktype' num2str(ses.tasktype(ses.block == NrBlock)  ) 'is not identical with the information from behavior file'  num2str(ses.type(i_block) ) 'in Block' num2str(i_block)])
+                disp(['Condition does not match!! Excel-sheet colum tasktype' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) 'is not identical with the information from behavior file'  num2str(ses.type(i_block) ) 'in Block' num2str(i_block)])
             end
         end
         
     else
         if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
             ses.type  =  table.tasktype(table.date == str2num(session_name))';
-            ses.type  =  ses.type(~ses.block == 0);
+            ses.type  =  ses.type(~ses.nrblock_combinedFiles == 0);
         end
     end
     
@@ -195,13 +196,13 @@ for i_block = 1 :n_blocks, % for each run/block
         ecgSignal   = ecg.ECG1;
         Fs          = ecg.Fs;
     end
-    [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',i_block));
+    [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,i_block,NrBlock);
     print(out(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],i_block),'-dpng','-r0');
     if ~par.keepRunFigs
         close(out(i_block).hf);
     end
-    
-    
+
+
 end
 
 

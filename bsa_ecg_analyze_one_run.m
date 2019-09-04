@@ -1,4 +1,4 @@
-function [out,Tab_outlier] = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,TOPLOT,FigInfo)
+function [out,Tab_outlier] = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,TOPLOT,i_block,NrBlock)
 %bsa_ecg_analyze_one_run  - analyses ECG in one run/block
 %
 % USAGE:
@@ -336,32 +336,37 @@ if length(R2R_valid_locs)>1,
 end
 
 %% How "much time of the run" was deleted related to the detection of outlier?
-Tab_outlier.durationRun_s       = max(t);
-Tab_outlier.duration_NotValidSegments_s   = max(t)-sum(R2R(idx_valid_R2R));
+Tab_outlier.durationRun_s                   = max(t);
+Tab_outlier.duration_NotValidSegments_s     = max(t)-sum(R2R(idx_valid_R2R));
+Tab_outlier.nrblock                         = i_block; 
+Tab_outlier.nrblock_combinedFiles           = NrBlock;
 if Set.OutlierModus == 1; 
 display(Tab_outlier)
 end
 
 
-if length(R2R_valid) < 100,
-    out.Rpeak_t                 = NaN;
-    out.Rpeak_sample            = NaN;
-    out.R2R_t                   = NaN;
-    out.R2R_sample              = NaN;   
-    out.R2R_valid               = NaN;
-    out.R2R_valid_bpm           = NaN;
-    out.idx_valid_R2R_consec    = NaN;
-    out.mean_R2R_valid_bpm      = NaN;
-    out.median_R2R_valid_bpm    = NaN;
-    out.std_R2R_valid_bpm       = NaN;
-    out.rmssd_R2R_valid_ms      = NaN;
-    out.rmssd_R2R_valid_bpm     = NaN;
-    out.Pxx                     = NaN;
-    out.freq                    = NaN;
-    out.vlfPower                = NaN;
-    out.lfPower                 = NaN;
-    out.hfPower                 = NaN;
-    out.totPower                = NaN;
+
+if length(R2R_valid) < Set.R2R_minValidData,
+    out.Rpeak_t                 = [];
+    out.Rpeak_sample            = [];
+    out.R2R_t                   = [];
+    out.R2R_sample              = [];   
+    out.R2R_valid               = [];
+    out.R2R_valid_bpm           = [];
+    out.idx_valid_R2R_consec    = [];
+    out.mean_R2R_valid_bpm      = [];
+    out.median_R2R_valid_bpm    = [];
+    out.std_R2R_valid_bpm       = [];
+    out.rmssd_R2R_valid_ms      = [];
+    out.rmssd_R2R_valid_bpm     = [];
+    out.Pxx                     = [];
+    out.freq                    = [];
+    out.vlfPower                = [];
+    out.lfPower                 = [];
+    out.hfPower                 = [];
+    out.totPower                = [];
+    out.nrblock                 = []; 
+    out.nrblock_combinedFiles   = [];
 else
     out.Rpeak_t                 = t(R_valid_locs);
     out.Rpeak_sample            = R_valid_locs;
@@ -381,6 +386,8 @@ else
     out.lfPower                 = lfPower;
     out.hfPower                 = hfPower;
     out.totPower                = totPower;
+    out.nrblock                   = i_block ; 
+    out.nrblock_combinedFiles     = NrBlock ; 
 end
 
 
@@ -390,7 +397,7 @@ end
 out.hf = [];
 
 if TOPLOT
-    hf = figure('Name',FigInfo,'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
+    hf = figure('Name',sprintf('block%02d',i_block),'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
     
     %% single HR-peak
 %     t = t*1000; 

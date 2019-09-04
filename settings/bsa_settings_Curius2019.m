@@ -7,7 +7,7 @@ Set.task2.Type     = 1;
 Set.task.mintrials2 = 10; % task which are different from the main task
 Set.rest.Type       = 1; 
 Set.rest.reward     = [0 0]; 
-
+Set.R2R_minValidData = 100; 
 Set.OutlierModus = 0; 
 
 
@@ -40,3 +40,4 @@ Set.cap.fraction_R2R_look4peak          = 0.1; % fraction of R2R interval to loo
 Set.cap.hampel_T                        = 15 ; % threshold for hamplel outlier detection (larger means more permissive, less outliers)
 Set.cap.hampel_DX                       = 10; % (# R peaks) half width of hampel window for outlier detection
 
+Set.R2R_minValidData = 100; 

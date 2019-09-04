@@ -48,73 +48,62 @@ DVs =   unique(Tabl_MultComp.Variable);
 NoBlocks = 1;
 HR_HRV = 1;
 %% HR & HRV in Sessions
-ind_DV = 3;
-[S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]
-ind_DV = 5;
- [S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]
+% ind_DV = 3;
+% [S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]
+% ind_DV = 5;
+%  [S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]
+% 
+%     con_b_col = [0.4667    0.6745    0.1882];
+% con_d_col = [0.0706    0.2118    0.1412];
+% ina_b_col = [0          0.7   0.9];
+% ina_d_col = [0          0    0.9];
+% 
+% plot(  1, nanmean([S_con.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
+% plot(  2, nanmean([S_con.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col);
+% plot(  3, nanmean([S_con.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col);
+% plot(  4, nanmean([S_con.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col) ;     
+%     
+% get the Variable names of all HRV measurements    
+HRV_DVs{2} = DVs{find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm')], 2) == 0)} ;
+ix = find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm')], 2) == 0);
+for ind = 1: length(ix)
+HRV_DVs{ind} = DVs{ix(ind)} ; 
+end
 
-    con_b_col = [0.4667    0.6745    0.1882];
-con_d_col = [0.0706    0.2118    0.1412];
-ina_b_col = [0          0.7   0.9];
-ina_d_col = [0          0    0.9];
-
-plot(  1, nanmean([S_con.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
-plot(  2, nanmean([S_con.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col);
-plot(  3, nanmean([S_con.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col);
-plot(  4, nanmean([S_con.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col) ;     
-    
-    
-
-for ind_DV = 1: length(DVs)
-    Stat = [];
+DeleteOutlier = 0; 
+for ind_DV = 1: length(HRV_DVs)
     
      if HR_HRV
         figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
-        set(gcf,'Name',DVs{ind_DV}); hold on;
+        set(gcf,'Name',HRV_DVs{ind_DV}); hold on;
         count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
         for I_Ses = 1: length(S_Blocks2)
-            [count_con, count_ina, count_c, count_i] = plot_oneVar_Block_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, [S_Blocks2(I_Ses).Block],[S_Blocks2(I_Ses).(DVs{ind_DV})],count_con, count_ina , count_c, count_i );
+            [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier);
             %[Graph, Ymin ,Ymax] =
             % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
         end
         
-        C1 = struct2cell([S_Blocks2(I_Ses).(DVs{ind_DV})]);
-        Ymin = min([C1{:}]);
-        Ymax = max([C1{:}]);
-        
-        line([3.5 3.5],[Ymin Ymax],'Color',[0 0 0],'HandleVisibility','off')
-        %text(3.5,Ymax -10,'Inactivation','fontsize',15)
-        
-        MeanForBlock_Task_Control_Task            = MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pre_task'),:);
-        MeanForBlock_Task_Control_Task            = [MeanForBlock_Task_Control_Task; MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pst_task'),:)];
-        MeanForBlock_Task_Injection_Task          = MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pre_task'),:);
-        Table_MeanForBlock_Task_Injection_Task    = [MeanForBlock_Task_Injection_Task; MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pst_task'),:)];
-        
-        % eine Funktion die zuerst Control plotted se
-        VarName = [ 'mean_', DVs{ind_DV}] ;
-        plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)]);
-        plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)]);
-        
-        
-        Name_DV = strsplit(char(DVs{ind_DV}), '_');
-        title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
-        ylabel(char(DVs{ind_DV}),'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
-        xlabel('Blocks','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
+        C1 = struct2cell([S_Blocks2(I_Ses).(HRV_DVs{ind_DV})]);
+       
+           
+        ylabel(char(HRV_DVs{ind_DV}),'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
+        xlabel('heart rate (bpm)','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         
         
         
         h = [];
         h(1) = figure(1);
-        print(h,[path_SaveFig filesep targetBrainArea '_', monkey,  DVs{ind_DV} '_Blocks_' ], '-dpng')
+        print(h,[path_SaveFig filesep 'HR_HRV' filesep targetBrainArea '_', monkey, '_',  HRV_DVs{ind_DV} '_heartrate' ], '-dpng')
         set(h,'Renderer','Painters');
         set(h,'PaperPositionMode','auto')
-        compl_filename =  [path_SaveFig filesep targetBrainArea '_', monkey,  DVs{ind_DV} '_Blocks.ai'] ;
+        compl_filename =  [path_SaveFig filesep 'HR_HRV' filesep targetBrainArea '_', monkey,'_',   HRV_DVs{ind_DV} '_heartrate.ai'] ;
         print(h,'-depsc',compl_filename);
         close all;
-    end
+     end
+end
   
-    
-    
+     Stat = [];   
+  for ind_DV = 1: length(DVs)  
     %% Blocks
     if NoBlocks
         figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
@@ -548,6 +537,59 @@ elseif  strcmp(Experiment, 'Injection')
     count_i = count_i +1;
     
 end
+
+function [count_con, count_ina, count_c, count_i] =  plot_oneVar_secondVar_pre_post_rest_task(Experiment, Block,Variable, count_con, count_ina, count_c, count_i,DeleteOutlier)
+%[Graph, Ymin ,Ymax] =
+
+count_con= [0 0 0]; count_ina = [0 0 0];
+
+
+con_b_col = abs([0.4667    0.6745    0.1882] +count_con); % light green
+con_d_col = abs([0.0706    0.2118    0.1412] +count_con);
+ina_b_col = abs([0          0.7   0.9] +count_ina);
+ina_d_col = abs([0          0    0.9] +count_ina);
+
+if DeleteOutlier
+    med = median([Variable.pre_task,Variable.pst_task,Variable.pre_rest,Variable.pst_rest]);
+    Variable.pre_task(Variable.pre_task > 4*med ) = nan; 
+    Variable.pst_task(Variable.pst_task > 4*med ) = nan; 
+    Variable.pre_rest(Variable.pre_rest > 5*med ) = nan; 
+    Variable.pst_rest(Variable.pst_rest > 5*med ) = nan; 
+
+    disp('Value above 3* std are changed to nan')
+end
+% plot(  1, nanmean([Block.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
+% plot(  2, nanmean([Block.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col);
+if  strcmp(Experiment, 'Control')
+    plot(  [Block.pre_task],[Variable.pre_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
+    plot(  [Block.pst_task],[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
+    
+   % plot(  [Block.pre_rest],[Variable.pre_rest], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
+   % plot(  [Block.pst_rest],[Variable.pst_rest], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
+
+    count_con = count_con + [0 0.15 0.15];
+    text([Block.pre_task],[Variable.pre_task],num2str(count_c),'fontsize',15)
+    text([Block.pst_task],[Variable.pst_task],num2str(count_c),'fontsize',15)
+   % text([Block.pre_rest],[Variable.pre_rest],num2str(count_c),'fontsize',15)
+   % text([Block.pst_rest],[Variable.pst_rest],num2str(count_c),'fontsize',15)
+    count_c = count_c +1;
+elseif  strcmp(Experiment, 'Injection')
+    
+    plot(  [Block.pre_task],[Variable.pre_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
+    plot(  [Block.pst_task],[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
+   % plot(  [Block.pre_rest],[Variable.pre_rest], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
+   % plot(  [Block.pst_rest],[Variable.pst_rest], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
+
+    count_ina = count_ina - [0  0.1 0.1];
+    
+    text([Block.pre_task],[Variable.pre_task],num2str(count_i),'fontsize',15)
+    text([Block.pst_task],[Variable.pst_task],num2str(count_i),'fontsize',15)
+   % text([Block.pre_rest],[Variable.pre_rest],num2str(count_c),'fontsize',15)
+   % text([Block.pst_rest],[Variable.pst_rest],num2str(count_c),'fontsize',15)
+    count_i = count_i +1;
+    
+end
+
 
 
 
