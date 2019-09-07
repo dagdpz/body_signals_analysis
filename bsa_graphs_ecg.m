@@ -48,21 +48,12 @@ DVs =   unique(Tabl_MultComp.Variable);
 NoBlocks = 1;
 HR_HRV = 1;
 %% HR & HRV in Sessions
-% ind_DV = 3;
-% [S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]
-% ind_DV = 5;
-%  [S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]
 % 
-%     con_b_col = [0.4667    0.6745    0.1882];
-% con_d_col = [0.0706    0.2118    0.1412];
-% ina_b_col = [0          0.7   0.9];
-% ina_d_col = [0          0    0.9];
-% 
-% plot(  1, nanmean([S_con.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
-% plot(  2, nanmean([S_con.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col);
-% plot(  3, nanmean([S_con.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col);
-% plot(  4, nanmean([S_con.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col) ;     
-%     
+con_b_col = abs([0.4667    0.6745    0.1882] ); % light green
+con_d_col = abs([0.0706    0.2118    0.1412] );
+ina_b_col = abs([0          0.7   0.9]);
+ina_d_col = abs([0          0    0.9] );
+
 % get the Variable names of all HRV measurements    
 HRV_DVs{2} = DVs{find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm')], 2) == 0)} ;
 ix = find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm')], 2) == 0);
@@ -78,18 +69,28 @@ for ind_DV = 1: length(HRV_DVs)
         set(gcf,'Name',HRV_DVs{ind_DV}); hold on;
         count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
         for I_Ses = 1: length(S_Blocks2)
-            [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier);
+            [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, ...
+                [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
+                [S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]);
             %[Graph, Ymin ,Ymax] =
             % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
         end
         
-        C1 = struct2cell([S_Blocks2(I_Ses).(HRV_DVs{ind_DV})]);
-       
+        C1 = struct2cell([S_Blocks2(:).mean_R2R_bpm]);
+        Xmin = min([C1{:}]);
+        Xmax = max([C1{:}]);
            
         ylabel(char(HRV_DVs{ind_DV}),'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         xlabel('heart rate (bpm)','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
+        %% add the mean for over all sessions to the plot
+        S_control = [S_con.(DVs{ind_DV})]; 
+        S_inactivation = [S_ina.(DVs{ind_DV})]; 
         
-        
+        line([Xmin,Xmax],[nanmean([S_control.pre_task]),nanmean([S_control.pre_task])],'color',con_b_col,'LineWidth',1.5,'LineStyle','--')
+        line([Xmin,Xmax],[nanmean([S_control.pst_task]),nanmean([S_control.pst_task])],'color',con_d_col,'LineWidth',1.5,'LineStyle','--')
+        line([Xmin,Xmax],[nanmean([S_inactivation.pre_task]),nanmean([S_inactivation.pre_task])],'color',ina_b_col,'LineWidth',1.5,'LineStyle','--')
+        line([Xmin,Xmax],[nanmean([S_inactivation.pst_task]),nanmean([S_inactivation.pst_task])],'color',ina_d_col,'LineWidth',1.5,'LineStyle','--')
+
         
         h = [];
         h(1) = figure(1);
@@ -538,7 +539,7 @@ elseif  strcmp(Experiment, 'Injection')
     
 end
 
-function [count_con, count_ina, count_c, count_i] =  plot_oneVar_secondVar_pre_post_rest_task(Experiment, Block,Variable, count_con, count_ina, count_c, count_i,DeleteOutlier)
+function [count_con, count_ina, count_c, count_i] =  plot_oneVar_secondVar_pre_post_rest_task(Experiment, Block,Variable, count_con, count_ina, count_c, count_i,DeleteOutlier, S_con,S_ina)
 %[Graph, Ymin ,Ymax] =
 
 count_con= [0 0 0]; count_ina = [0 0 0];
@@ -560,6 +561,17 @@ if DeleteOutlier
 end
 % plot(  1, nanmean([Block.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
 % plot(  2, nanmean([Block.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col);
+
+% line([0,120],[nanmean([S_con.pre_task]),nanmean([S_con.pre_task])])
+% plot(  nanmean([S_con.pre_rest]), , '-','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
+% plot(  nanmean([S_con.pst_rest]), '-','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col);
+% plot(  nanmean([S_con.pre_task]), '-','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col);
+% plot(  nanmean([S_con.pst_task]), '-','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col) ;
+% 
+% plot(  6, nanmean([S_ina.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',ina_b_col) ;
+% plot(  7, nanmean([S_ina.pst_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',ina_d_col) ;
+% plot(  8, nanmean([S_ina.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',ina_b_col);
+% plot(  9, nanmean([S_ina.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',ina_d_col) ;
 if  strcmp(Experiment, 'Control')
     plot(  [Block.pre_task],[Variable.pre_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
     plot(  [Block.pst_task],[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
