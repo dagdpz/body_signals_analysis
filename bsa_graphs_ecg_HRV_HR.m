@@ -65,14 +65,14 @@ DeleteOutlier = 0;
 for ind_DV = 1: length(HRV_DVs)
     
      if HR_HRV
-         ln = 0; 
+         ln = 0; correctionFactor = 0; 
         figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
         set(gcf,'Name',HRV_DVs{ind_DV}); hold on;
         count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
         for I_Ses = 1: length(S_Blocks2)
             [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, ...
                 [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
-                ln);
+                ln,correctionFactor);
             %[Graph, Ymin ,Ymax] =
             % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
         end
@@ -80,7 +80,30 @@ for ind_DV = 1: length(HRV_DVs)
         C1 = struct2cell([S_Blocks2(:).mean_R2R_bpm]);
         Xmin = min([C1{2,:,:}, C1{4,:,:}]);
         Xmax = max([C1{2,:,:}, C1{4,:,:}]);
-           
+                 indExp = strcmp([S_Blocks2(:).Experiment], 'Control'); 
+                C2 = struct2cell([S_Blocks2(indExp).(HRV_DVs{ind_DV})]);
+                C1 = struct2cell([S_Blocks2(indExp).mean_R2R_bpm]);
+               
+%                 
+%                 start_point = rand(1, 3);
+% model = @expfun;
+% est = fminsearch(model, start_point);
+% x = [C1{2,:,:},C1{4,:,:}]
+% y = [C2{2,:,:}, C2{4,:,:}]
+%                 f = fit(x,y,'exp1')
+%                 
+%                 g = fittype('a*exp(-(-x-c)/b)'); 
+%                % f0 = fit([C1{2,:,:},C1{4,:,:}],[C2{2,:,:}, C2{4,:,:}],g)'StartPoint',[[ones(size([C1{2,:,:},C1{4,:,:}])), -exp(-[C1{2,:,:},C1{4,:,:}])]\[C2{2,:,:}, C2{4,:,:}]; 1]);
+% 
+%                % f0 = fit([C1{2,:,:},C1{4,:,:}],[C2{2,:,:}, C2{4,:,:}], 'StartPoint', [][])
+%                 
+%                 
+%                     model_exp=  @(phi,t) phi(1)*(exp((phi(2).*t) -phi(3))+phi(3));
+%     % [beta1_percCorrect_expfit,PSI1_percCorrect_expfit,stats1_percCorrect_expfit,b1_percCorrect_expfit]  =  nlmefit(Matrix_Percentage_Corr_Incor_Difference_perWager(:,3),Matrix_Percentage_Corr_Incor_Difference_perWager(:,2),Matrix_Percentage_Corr_Incor_Difference_perWager(:,1),[],model_exp,phi0_exp);
+% 
+%                 mdl = fitlm([C1{2,:,:},C1{4,:,:}],log([C2{2,:,:}, C2{4,:,:}]),'linear', 'RobustOpts', 'off');    
+      
+
         ylabel(char(HRV_DVs{ind_DV}),'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         xlabel('heart rate (bpm)','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         %% add the mean for over all sessions to the plot
@@ -95,24 +118,24 @@ for ind_DV = 1: length(HRV_DVs)
         
         h = [];
         h(1) = figure(1);
-        print(h,[path_SaveFig filesep 'HR_HRV' filesep targetBrainArea '_', monkey, '_',  HRV_DVs{ind_DV} '_heartrate' ], '-dpng')
+        print(h,[path_SaveFig filesep 'HR_HRV' filesep 'png' filesep targetBrainArea '_', monkey, '_',  HRV_DVs{ind_DV} '_heartrate' ], '-dpng')
         set(h,'Renderer','Painters');
         set(h,'PaperPositionMode','auto')
-        compl_filename =  [path_SaveFig filesep 'HR_HRV' filesep targetBrainArea '_', monkey,'_',   HRV_DVs{ind_DV} '_heartrate.ai'] ;
+        compl_filename =  [path_SaveFig filesep 'HR_HRV' filesep 'ai' filesep targetBrainArea '_', monkey,'_',   HRV_DVs{ind_DV} '_heartrate.ai'] ;
         print(h,'-depsc',compl_filename);
         close all;
         
-        %%
+        %% natural logarithmus for the HRV y-axis to determine the correction factor
         ln = 1; 
-
         figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
         set(gcf,'Name',HRV_DVs{ind_DV}); hold on;
         count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
         for I_Ses = 1: length(S_Blocks2)
             [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, ...
                 [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
-               ln);
+               ln, correctionFactor);
         end
+        
         
         C2 = struct2cell([S_Blocks2(:).(HRV_DVs{ind_DV})]);
         Ymin = log(min([C2{2,:,:}, C2{4,:,:}])) ;
@@ -122,39 +145,109 @@ for ind_DV = 1: length(HRV_DVs)
         C1 = struct2cell([S_Blocks2(:).mean_R2R_bpm]);
         Xmin = min([C1{2,:,:},C1{4,:,:}]);
         Xmax = max([C1{2,:,:},C1{4,:,:}]);
-        mdl = fitlm([C1{2,:,:},C1{4,:,:}],log([C2{2,:,:}, C2{4,:,:}]),'linear', 'RobustOpts', 'off'); 
-        plot(mdl)
-        %Fitted line
-        y1 = mdl.Coefficients.Estimate(1) +      mdl.Coefficients.Estimate(2)*100; 
-        y2 = mdl.Coefficients.Estimate(1) +      mdl.Coefficients.Estimate(2)*110; 
-        disp(['For 10bpm: ' , HRV_DVs{ind_DV},' ', num2str(y1 - y2)])
+        FitLineTO = 'Control'; 
+        if strcmp(FitLineTO, 'AllData')
+            %only task,  pre & post, Control and Injection
+            mdl = fitlm([C1{2,:,:},C1{4,:,:}],log([C2{2,:,:}, C2{4,:,:}]),'linear', 'RobustOpts', 'off');
+            
+        elseif strcmp(FitLineTO, 'Control')
+            %only task,  pre & post, Control and Injection
+            
+            indExp = strcmp([S_Blocks2(:).Experiment], 'Injection');
+            C2 = struct2cell([S_Blocks2(indExp).(HRV_DVs{ind_DV})]);
+            C1 = struct2cell([S_Blocks2(indExp).mean_R2R_bpm]);
+            mdl = fitlm([C1{2,:,:},C1{4,:,:}],log([C2{2,:,:}, C2{4,:,:}]),'linear', 'RobustOpts', 'off');
+            h = plot(mdl)    ;
+            set(h(2:4), 'Color', 'b')
+            
+            indExp = strcmp([S_Blocks2(:).Experiment], 'Control');
+            C2 = struct2cell([S_Blocks2(indExp).(HRV_DVs{ind_DV})]);
+            C1 = struct2cell([S_Blocks2(indExp).mean_R2R_bpm]);
+            mdl = fitlm([C1{2,:,:},C1{4,:,:}],log([C2{2,:,:}, C2{4,:,:}]),'linear', 'RobustOpts', 'off');
+            h = plot(mdl)    ;
+            set(h(2:4), 'Color', 'g')
+             
+
+            
+        end
+        correctionFactor = 10/(abs(mdl.Coefficients.Estimate(2)*10));
+            disp(['for every 10bpm increase in HR ' , HRV_DVs{ind_DV},' decreases by ', num2str(abs(mdl.Coefficients.Estimate(2)*10))])
+            disp([HRV_DVs{ind_DV}, ': the correction factor used in the formula ' num2str(10/(abs(mdl.Coefficients.Estimate(2)*10)))])
+            text(Xmin,Ymax ,['for every 10bpm increase in HR ' , HRV_DVs{ind_DV},' decreases by ', num2str(abs(mdl.Coefficients.Estimate(2)*10))],'fontsize',15)
+           
+
         
+        title([HRV_DVs{ind_DV}, ': the correction factor  ' num2str(10/(abs(mdl.Coefficients.Estimate(2)*10)))])
         ylabel(['ln ' char(HRV_DVs{ind_DV})],'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         xlabel('heart rate (bpm)','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
+        
+        h = [];
+        h(1) = figure(1);
+        print(h,[path_SaveFig filesep 'HR_HRV' filesep 'png' filesep targetBrainArea '_', monkey, '_ln_',  HRV_DVs{ind_DV} '_heartrate' ], '-dpng')
+        set(h,'Renderer','Painters');
+        set(h,'PaperPositionMode','auto')
+        compl_filename =  [path_SaveFig filesep 'HR_HRV' filesep 'ai' filesep targetBrainArea '_', monkey,'_ln_',   HRV_DVs{ind_DV} '_heartrate.ai'] ;
+        print(h,'-depsc',compl_filename);
+        close all;
+        
+      %% corrected HRV
+      
+        ln = 3; 
+        figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
+        set(gcf,'Name',HRV_DVs{ind_DV}); hold on;
+        count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
+        for I_Ses = 1: length(S_Blocks2)
+            [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, ...
+                [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
+                ln, correctionFactor);
+            %[Graph, Ymin ,Ymax] =
+            % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
+        end
+        
+        C1 = struct2cell([S_Blocks2(:).mean_R2R_bpm]);
+        Xmin = min([C1{2,:,:}, C1{4,:,:}]);
+        Xmax = max([C1{2,:,:}, C1{4,:,:}]);
+           
+        ylabel(['corrected ', char(HRV_DVs{ind_DV})],'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
+        xlabel('heart rate (bpm)','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         %% add the mean for over all sessions to the plot
-%         S_control = [S_con.(HRV_DVs{ind_DV})]; 
-%         S_inactivation = [S_ina.(HRV_DVs{ind_DV})]; 
-%         
-%         line([Xmin,Xmax],[nanmean([S_control.pre_task]),nanmean([S_control.pre_task])],'color',con_b_col,'LineWidth',1.5,'LineStyle','--')
-%         line([Xmin,Xmax],[nanmean([S_control.pst_task]),nanmean([S_control.pst_task])],'color',con_d_col,'LineWidth',1.5,'LineStyle','--')
-%         line([Xmin,Xmax],[nanmean([S_inactivation.pre_task]),nanmean([S_inactivation.pre_task])],'color',ina_b_col,'LineWidth',1.5,'LineStyle','--')
-%         line([Xmin,Xmax],[nanmean([S_inactivation.pst_task]),nanmean([S_inactivation.pst_task])],'color',ina_d_col,'LineWidth',1.5,'LineStyle','--')
+
+        S_control_HRV = [S_con.(HRV_DVs{ind_DV})]; 
+        S_inactivation_HRV = [S_ina.(HRV_DVs{ind_DV})]; 
+        S_control_HR = [S_con.mean_R2R_bpm]; 
+        S_inactivation_HR = [S_ina.mean_R2R_bpm]; 
+        
+
+Y_pre_task_Contr = nanmean(bsa_correct_for_HR( [S_control_HR.pre_task],[S_control_HRV.pre_task], correctionFactor,0));
+Y_pst_task_Contr = nanmean(bsa_correct_for_HR( [S_control_HR.pst_task],[S_control_HRV.pst_task], correctionFactor,0));
+Y_pre_task_Inac = nanmean(bsa_correct_for_HR( [S_inactivation_HR.pre_task],[S_inactivation_HRV.pre_task], correctionFactor,0));
+Y_pst_task_Inac = nanmean(bsa_correct_for_HR( [S_inactivation_HR.pst_task],[S_inactivation_HRV.pst_task], correctionFactor,0));
+ hold on; 
+        line([Xmin,Xmax],[Y_pre_task_Contr,Y_pre_task_Contr],'color',con_b_col,'LineWidth',1.5,'LineStyle','--')
+        line([Xmin,Xmax],[Y_pst_task_Contr,Y_pst_task_Contr],'color',con_d_col,'LineWidth',1.5,'LineStyle','--')
+        line([Xmin,Xmax],[Y_pre_task_Inac,Y_pre_task_Inac],'color',ina_b_col,'LineWidth',1.5,'LineStyle','--')
+        line([Xmin,Xmax],[Y_pst_task_Inac,Y_pst_task_Inac],'color',ina_d_col,'LineWidth',1.5,'LineStyle','--')
 
         
         h = [];
         h(1) = figure(1);
-        print(h,[path_SaveFig filesep 'HR_HRV' filesep targetBrainArea '_', monkey, '_ln_',  HRV_DVs{ind_DV} '_heartrate' ], '-dpng')
+        print(h,[path_SaveFig filesep 'HR_HRV' filesep 'png' filesep targetBrainArea '_', monkey, '_corrected',  HRV_DVs{ind_DV} '_heartrate' ], '-dpng')
         set(h,'Renderer','Painters');
         set(h,'PaperPositionMode','auto')
-        compl_filename =  [path_SaveFig filesep 'HR_HRV' filesep targetBrainArea '_', monkey,'_ln_',   HRV_DVs{ind_DV} '_heartrate.ai'] ;
+        compl_filename =  [path_SaveFig filesep 'HR_HRV' filesep 'ai' filesep targetBrainArea '_', monkey,'_corrected',   HRV_DVs{ind_DV} '_heartrate.ai'] ;
         print(h,'-depsc',compl_filename);
         close all;
+        
+        
+        
+        
+        
      end
 end
   
  
 
-function [count_con, count_ina, count_c, count_i] =  plot_oneVar_secondVar_pre_post_rest_task(Experiment, Block,Variable, count_con, count_ina, count_c, count_i,DeleteOutlier,  ln)
+function [count_con, count_ina, count_c, count_i] =  plot_oneVar_secondVar_pre_post_rest_task(Experiment, Block,Variable, count_con, count_ina, count_c, count_i,DeleteOutlier,  ln, CF)
 %[Graph, Ymin ,Ymax] =
 
 count_con= [0 0 0]; count_ina = [0 0 0];
@@ -175,17 +268,23 @@ if DeleteOutlier
     disp('Value above 3* std are changed to nan')
 end
 
-if ln 
+if ln == 1
  Y_pre_task =  log([Variable.pre_task]); 
  Y_pst_task =  log([Variable.pst_task]);
  Y_pre_rest =  log( [Variable.pre_rest]);
  Y_pst_rest =  log([Variable.pst_rest]);
 
-else
+elseif ln == 0
  Y_pre_task =  [Variable.pre_task]; 
  Y_pst_task =  [Variable.pst_task];
  Y_pre_rest =  [Variable.pre_rest];
- Y_pst_rest =  [Variable.pst_rest];  
+ Y_pst_rest =  [Variable.pst_rest]; 
+else
+ Y_pre_task = bsa_correct_for_HR( [Block.pre_task],[Variable.pre_task], CF,0);
+ Y_pst_task = bsa_correct_for_HR( [Block.pst_task],[Variable.pst_task], CF,0);
+ Y_pre_rest = bsa_correct_for_HR( [Block.pre_rest],[Variable.pre_rest], CF,0);
+ Y_pst_rest = bsa_correct_for_HR( [Block.pst_rest],[Variable.pst_rest], CF,0);
+
 end
 
 if  strcmp(Experiment, 'Control')

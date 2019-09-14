@@ -1,4 +1,4 @@
-function bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats,Text)
+function bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR,Text)
 %Todo:
 % How to input better all the different datasets
 %USAGE:
@@ -40,70 +40,23 @@ load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',
 load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Control_',targetBrainArea ]);
 load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Injection_',targetBrainArea ]);
 
-
+if Stats_beforeComputedWithR == 0
+ names = fieldnames(S_ina); 
+ DVs =   names(1:6); 
+else
 load(['C:\Users\kkaduk\Dropbox\DAG\Kristin\Statistic\body_signal_analysis\', monkey, filesep,monkey ,'_MultComp_PValues_HeartrateVaribility_PerSession_',targetBrainArea ]);
 Tabl_MultComp = struct2table(tabl_MultCom_pValues_Data);
 DVs =   unique(Tabl_MultComp.Variable);
-
+end
 NoBlocks = 1;
-HR_HRV = 1;
-%% HR & HRV in Sessions
-% 
-con_b_col = abs([0.4667    0.6745    0.1882] ); % light green
-con_d_col = abs([0.0706    0.2118    0.1412] );
-ina_b_col = abs([0          0.7   0.9]);
-ina_d_col = abs([0          0    0.9] );
 
-% get the Variable names of all HRV measurements    
-HRV_DVs{2} = DVs{find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm')], 2) == 0)} ;
-ix = find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm')], 2) == 0);
-for ind = 1: length(ix)
-HRV_DVs{ind} = DVs{ix(ind)} ; 
-end
 
-DeleteOutlier = 0; 
-for ind_DV = 1: length(HRV_DVs)
-    
-     if HR_HRV
-        figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
-        set(gcf,'Name',HRV_DVs{ind_DV}); hold on;
-        count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
-        for I_Ses = 1: length(S_Blocks2)
-            [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, ...
-                [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
-                [S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]);
-            %[Graph, Ymin ,Ymax] =
-            % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
-        end
-        
-        C1 = struct2cell([S_Blocks2(:).mean_R2R_bpm]);
-        Xmin = min([C1{:}]);
-        Xmax = max([C1{:}]);
-           
-        ylabel(char(HRV_DVs{ind_DV}),'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
-        xlabel('heart rate (bpm)','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
-        %% add the mean for over all sessions to the plot
-        S_control = [S_con.(DVs{ind_DV})]; 
-        S_inactivation = [S_ina.(DVs{ind_DV})]; 
-        
-        line([Xmin,Xmax],[nanmean([S_control.pre_task]),nanmean([S_control.pre_task])],'color',con_b_col,'LineWidth',1.5,'LineStyle','--')
-        line([Xmin,Xmax],[nanmean([S_control.pst_task]),nanmean([S_control.pst_task])],'color',con_d_col,'LineWidth',1.5,'LineStyle','--')
-        line([Xmin,Xmax],[nanmean([S_inactivation.pre_task]),nanmean([S_inactivation.pre_task])],'color',ina_b_col,'LineWidth',1.5,'LineStyle','--')
-        line([Xmin,Xmax],[nanmean([S_inactivation.pst_task]),nanmean([S_inactivation.pst_task])],'color',ina_d_col,'LineWidth',1.5,'LineStyle','--')
+        if ~exist(path_SaveFig);   mkdir(path_SaveFig); end
+        if ~exist([path_SaveFig filesep 'png']);mkdir([path_SaveFig filesep 'png']); end
+        if ~exist([path_SaveFig filesep 'ai']);mkdir([path_SaveFig filesep 'ai']); end
 
-        
-        h = [];
-        h(1) = figure(1);
-        print(h,[path_SaveFig filesep 'HR_HRV' filesep targetBrainArea '_', monkey, '_',  HRV_DVs{ind_DV} '_heartrate' ], '-dpng')
-        set(h,'Renderer','Painters');
-        set(h,'PaperPositionMode','auto')
-        compl_filename =  [path_SaveFig filesep 'HR_HRV' filesep targetBrainArea '_', monkey,'_',   HRV_DVs{ind_DV} '_heartrate.ai'] ;
-        print(h,'-depsc',compl_filename);
-        close all;
-     end
-end
-  
-     Stat = [];   
+
+ Stat = [];   
   for ind_DV = 1: length(DVs)  
     %% Blocks
     if NoBlocks
@@ -143,10 +96,13 @@ end
         
         h = [];
         h(1) = figure(1);
-        print(h,[path_SaveFig filesep targetBrainArea '_', monkey,  DVs{ind_DV} '_Blocks_' ], '-dpng')
+        
+
+
+        print(h,[path_SaveFig filesep 'png' filesep targetBrainArea '_', monkey, '_',  DVs{ind_DV} '_Blocks_' ], '-dpng')
         set(h,'Renderer','Painters');
         set(h,'PaperPositionMode','auto')
-        compl_filename =  [path_SaveFig filesep targetBrainArea '_', monkey,  DVs{ind_DV} '_Blocks.ai'] ;
+        compl_filename =  [path_SaveFig filesep 'ai' filesep targetBrainArea '_', monkey, '_',  DVs{ind_DV} '_Blocks.ai'] ;
         print(h,'-depsc',compl_filename);
         close all;
     end
@@ -211,7 +167,8 @@ end
         text(6 ,max_yValue -20,'rest','fontsize',15)
         text(8 ,max_yValue -20,'task','fontsize',15)
     end
-    if Stats
+    if Stats_beforeComputedWithR(1) == 1  
+        if  Stats_beforeComputedWithR(2)  == 3
         % add STATISTIC: line for the comparison && stars for significance
         Stat = Tabl_MultComp(strcmp(Tabl_MultComp.Variable, DVs{ind_DV}),:);
         Row(1) =find(sum([strcmp(Stat.Comparison1, 'Control,pre,task'), strcmp(Stat.Comparison2, 'Injection,pre,task')],2)== 2);
@@ -219,7 +176,17 @@ end
         Row(3) =find(sum([strcmp(Stat.Comparison1, 'Injection,pre,task'), strcmp(Stat.Comparison2, 'Injection,pst,task')],2)== 2);
         Row(4) =find(sum([strcmp(Stat.Comparison1, 'Control,pre,task'), strcmp(Stat.Comparison2, 'Control,pst,task')],2)== 2);
         
-         Stat(Row,:)
+      
+    elseif  Stats_beforeComputedWithR(2)  == 2
+         Stat = Tabl_MultComp(strcmp(Tabl_MultComp.Variable, DVs{ind_DV}),:);
+        Row(1) =find(sum([strcmp(Stat.Comparison1, 'Control,pre'), strcmp(Stat.Comparison2, 'Injection,pre'), strcmp(Stat.Tasktype, 'task') ],2)== 3);
+        Row(2) =find(sum([strcmp(Stat.Comparison1, 'Control,pst'), strcmp(Stat.Comparison2, 'Injection,pst'), strcmp(Stat.Tasktype, 'task')],2)== 3);
+        Row(3) =find(sum([strcmp(Stat.Comparison1, 'Injection,pre'), strcmp(Stat.Comparison2, 'Injection,pst'), strcmp(Stat.Tasktype, 'task')],2)== 3);
+        Row(4) =find(sum([strcmp(Stat.Comparison1, 'Control,pre'), strcmp(Stat.Comparison2, 'Control,pst'), strcmp(Stat.Tasktype, 'task')],2)== 3);
+        
+    end
+    disp(DVs{ind_DV})
+        disp(Stat(Row,:)); 
         Contrast(1,:) = [3,8];
         Contrast(2,:) = [4,9];
         Contrast(3,:) = [8,9];
@@ -231,10 +198,10 @@ end
     end
     h = [];
     h(1) = figure(1);
-    print(h,[path_SaveFig filesep targetBrainArea '_' monkey '_', DVs{ind_DV} '_TaskStats'], '-dpng')
+    print(h,[path_SaveFig filesep 'png' filesep targetBrainArea '_' monkey '_', DVs{ind_DV} '_TaskStats'], '-dpng')
     set(h,'Renderer','Painters');
     set(h,'PaperPositionMode','auto')
-    compl_filename =  [path_SaveFig filesep targetBrainArea '_' monkey, '_' DVs{ind_DV} '_TaskStats.ai'] ;
+    compl_filename =  [path_SaveFig  filesep targetBrainArea '_' monkey, '_' DVs{ind_DV} '_TaskStats.ai'] ;
     print(h,'-depsc',compl_filename);
     close all;
     
@@ -298,17 +265,27 @@ end
         text(6 ,max_yValue -20,'rest','fontsize',15)
         text(8 ,max_yValue -20,'task','fontsize',15)
     end
-    if Stats
+    if Stats_beforeComputedWithR(1) == 1
         
         % add STATISTIC: line for the comparison && stars for significance
-        %Row1 =find(sum([strcmp(Stat.Experiment_Comp1, 'Control'), strcmp(Stat.Injection_Comp1, 'pst'),strcmp(Stat.TaskType_Comp1, 'task')],2)== 3);
-        Stat = Tabl_MultComp(strcmp(Tabl_MultComp.Variable, DVs{ind_DV}),:);
-        Row(1) =find(sum([strcmp(Stat.Comparison1, 'Control,pre,rest'), strcmp(Stat.Comparison2, 'Injection,pre,rest')],2)== 2);
-        Row(2) =find(sum([strcmp(Stat.Comparison1, 'Control,pst,rest'), strcmp(Stat.Comparison2, 'Injection,pst,rest')],2)== 2);
-        Row(3) =find(sum([strcmp(Stat.Comparison1, 'Injection,pre,rest'), strcmp(Stat.Comparison2, 'Injection,pst,rest')],2)== 2);
-        Row(4) =find(sum([strcmp(Stat.Comparison1, 'Control,pre,rest'), strcmp(Stat.Comparison2, 'Control,pst,rest')],2)== 2);
-        
-        Stat(Row,:)
+        if Stats_beforeComputedWithR(2)  == 3
+            Stat = Tabl_MultComp(strcmp(Tabl_MultComp.Variable, DVs{ind_DV}),:);
+            Row(1) =find(sum([strcmp(Stat.Comparison1, 'Control,pre,rest'), strcmp(Stat.Comparison2, 'Injection,pre,rest')],2)== 2);
+            Row(2) =find(sum([strcmp(Stat.Comparison1, 'Control,pst,rest'), strcmp(Stat.Comparison2, 'Injection,pst,rest')],2)== 2);
+            Row(3) =find(sum([strcmp(Stat.Comparison1, 'Injection,pre,rest'), strcmp(Stat.Comparison2, 'Injection,pst,rest')],2)== 2);
+            Row(4) =find(sum([strcmp(Stat.Comparison1, 'Control,pre,rest'), strcmp(Stat.Comparison2, 'Control,pst,rest')],2)== 2);
+            
+        elseif Stats_beforeComputedWithR(2)  == 2
+            Stat = Tabl_MultComp(strcmp(Tabl_MultComp.Variable, DVs{ind_DV}),:);
+            Row(1) =find(sum([strcmp(Stat.Comparison1, 'Control,pre'), strcmp(Stat.Comparison2, 'Injection,pre'), strcmp(Stat.Tasktype, 'rest') ],2)== 3);
+            Row(2) =find(sum([strcmp(Stat.Comparison1, 'Control,pst'), strcmp(Stat.Comparison2, 'Injection,pst'), strcmp(Stat.Tasktype, 'rest')],2)== 3);
+            Row(3) =find(sum([strcmp(Stat.Comparison1, 'Injection,pre'), strcmp(Stat.Comparison2, 'Injection,pst'), strcmp(Stat.Tasktype, 'rest')],2)== 3);
+            Row(4) =find(sum([strcmp(Stat.Comparison1, 'Control,pre'), strcmp(Stat.Comparison2, 'Control,pst'), strcmp(Stat.Tasktype, 'rest')],2)== 3);
+            
+        end
+    
+        disp(DVs{ind_DV})
+        disp(Stat(Row,:)); 
         Contrast(1,:) = [1,6];
         Contrast(2,:) = [2,7];
         Contrast(3,:) = [6,7];
@@ -327,10 +304,10 @@ end
     end
     h = [];
     h(1) = figure(1);
-    print(h,[path_SaveFig filesep targetBrainArea '_' monkey, '_', DVs{ind_DV} '_RestStats'], '-dpng')
+    print(h,[path_SaveFig filesep 'png' filesep targetBrainArea '_' monkey, '_', DVs{ind_DV} '_RestStats'], '-dpng')
     set(h,'Renderer','Painters');
     set(h,'PaperPositionMode','auto')
-    compl_filename =  [path_SaveFig filesep targetBrainArea '_' monkey, '_', DVs{ind_DV} '_RestStats.ai'] ;
+    compl_filename =  [path_SaveFig filesep 'ai' filesep targetBrainArea '_' monkey, '_', DVs{ind_DV} '_RestStats.ai'] ;
     print(h,'-depsc',compl_filename);
     close all;
     
@@ -475,10 +452,10 @@ set(ha([7 8]),'Xlim',[0 0.6]);
 h(1) = figure(1);
 %end
 savefig(h, [path_SaveFig filesep targetBrainArea ,'_' monkey '_OverviewBarGraph_Heartratevariability.fig'])
-print(h,[path_SaveFig filesep targetBrainArea,'_', monkey, '_OverviewBarGraph_Heartratevariability'], '-dpng')
+print(h,[path_SaveFig filesep 'png' filesep targetBrainArea,'_', monkey, '_OverviewBarGraph_Heartratevariability'], '-dpng')
 set(h,'Renderer','Painters');
 set(h,'PaperPositionMode','auto')
-compl_filename =  [path_SaveFig filesep targetBrainArea,'_', monkey, '_OverviewBarGraph_Heartratevariability.ai'] ;
+compl_filename =  [path_SaveFig filesep 'ai' filesep targetBrainArea,'_', monkey, '_OverviewBarGraph_Heartratevariability.ai'] ;
 print(h,'-depsc',compl_filename);
 
 
@@ -614,26 +591,68 @@ con_d_col = [0.0706    0.2118    0.1412];
 ina_b_col = [0          0.7   0.9];
 ina_d_col = [0          0    0.9];
 
-plot(  1, nanmean([S_con.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
-plot(  2, nanmean([S_con.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col);
-plot(  3, nanmean([S_con.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col);
-plot(  4, nanmean([S_con.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col) ;
 
-plot(  6, nanmean([S_ina.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',ina_b_col) ;
-plot(  7, nanmean([S_ina.pst_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',ina_d_col) ;
-plot(  8, nanmean([S_ina.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',ina_b_col);
-plot(  9, nanmean([S_ina.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',ina_d_col) ;
+Con(1,:) = [S_con.pre_rest]; 
+Con(2,:) =[S_con.pst_rest]; 
+Con(3,:) =[S_con.pre_task]; 
+Con(4,:) =[S_con.pst_task]; 
+con_b_col_trans = [0.3    0.5   0.3 0.4];
+for i = 1: length([S_con.pre_rest])
+line(1:2, Con(1:2,i),'Color',con_b_col_trans ); 
+line(3:4, Con(3:4,i),'Color',con_b_col_trans ); 
 
-Graph = plot(  1, [S_con.pre_rest], '.','color',con_b_col ,'MarkerSize',25) ; hold on;
-Graph = plot(  2, [S_con.pst_rest], '.','color',con_d_col ,'MarkerSize',25) ;
-Graph = plot(  3, [S_con.pre_task], '.','color',con_b_col ,'MarkerSize',25);
-Graph = plot(  4, [S_con.pst_task], '.','color',con_d_col ,'MarkerSize',25) ;
+end
 
+ina_b_col_trans = [0    0.5   0.9 0.4];
 
-Graph =plot(  6, [S_ina.pre_rest], '.','color',ina_b_col ,'MarkerSize',25) ;
-Graph =plot(  7, [S_ina.pst_rest], '.','color',ina_d_col ,'MarkerSize',25) ;
-Graph =plot(  8, [S_ina.pre_task], '.','color',ina_b_col ,'MarkerSize',25) ;
-Graph =plot(  9, [S_ina.pst_task], '.','color',ina_d_col ,'MarkerSize',25) ;
+Ina(1,:) = [S_ina.pre_rest]; 
+Ina(2,:) =[S_ina.pst_rest]; 
+Ina(3,:) =[S_ina.pre_task]; 
+Ina(4,:) =[S_ina.pst_task]; 
+for i = 1: length([S_ina.pre_rest])
+line(6:7, Ina(1:2,i),'color',ina_b_col_trans )
+line(8:9, Ina(3:4,i),'color',ina_b_col_trans )
+
+end
+hold on;
+MarkerSize_EachSession = 38; 
+MarkerSize_AllSession = 30; 
+
+Graph = plot(  1, [S_con.pre_rest], '.','color',con_b_col ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+Graph = plot(  2, [S_con.pst_rest], '.','color',con_d_col ,'MarkerSize',MarkerSize_EachSession) ;
+Graph = plot(  3, [S_con.pre_task], '.','color',con_b_col ,'MarkerSize',MarkerSize_EachSession);
+Graph = plot(  4, [S_con.pst_task], '.','color',con_d_col ,'MarkerSize',MarkerSize_EachSession) ;
+for i = 1: length([S_con.pre_rest])
+ text(1,Con(1,i),num2str(i),'fontsize',15)
+ text(2,Con(2,i),num2str(i),'fontsize',15)
+ text(3,Con(3,i),num2str(i),'fontsize',15)
+ text(4,Con(4,i),num2str(i),'fontsize',15)
+ text(6,Ina(1,i),num2str(i),'fontsize',15)
+ text(7,Ina(2,i),num2str(i),'fontsize',15)
+ text(8,Ina(3,i),num2str(i),'fontsize',15)
+ text(9,Ina(4,i),num2str(i),'fontsize',15)
+
+end
+
+Graph =plot(  6, [S_ina.pre_rest], '.','color',ina_b_col ,'MarkerSize',MarkerSize_EachSession) ;
+Graph =plot(  7, [S_ina.pst_rest], '.','color',ina_d_col ,'MarkerSize',MarkerSize_EachSession) ;
+Graph =plot(  8, [S_ina.pre_task], '.','color',ina_b_col ,'MarkerSize',MarkerSize_EachSession) ;
+Graph =plot(  9, [S_ina.pst_task], '.','color',ina_d_col ,'MarkerSize',MarkerSize_EachSession) ;
+
+line(1:2,[nanmean([S_con.pre_rest]),nanmean([S_con.pst_rest])],'Color',con_b_col_trans,'LineWidth', 4)
+line(3:4,[nanmean([S_con.pre_task]),nanmean([S_con.pst_task])],'Color',con_b_col_trans,'LineWidth', 4)
+line(6:7,[nanmean([S_ina.pre_rest]),nanmean([S_ina.pst_rest])],'Color',ina_b_col_trans,'LineWidth', 4)
+line(8:9,[nanmean([S_ina.pre_task]),nanmean([S_ina.pst_task])],'Color',ina_b_col_trans,'LineWidth', 4)
+
+plot(  1, nanmean([S_con.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',con_b_col) ; hold on
+plot(  2, nanmean([S_con.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',con_d_col);
+plot(  3, nanmean([S_con.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',con_b_col);
+plot(  4, nanmean([S_con.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',con_d_col) ;
+
+plot(  6, nanmean([S_ina.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',ina_b_col) ;
+plot(  7, nanmean([S_ina.pst_rest]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',ina_d_col) ;
+plot(  8, nanmean([S_ina.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',ina_b_col);
+plot(  9, nanmean([S_ina.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',ina_d_col) ;
 
 C1 = struct2cell(S_con);
 C2 = struct2cell(S_ina);
