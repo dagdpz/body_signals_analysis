@@ -139,9 +139,9 @@ sessions = {
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190815'
    % 'Y:\Projects\PhysiologicalRecording\Data\Curius\20190821'
    % 'Y:\Projects\PhysiologicalRecording\Data\Curius\20190822'
-    'Y:\Projects\PhysiologicalRecording\Data\Curius\20190903'
-    'Y:\Projects\PhysiologicalRecording\Data\Curius\20190910'
-    'Y:\Projects\PhysiologicalRecording\Data\Curius\20190912'
+    'Y:\Projects\PhysiologicalRecording\Data\Curius\20190903' %baseline Injection
+    'Y:\Projects\PhysiologicalRecording\Data\Curius\20190910' %baseline Injection
+    'Y:\Projects\PhysiologicalRecording\Data\Curius\20190912' %baseline Injection
 
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190729';
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190801';
@@ -154,7 +154,7 @@ sessions = {
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190913'
 
     };
-targetBrainArea = 'mdPul';
+targetBrainArea = 'mdPul_AddedSessionNr';
 inactivation_sessions = {'20190729' '20190801' '20190809' '20190814' '20190820'  '20190905'  '20190913' }; %'20190828' 
 
 %% Curius
@@ -250,21 +250,23 @@ bsa_ecg_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\Body
 
 %%
 monkey = 'Curius'; 
-targetBrainArea = 'Controls_mdPul'; %mdPul %ldPul_mdPul %ldPul %dPul_Cur_Cor
+targetBrainArea = 'mdPul_AddedSessionNr'; %mdPul %ldPul_mdPul %ldPul %dPul_Cur_Cor
 Stats_beforeComputedWithR = 0; %[1,2]; 
 Text = 0; 
+BaselineInjection = []; %[5,6,7]; %Settings -> red color circle for baseline Injection sessions
 path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\ECG\',targetBrainArea]; 
-bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR, Text)
+bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR, Text,BaselineInjection)
 
 %%
 monkey = 'Curius';  %Curius
 targetBrainArea = 'mdPul'; %mdPul %ldPul_mdPul %ldPul %dPul_Cur_Cor
 Stats_beforeComputedWithR = 0; 
 Text = 0; 
+
 path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\ECG\',targetBrainArea]; 
-bsa_graphs_ecg_HRV_HR(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR, Text)
+bsa_graphs_ecg_HRV_HR(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR, Text,)
 %%
-monkey = 'Cornelius'; 
+monkey = 'Curius'; 
 targetBrainArea = 'ldPul_mdPul';
 path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\ECG_behavior']; 
 behavior_Data = ['Y:\Projects\PhysiologicalRecording\Figures\', monkey,'\behavior\Inactivation_20190124_20190129_20190201_20190207_20190214_20190228_20190314\Behavior_Inactivation_20190502-1403.mat']; 

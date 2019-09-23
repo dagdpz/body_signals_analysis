@@ -1,4 +1,4 @@
-function bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR,Text)
+function bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR,Text,BaselineInjection)
 %Todo:
 % How to input better all the different datasets
 %USAGE:
@@ -51,9 +51,9 @@ end
 NoBlocks = 1;
 
 
-        if ~exist(path_SaveFig);   mkdir(path_SaveFig); end
-        if ~exist([path_SaveFig filesep 'png']);mkdir([path_SaveFig filesep 'png']); end
-        if ~exist([path_SaveFig filesep 'ai']);mkdir([path_SaveFig filesep 'ai']); end
+        if ~exist(path_SaveFig, 'dir');   mkdir(path_SaveFig); end
+        if ~exist([path_SaveFig filesep 'png'], 'dir');mkdir([path_SaveFig filesep 'png']); end
+        if ~exist([path_SaveFig filesep 'ai'], 'dir');mkdir([path_SaveFig filesep 'ai']); end
 
 
  Stat = [];   
@@ -201,7 +201,7 @@ NoBlocks = 1;
     print(h,[path_SaveFig filesep 'png' filesep targetBrainArea '_' monkey '_', DVs{ind_DV} '_TaskStats'], '-dpng')
     set(h,'Renderer','Painters');
     set(h,'PaperPositionMode','auto')
-    compl_filename =  [path_SaveFig  filesep targetBrainArea '_' monkey, '_' DVs{ind_DV} '_TaskStats.ai'] ;
+    compl_filename =  [path_SaveFig filesep 'ai' filesep targetBrainArea '_' monkey, '_' DVs{ind_DV} '_TaskStats.ai'] ;
     print(h,'-depsc',compl_filename);
     close all;
     
@@ -209,7 +209,8 @@ NoBlocks = 1;
     %% Session - Rest
     figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
     set(gcf,'Name',DVs{ind_DV});
-    [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]);
+
+    [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})],BaselineInjection);
     % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
     Name_DV = strsplit(char(DVs{ind_DV}), '_');
    % title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
@@ -584,7 +585,7 @@ end
 
 
 
-function [Graph, Ymin ,Ymax] = plot_one_var_pre_post_rest_task(S_con,S_ina)
+function [Graph, Ymin ,Ymax] = plot_one_var_pre_post_rest_task(S_con,S_ina,BaselineInjection)
 
 con_b_col = [0.4667    0.6745    0.1882];
 con_d_col = [0.0706    0.2118    0.1412];
@@ -615,29 +616,27 @@ line(8:9, Ina(3:4,i),'color',ina_b_col_trans )
 
 end
 hold on;
-MarkerSize_EachSession = 38; 
+MarkerSize_EachSession = 40; 
 MarkerSize_AllSession = 30; 
+MarkerSize_EachSession_BaselineInjection = 12; 
+
 
 Graph = plot(  1, [S_con.pre_rest], '.','color',con_b_col ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 Graph = plot(  2, [S_con.pst_rest], '.','color',con_d_col ,'MarkerSize',MarkerSize_EachSession) ;
 Graph = plot(  3, [S_con.pre_task], '.','color',con_b_col ,'MarkerSize',MarkerSize_EachSession);
 Graph = plot(  4, [S_con.pst_task], '.','color',con_d_col ,'MarkerSize',MarkerSize_EachSession) ;
-for i = 1: length([S_con.pre_rest])
- text(1,Con(1,i),num2str(i),'fontsize',15)
- text(2,Con(2,i),num2str(i),'fontsize',15)
- text(3,Con(3,i),num2str(i),'fontsize',15)
- text(4,Con(4,i),num2str(i),'fontsize',15)
- text(6,Ina(1,i),num2str(i),'fontsize',15)
- text(7,Ina(2,i),num2str(i),'fontsize',15)
- text(8,Ina(3,i),num2str(i),'fontsize',15)
- text(9,Ina(4,i),num2str(i),'fontsize',15)
-
-end
 
 Graph =plot(  6, [S_ina.pre_rest], '.','color',ina_b_col ,'MarkerSize',MarkerSize_EachSession) ;
 Graph =plot(  7, [S_ina.pst_rest], '.','color',ina_d_col ,'MarkerSize',MarkerSize_EachSession) ;
 Graph =plot(  8, [S_ina.pre_task], '.','color',ina_b_col ,'MarkerSize',MarkerSize_EachSession) ;
 Graph =plot(  9, [S_ina.pst_task], '.','color',ina_d_col ,'MarkerSize',MarkerSize_EachSession) ;
+
+if ~isempty(BaselineInjection)
+Graph = plot(  1,Con(1,BaselineInjection), 'o','color',[1 0 0] ,'MarkerSize',MarkerSize_EachSession_BaselineInjection,'markerfacecolor',con_b_col) ; hold on;
+Graph = plot(  2,Con(2,BaselineInjection), 'o','color',[1 0 0] ,'MarkerSize',MarkerSize_EachSession_BaselineInjection,'markerfacecolor',con_d_col) ;
+Graph = plot(  3,Con(3,BaselineInjection), 'o','color',[1 0 0] ,'MarkerSize',MarkerSize_EachSession_BaselineInjection,'markerfacecolor',con_b_col);
+Graph = plot(  4,Con(4,BaselineInjection), 'o','color',[1 0 0] ,'MarkerSize',MarkerSize_EachSession_BaselineInjection,'markerfacecolor',con_d_col) ;
+end
 
 line(1:2,[nanmean([S_con.pre_rest]),nanmean([S_con.pst_rest])],'Color',con_b_col_trans,'LineWidth', 4)
 line(3:4,[nanmean([S_con.pre_task]),nanmean([S_con.pst_task])],'Color',con_b_col_trans,'LineWidth', 4)
@@ -654,6 +653,20 @@ plot(  7, nanmean([S_ina.pst_rest]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSiz
 plot(  8, nanmean([S_ina.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',ina_b_col);
 plot(  9, nanmean([S_ina.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',ina_d_col) ;
 
+
+for i = 1: length([S_con.pre_rest])
+ text(1,Con(1,i),num2str(i),'fontsize',15)
+ text(2,Con(2,i),num2str(i),'fontsize',15)
+ text(3,Con(3,i),num2str(i),'fontsize',15)
+ text(4,Con(4,i),num2str(i),'fontsize',15)
+end
+ for i = 1: length([S_ina.pre_rest])
+ text(6,Ina(1,i),num2str(i),'fontsize',15)
+ text(7,Ina(2,i),num2str(i),'fontsize',15)
+ text(8,Ina(3,i),num2str(i),'fontsize',15)
+ text(9,Ina(4,i),num2str(i),'fontsize',15)
+
+end
 C1 = struct2cell(S_con);
 C2 = struct2cell(S_ina);
 

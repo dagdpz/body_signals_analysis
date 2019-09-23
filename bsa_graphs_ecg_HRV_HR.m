@@ -47,6 +47,14 @@ DVs =   unique(Tabl_MultComp.Variable);
 
 NoBlocks = 1;
 HR_HRV = 1;
+
+
+
+        if ~exist([path_SaveFig  filesep 'HR_HRV'], 'dir');   mkdir([path_SaveFig  filesep 'HR_HRV']); end
+        if ~exist([path_SaveFig filesep 'HR_HRV' filesep 'png'], 'dir');mkdir([path_SaveFig filesep 'HR_HRV'  filesep 'png']); end
+        if ~exist([path_SaveFig filesep 'HR_HRV' filesep 'ai'], 'dir');mkdir([path_SaveFig filesep 'HR_HRV'  filesep 'ai']); end
+
+
 %% HR & HRV in Sessions
 % 
 con_b_col = abs([0.4667    0.6745    0.1882] ); % light green
@@ -61,8 +69,8 @@ for ind = 1: length(ix)
 HRV_DVs{ind} = DVs{ix(ind)} ; 
 end
 
-DeleteOutlier = 0; 
-for ind_DV = 1: length(HRV_DVs)
+DeleteOutlier = 1; 
+for ind_DV =  1: length(HRV_DVs)
     
      if HR_HRV
          ln = 0; correctionFactor = 0; 
@@ -104,8 +112,8 @@ for ind_DV = 1: length(HRV_DVs)
 %                 mdl = fitlm([C1{2,:,:},C1{4,:,:}],log([C2{2,:,:}, C2{4,:,:}]),'linear', 'RobustOpts', 'off');    
       
 
-        ylabel(char(HRV_DVs{ind_DV}),'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
-        xlabel('heart rate (bpm)','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
+        ylabel(char(HRV_DVs{ind_DV}),'fontsize',20,'fontweight','b', 'Interpreter', 'none' );
+        xlabel('heart rate (bpm)','fontsize',20,'fontweight','b', 'Interpreter', 'none' );
         %% add the mean for over all sessions to the plot
         S_control = [S_con.(HRV_DVs{ind_DV})]; 
         S_inactivation = [S_ina.(HRV_DVs{ind_DV})]; 
@@ -260,12 +268,14 @@ ina_d_col = abs([0          0    0.9] +count_ina);
 
 if DeleteOutlier
     med = median([Variable.pre_task,Variable.pst_task,Variable.pre_rest,Variable.pst_rest]);
+    
     Variable.pre_task(Variable.pre_task > 4*med ) = nan; 
     Variable.pst_task(Variable.pst_task > 4*med ) = nan; 
-    Variable.pre_rest(Variable.pre_rest > 5*med ) = nan; 
-    Variable.pst_rest(Variable.pst_rest > 5*med ) = nan; 
-
-    disp('Value above 3* std are changed to nan')
+    Variable.pre_rest(Variable.pre_rest > 4*med ) = nan; 
+    Variable.pst_rest(Variable.pst_rest > 4*med ) = nan; 
+if sum(isnan([ Variable.pre_task,Variable.pst_task,Variable.pre_rest , Variable.pst_rest])) > 0
+    disp('Value above 4* std are changed to nan')
+end
 end
 
 if ln == 1
@@ -288,29 +298,29 @@ else
 end
 
 if  strcmp(Experiment, 'Control')
-    plot(  [Block.pre_task],Y_pre_task, 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
-    plot(  [Block.pst_task],Y_pst_task, 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
+    plot(  [Block.pre_task],Y_pre_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
+    plot(  [Block.pst_task],Y_pst_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
     
    % plot(  [Block.pre_rest],Y_pre_rest, 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
    % plot(  [Block.pst_rest],Y_pst_rest, 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
 
     count_con = count_con + [0 0.15 0.15];
-    text([Block.pre_task],Y_pre_task,num2str(count_c),'fontsize',15)
-    text([Block.pst_task],Y_pst_task,num2str(count_c),'fontsize',15)
+   % text([Block.pre_task],Y_pre_task,num2str(count_c),'fontsize',15)
+   %text([Block.pst_task],Y_pst_task,num2str(count_c),'fontsize',15)
    % text([Block.pre_rest],Y_pre_rest,num2str(count_c),'fontsize',15)
    % text([Block.pst_rest],Y_pst_rest,num2str(count_c),'fontsize',15)
     count_c = count_c +1;
 elseif  strcmp(Experiment, 'Injection')
     
-    plot(  [Block.pre_task],Y_pre_task, 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
-    plot(  [Block.pst_task],Y_pst_task, 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
+    plot(  [Block.pre_task],Y_pre_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
+    plot(  [Block.pst_task],Y_pst_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
    % plot(  [Block.pre_rest],[Variable.pre_rest], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
    % plot(  [Block.pst_rest],[Variable.pst_rest], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
 
     count_ina = count_ina - [0  0.1 0.1];
     
-    text([Block.pre_task],Y_pre_task,num2str(count_i),'fontsize',15)
-    text([Block.pst_task],Y_pst_task,num2str(count_i),'fontsize',15)
+   % text([Block.pre_task],Y_pre_task,num2str(count_i),'fontsize',15)
+   % text([Block.pst_task],Y_pst_task,num2str(count_i),'fontsize',15)
    % text([Block.pre_rest],[Variable.pre_rest],num2str(count_c),'fontsize',15)
    % text([Block.pst_rest],[Variable.pst_rest],num2str(count_c),'fontsize',15)
     count_i = count_i +1;
