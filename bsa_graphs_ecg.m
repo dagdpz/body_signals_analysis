@@ -112,7 +112,7 @@ NoBlocks = 1;
     Stat = []; 
     figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
     set(gcf,'Name',DVs{ind_DV});
-    [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]);
+    [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})],BaselineInjection);
     % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
     Name_DV = strsplit(char(DVs{ind_DV}), '_');
     %title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
@@ -631,7 +631,7 @@ Graph =plot(  7, [S_ina.pst_rest], '.','color',ina_d_col ,'MarkerSize',MarkerSiz
 Graph =plot(  8, [S_ina.pre_task], '.','color',ina_b_col ,'MarkerSize',MarkerSize_EachSession) ;
 Graph =plot(  9, [S_ina.pst_task], '.','color',ina_d_col ,'MarkerSize',MarkerSize_EachSession) ;
 
-if ~isempty(BaselineInjection)
+if BaselineInjection ~= 0
 Graph = plot(  1,Con(1,BaselineInjection), 'o','color',[1 0 0] ,'MarkerSize',MarkerSize_EachSession_BaselineInjection,'markerfacecolor',con_b_col) ; hold on;
 Graph = plot(  2,Con(2,BaselineInjection), 'o','color',[1 0 0] ,'MarkerSize',MarkerSize_EachSession_BaselineInjection,'markerfacecolor',con_d_col) ;
 Graph = plot(  3,Con(3,BaselineInjection), 'o','color',[1 0 0] ,'MarkerSize',MarkerSize_EachSession_BaselineInjection,'markerfacecolor',con_b_col);

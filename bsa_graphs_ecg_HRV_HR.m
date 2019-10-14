@@ -70,7 +70,7 @@ HRV_DVs{ind} = DVs{ix(ind)} ;
 end
 
 DeleteOutlier = 1; 
-for ind_DV =  1: length(HRV_DVs)
+for ind_DV =  3: length(HRV_DVs)
     
      if HR_HRV
          ln = 0; correctionFactor = 0; 
@@ -188,7 +188,7 @@ for ind_DV =  1: length(HRV_DVs)
         title([HRV_DVs{ind_DV}, ': the correction factor  ' num2str(10/(abs(mdl.Coefficients.Estimate(2)*10)))])
         ylabel(['ln ' char(HRV_DVs{ind_DV})],'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         xlabel('heart rate (bpm)','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
-        
+        set(gca,'ylim',[0 5])
         h = [];
         h(1) = figure(1);
         print(h,[path_SaveFig filesep 'HR_HRV' filesep 'png' filesep targetBrainArea '_', monkey, '_ln_',  HRV_DVs{ind_DV} '_heartrate' ], '-dpng')

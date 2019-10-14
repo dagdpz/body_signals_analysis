@@ -1,11 +1,11 @@
-function [out,Tab_outlier] = bsa_respiration_analyze_one_run(ecgSignal,settings_path,Fs,TOPLOT,FigInfo)
+function [out,Tab_outlier] = bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,TOPLOT,FigInfo)
 %bsa_respiration_analyze_one_run  - analyses ECG in one run/block
 %
 % USAGE:
-% out = bsa_respiration_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',r));
+% out = bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,1,sprintf('block%02d',r));
 %
 % INPUTS:
-%		ecgSignal		- ECG
+%		capSignal		- ECG
 %       settings_path   - full path to mfile with specific session/monkey settings
 %		Fs              - sampling rate (Hz)
 %       TOPLOT          - plot figure
@@ -43,7 +43,7 @@ function [out,Tab_outlier] = bsa_respiration_analyze_one_run(ecgSignal,settings_
 [remove "{" above to run it for debugging specific blocks]
 load('bodysignals_wo_behavior.mat');
 Fs = double(dat.ECG_SR);
-ecgSignal = double(dat.ECG{5});
+capSignal = double(dat.ECG{5});
 %}
 
 
@@ -59,12 +59,12 @@ end
 run(settings_path)
 
 
-n_samples       = length(ecgSignal);
+n_samples       = length(capSignal);
 t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sample is time 0! (not 1/Fs)
 
 % Step1: detrending
-ecgSignal = detrend(ecgSignal);
-%% create a butterworth filter order selection
+capSignal = detrend(capSignal);
+% Step2: create a butterworth filter order selection (low pass filter)
 Fn  = Fs/2;                                                 % Nyquist Frequency (Hz)
 Wp  = 40/Fn;                                                % Passband Frequency (Normalised)
 Ws  = 100/Fn;                                               % Stopband Frequency (Normalised)
@@ -76,14 +76,14 @@ Rs  = 150;                                                  % Stopband Ripple (d
 
 
 % Filter raw ECG using filtfilt from Matlab
-ecgFiltered = filtfilt(sos, g, ecgSignal); 
+capFiltered = filtfilt(sos, g, capSignal); 
 
 
 
 
 if 0 % Debug
     figure ('Name','Single-sided amplitude spectrum');
-    ft_original = fft(ecgSignal)/n_samples;         % Fourier Transform
+    ft_original = fft(capSignal)/n_samples;         % Fourier Transform
     Fv = linspace(0, 1, fix(n_samples/2)+1)*Fn;     % Frequency Vector
     Fv = Fv(Fv<60); % limit to 60 Hz
     
@@ -99,68 +99,28 @@ if 0 % Debug
 end
 
 
-% 
-% waveName = {'morl', []};
-% % we ignore components outside of the doubled range of interest
-% minFreq = Set.cap.wv_rangeOfInterest(1);
-% maxFreq = Set.cap.wv_rangeOfInterest(2);
-% sca = wavelet_init_scales(minFreq/2, 2*maxFreq, Set.wv_scalesPerDecade);
-% 
-% if ~Set.segment_length || t(end) < Set.segment_length, % process entire block at once - can be very slow for large blocks
-%     sig = struct('val',ecgFiltered, 'period', 1/Fs);
-%        
-%     energyProfile_tc = get_energy_profile(sig,waveName,sca);
-%     n_segments = 0;
-%     
-% else % chop to segments
-%     n_segment = round2(Set.segment_length*Fs,2); % round to even
-%     n_overlap = round2(Set.segment_overlap*Fs,2);
-%     % energyProfile_tc = zeros(1,n_samples);
-%     
-%     seg_ind = buffer(1:n_samples,n_segment,n_overlap,'nodelay');
-%     n_segments = size(seg_ind,2);
-%     disp(sprintf('chopping to %d segments of %.1f s with %.1f s overlap',n_segments,Set.segment_length,Set.segment_overlap));
-%     for s = 1:n_segments, % for each segment
-%         ind = seg_ind(:,s);
-%         ind = ind(ind>0); % only important for the last segment
-%         sig = struct('val',ecgFiltered(ind), 'period', 1/Fs);
-%         energyProfile_tc_segm = get_energy_profile(sig,waveName,sca);
-%         if s == 1, % first segment
-%             energyProfile_tc = energyProfile_tc_segm(1:end - n_overlap/2);
-%         elseif s<n_segments,
-%             energyProfile_tc = [energyProfile_tc energyProfile_tc_segm(n_overlap/2+1:end - n_overlap/2)];
-%         else % last segment
-%             energyProfile_tc = [energyProfile_tc energyProfile_tc_segm(n_overlap/2+1:end)];
-%         end
-%         
-% 
-%         
-%     end
-% end
-%     
-
-
-Set.cap.min_P2P                         = 1.5; % s
-Set.cap.eP_tc_minpeakheight_med_prop    = 0.3; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
-Set.cap.MAD_sensitivity_p2p_diff        = 3; % sensitivity factor for threshold caluclation -  larger value -> less sensitive (i.e. less outliers)
-
-range_energyProfile_tc = max(ecgFiltered) - min(ecgFiltered);
-[pks,locs]=findpeaks(ecgFiltered,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(ecgFiltered));
+range_energyProfile_tc = max(capFiltered) - min(capFiltered);
+[pks,locs_peak]=findpeaks(capFiltered,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
+[minimum,locs_min]=findpeaks(-capFiltered,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
+minimum = capFiltered(locs_min); 
 Tab_outlier.NrRpeaks_orig    = length(pks); 
 
 
 diff_peaks = [0 abs(diff(pks))];
+diff_peaks = [0 abs(diff(pks))];
 
 
-% remove outliers based on the difference between amplitude of peaks
+% remove outliers based on the difference in height /between the amplitude of peaks
 [data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,Set.cap.MAD_sensitivity_p2p_diff);
+[data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,Set.cap.MAD_sensitivity_p2p_diff);
+
 Tab_outlier.outlier = length(idx_outliers);
 
-appr_ecg_peak2peak_n_samples = mode(abs(diff(locs(idx_wo_outliers)))); % rough number of samples between ecg R peaks
+appr_ecg_peak2peak_n_samples = mode(abs(diff(locs_peak(idx_wo_outliers)))); % rough number of samples between ecg R peaks
 
 % rectify - leave only positive values
-ecgFiltered_pos             = max(ecgFiltered,0);
-[pos_ecg_pks,pos_ecg_locs]  = findpeaks(ecgFiltered_pos,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs));
+capFiltered_pos             = max(capFiltered,0);
+[pos_ecg_pks,pos_ecg_locs]  = findpeaks(capFiltered_pos,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs));
 
 % find ecg peaks closest (in time) to valid energyProfile_tc peaks, within search_segment_n_samples
 search_segment_n_samples    = fix(appr_ecg_peak2peak_n_samples* Set.cap.fraction_R2R_look4peak);
@@ -221,7 +181,7 @@ detectedOutlier2                = 100-((length(idx_valid_R2R)/length(R2R))*100);
 disp(['Fraction of R2R outliers detected using deviations from R2R mode and Hampel: ', num2str(detectedOutlier2) ])
 
 Tab_outlier.outliers_delete_abs = length(idx_to_delete);
-
+%
 Tab_outlier.outliers_hampel_pct = 100- (((length(idx_valid_R2R)+Tab_outlier.outlier_Mode_abs)/length(R2R))*100) ;
 
 %R-peaks
@@ -241,7 +201,7 @@ disp(['Fraction of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outlie
 %%  CALCULATE VARIABLES
 median_R2R_valid        = median(R2R_valid);
 mode_R2R_valid          = mode(R2R_valid);
-[hist_R2R_valid,bins]   = hist(R2R_valid,bins);
+[hist_R2R_valid,bins]   = hist(R2R_valid,[Set.min_R2R:0.01:1]);
 
 R2R_valid_bpm           = 60./R2R_valid;
 mean_R2R_valid_bpm      = mean(R2R_valid_bpm);
@@ -345,23 +305,23 @@ if TOPLOT
     
     %% single HR-peak
 %     t = t*1000; 
-%     plot(t,ecgSignal,'b'); hold on;
+%     plot(t,capSignal,'b'); hold on;
 %     set(gca,'xlim',[172 173]);    
 %     
     ha1 = subplot(4,4,[1:4]); 
-    plot(t,ecgSignal,'b'); hold on;
-    plot(t,ecgFiltered,'g');    
-    plot(t(locs(idx_wo_outliers)),ecgFiltered(locs(idx_wo_outliers)),'ko','MarkerSize',6);
-    plot(t(maybe_valid_pos_ecg_locs),ecgFiltered(maybe_valid_pos_ecg_locs),'kv','MarkerSize',6,'MarkerEdgeColor',[0.5 0.5 0.5]);
+    plot(t,capSignal,'b'); hold on;
+    plot(t,capFiltered,'g');    
+    plot(t(locs(idx_wo_outliers)),capFiltered(locs(idx_wo_outliers)),'ko','MarkerSize',6);
+    plot(t(maybe_valid_pos_ecg_locs),capFiltered(maybe_valid_pos_ecg_locs),'kv','MarkerSize',6,'MarkerEdgeColor',[0.5 0.5 0.5]);
      % valid R peaks
-    plot(t(R_valid_locs),ecgFiltered(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
+    plot(t(R_valid_locs),capFiltered(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
     %valid R2R intervals -> filled TRIANGLE
-    plot(t(R2R_valid_locs),ecgFiltered(R2R_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
-    plot(t(locs(idx_outliers)),ecgFiltered(locs(idx_outliers)),'bx');
+    plot(t(R2R_valid_locs),capFiltered(R2R_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
+    plot(t(locs(idx_outliers)),capFiltered(locs(idx_outliers)),'bx');
    
     %line for 
     plot([t(R2R_valid_locs(idx_valid_R2R_consec)) - R2R_valid(idx_valid_R2R_consec); t(R2R_valid_locs(idx_valid_R2R_consec))], ...
-         [ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec)); ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec))],'k');
+         [capFiltered(R2R_valid_locs(idx_valid_R2R_consec)); capFiltered(R2R_valid_locs(idx_valid_R2R_consec))],'k');
  
  
      
@@ -369,9 +329,9 @@ if TOPLOT
     xlabel('Time (s)');
     title(sprintf('CAP: %d valid peaks, %d valid P2P intervals',length(R_valid_locs),length(R2R_valid_locs)));
     if isempty(idx_outliers)
-    legend({'ecgSignal','ecgFiltered','allPeaks','only posPeaks','valid Peaks','valid P2Pinterval'},'location','Best');
+    legend({'capSignal','capFiltered','allPeaks','only posPeaks','valid Peaks','valid P2Pinterval'},'location','Best');
     else
-    legend({'ecgSignal','ecgFiltered','allPeaks','posPeaks','valid Rpeaks','valid P2Pinterval','outlier.diff Peaks'},'location','Best');
+    legend({'capSignal','capFiltered','allPeaks','posPeaks','valid Rpeaks','valid P2Pinterval','outlier.diff Peaks'},'location','Best');
     end
  
     

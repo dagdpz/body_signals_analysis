@@ -28,14 +28,10 @@ Set.hampel_T                        = 15 ; % threshold for hamplel outlier detec
 Set.hampel_DX                       = 10; % (# R peaks) half width of hampel window for outlier detection
 
 
-% Set for wavelet analysis
-
-Set.cap.wv_rangeOfInterest              = [1 12]; % Hz
-Set.cap.wv_scalesPerDecade              = 32;
 % properties for the respiration peak detection
-Set.cap.min_P2P                         = 0.25; % s
-Set.cap.eP_tc_minpeakheight_med_prop    = 0.5; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
-Set.cap.MAD_sensitivity_p2p_diff        = 3; % sensitivity factor for threshold caluclation -  larger value -> less sensitive (i.e. less outliers)
+Set.cap.min_P2P                         = 2; % s
+Set.cap.eP_tc_minpeakheight_med_prop    = 1; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
+Set.cap.MAD_sensitivity_p2p_diff        = 4; % sensitivity factor for threshold caluclation -  larger value -> less sensitive (i.e. less outliers)
 Set.cap.fraction_R2R_look4peak          = 0.1; % fraction of R2R interval to look for real R peak next to energy timecourse peak 
 Set.cap.hampel_T                        = 15 ; % threshold for hamplel outlier detection (larger means more permissive, less outliers)
 Set.cap.hampel_DX                       = 10; % (# R peaks) half width of hampel window for outlier detection

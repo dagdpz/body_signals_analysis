@@ -65,6 +65,11 @@ figure(2)
 h3 = histogram([Control.pre_rest],6); hold on; 
 h4 =histogram([Injection.pre_rest], 6);
 
+   h = [];
+        h(1) = figure(1);
+ print(h,[path_SaveFig filesep 'png' filesep targetBrainArea '_' monkey '_' 'Histogram_meanHeartrate_pre' ], '-dpng')
+        set(h,'Renderer','Painters');
+        set(h,'PaperPositionMode','auto')
 
 %% How predictive are the first  Block for the HR in the pre-Blocks?
 for i_Sess = 1: length(S_Blocks2)
