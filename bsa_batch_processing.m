@@ -51,6 +51,8 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_T
 out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190912',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190912');
 out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191011',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20191011');
 out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191010',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20191010');
+out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191014',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20191014');
+out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191015',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20191015');
 
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190808', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190808\bodysignals_without_behavior');
 out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190808\bodysignals_without_behavior',pathExcel,settings_filename,'',false,'dataOrigin','TDT');

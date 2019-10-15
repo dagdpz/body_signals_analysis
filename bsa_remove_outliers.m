@@ -45,7 +45,13 @@ MAD = median(absoluteDeviation);
 
 % Find outliers: absolute difference is more than some factor times the mad value.
 thresholdValue = sensitivityFactor * c * sensitivityFactor * MAD;
-idx_outliers = find(abs(absoluteDeviation) > thresholdValue);
+% if strcmp( criterium, 'BigDifference')
+% idx_outliers = find(abs(absoluteDeviation) > thresholdValue);
+% elseif strcmp( criterium, 'SmallDifference')
+% idx_outliers = find(abs(absoluteDeviation) < thresholdValue);
+% end
+
+ idx_outliers = find(abs(absoluteDeviation) > thresholdValue);
 
 idx_wo_outliers = setdiff(1:length(data),idx_outliers);
 outliers = data;

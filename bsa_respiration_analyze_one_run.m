@@ -105,14 +105,25 @@ range_energyProfile_tc = max(capFiltered) - min(capFiltered);
 minimum = capFiltered(locs_min); 
 Tab_outlier.NrRpeaks_orig    = length(pks); 
 
+% find peaks which are next to each other without a minimum
+locs = [locs_min, locs_peak]; 
+locs = sort(locs); 
+[C, il,ilp] = intersect(locs,locs_peak )
+idx = locs(il(diff(il) == 1)); %shifted!!
+
+
+
+height_peaks = abs(minimum)+pks;
+% remove peaks which 
+%criterium = 'SmallDifference';
+%[data_wo_outliers_p2m,idx_wo_outliers_p2m,outliers_p2m,idx_outliers,thresholdValue_p2m] = bsa_remove_outliers(height_peaks,Set.cap.MAD_sensitivity_p2m_diff,criterium);
+
 
 diff_peaks = [0 abs(diff(pks))];
-diff_peaks = [0 abs(diff(pks))];
 
-
+criterium = 'BigDifference';
 % remove outliers based on the difference in height /between the amplitude of peaks
-[data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,Set.cap.MAD_sensitivity_p2p_diff);
-[data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,Set.cap.MAD_sensitivity_p2p_diff);
+[data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,Set.cap.MAD_sensitivity_p2p_diff,criterium);
 
 Tab_outlier.outlier = length(idx_outliers);
 
@@ -126,7 +137,7 @@ capFiltered_pos             = max(capFiltered,0);
 search_segment_n_samples    = fix(appr_ecg_peak2peak_n_samples* Set.cap.fraction_R2R_look4peak);
 maybe_valid_pos_ecg_locs    = [];
 for p = 1:length(idx_wo_outliers)
-    idx_overlap = intersect( pos_ecg_locs, locs(idx_wo_outliers(p))-search_segment_n_samples : locs(idx_wo_outliers(p))+search_segment_n_samples );
+    idx_overlap = intersect( pos_ecg_locs, locs_peak(idx_wo_outliers(p))-search_segment_n_samples : locs_peak(idx_wo_outliers(p))+search_segment_n_samples );
     
     if ~isempty(idx_overlap)
         maybe_valid_pos_ecg_locs = [maybe_valid_pos_ecg_locs idx_overlap(end)];
@@ -310,8 +321,10 @@ if TOPLOT
 %     
     ha1 = subplot(4,4,[1:4]); 
     plot(t,capSignal,'b'); hold on;
-    plot(t,capFiltered,'g');    
-    plot(t(locs(idx_wo_outliers)),capFiltered(locs(idx_wo_outliers)),'ko','MarkerSize',6);
+    plot(t,capFiltered,'g'); 
+    plot(t(locs_min(idx_wo_outliers)),capFiltered(locs_min(idx_wo_outliers)),'bo','MarkerSize',6);
+
+    plot(t(locs_peak(idx_wo_outliers)),capFiltered(locs_peak(idx_wo_outliers)),'ko','MarkerSize',6);
     plot(t(maybe_valid_pos_ecg_locs),capFiltered(maybe_valid_pos_ecg_locs),'kv','MarkerSize',6,'MarkerEdgeColor',[0.5 0.5 0.5]);
      % valid R peaks
     plot(t(R_valid_locs),capFiltered(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
