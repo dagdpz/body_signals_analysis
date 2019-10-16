@@ -98,13 +98,15 @@ if 0 % Debug
     title('Single-sided amplitude spectrum');
 end
 
-
-range_energyProfile_tc = max(capFiltered) - min(capFiltered);
+%% full  rectification
+% part of the quarter
+capFiltered_rectified = ig_fullrectify(capFiltered); 
+MinPeakProminence = median (capFiltered_rectified)* Set.cap.MinPeakProminenceCoef; 
 % find peaks according to three critera:
 % 1) amplitude of the previous & next minimum
 % 2) Distance between two peaks
 % 3) Min Peak height
-[pks,locs_peak]=findpeaks(capFiltered,'threshold',eps,'MinPeakProminence',Set.cap.MinPeakProminence,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
+[pks,locs_peak]=findpeaks(capFiltered,'threshold',eps,'MinPeakProminence',MinPeakProminence,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
 % find peaks which are next to each other without a minimum
 % locs = [locs_min, locs_peak]; 
 % locs = sort(locs); 
@@ -127,8 +129,9 @@ Tab_outlier.NrRpeaks_orig       = length(pks);
 
 appr_ecg_peak2peak_n_samples = mode(abs(diff(locs_peak(idx_wo_outliers)))); % rough number of samples between ecg R peaks
 
-% rectify - leave only positive values
+% half-way rectify - leave only positive values
 capFiltered_pos             = max(capFiltered,0);
+median(capFiltered_pos)
 [pos_ecg_pks,pos_ecg_locs]  = findpeaks(capFiltered_pos,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs));
 
 % find ecg peaks closest (in time) to valid energyProfile_tc peaks, within search_segment_n_samples
