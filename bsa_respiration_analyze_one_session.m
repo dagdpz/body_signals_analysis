@@ -210,11 +210,12 @@ for i_block = 1:n_blocks, % for each run/block
      end
  
       % respiration
-        [ out_cap(i_block), Tab_outlier(i_block) ]= bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,1,sprintf('block%02d',i_block));
+        [ out_cap(i_block), Tab_outlier(i_block) ]= bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,1,i_block,NrBlock);
 
      
    %ECG
-    [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,sprintf('block%02d',i_block));
+       [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,i_block,NrBlock);
+
     print(out(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],i_block),'-dpng','-r0');
     if ~par.keepRunFigs
         close(out(i_block).hf);

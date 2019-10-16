@@ -1,4 +1,4 @@
-function [out,Tab_outlier] = bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,TOPLOT,FigInfo)
+function [out,Tab_outlier] = bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,TOPLOT,i_block,NrBlock)
 %bsa_respiration_analyze_one_run  - analyses ECG in one run/block
 %
 % USAGE:
@@ -100,32 +100,30 @@ end
 
 
 range_energyProfile_tc = max(capFiltered) - min(capFiltered);
-[pks,locs_peak]=findpeaks(capFiltered,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
-[minimum,locs_min]=findpeaks(-capFiltered,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
-minimum = capFiltered(locs_min); 
-Tab_outlier.NrRpeaks_orig    = length(pks); 
-
+% find peaks according to three critera:
+% 1) amplitude of the previous & next minimum
+% 2) Distance between two peaks
+% 3) Min Peak height
+[pks,locs_peak]=findpeaks(capFiltered,'threshold',eps,'MinPeakProminence',Set.cap.MinPeakProminence,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
 % find peaks which are next to each other without a minimum
-locs = [locs_min, locs_peak]; 
-locs = sort(locs); 
-[C, il,ilp] = intersect(locs,locs_peak )
-idx = locs(il(diff(il) == 1)); %shifted!!
+% locs = [locs_min, locs_peak]; 
+% locs = sort(locs); 
+% [C, il,ilp] = intersect(locs,locs_peak );
+% idx = locs(il(diff(il) == 1)); %shifted!!
 
 
-
-height_peaks = abs(minimum)+pks;
-% remove peaks which 
+%remove peaks which 
 %criterium = 'SmallDifference';
 %[data_wo_outliers_p2m,idx_wo_outliers_p2m,outliers_p2m,idx_outliers,thresholdValue_p2m] = bsa_remove_outliers(height_peaks,Set.cap.MAD_sensitivity_p2m_diff,criterium);
 
 
 diff_peaks = [0 abs(diff(pks))];
 
-criterium = 'BigDifference';
 % remove outliers based on the difference in height /between the amplitude of peaks
-[data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,Set.cap.MAD_sensitivity_p2p_diff,criterium);
+[data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,Set.cap.MAD_sensitivity_p2p_diff);
 
 Tab_outlier.outlier = length(idx_outliers);
+Tab_outlier.NrRpeaks_orig       = length(pks); 
 
 appr_ecg_peak2peak_n_samples = mode(abs(diff(locs_peak(idx_wo_outliers)))); % rough number of samples between ecg R peaks
 
@@ -144,6 +142,8 @@ for p = 1:length(idx_wo_outliers)
     end
     
 end
+
+
 
 %% R2R intervals
 R2R             = [NaN diff(t(maybe_valid_pos_ecg_locs))]; % 
@@ -165,6 +165,8 @@ R2R_valid_before_hampel             = R2R(idx_valid_R2R);
 Tab_outlier.NrR2R_beforehampel      = length(R2R_valid_before_hampel); 
 %% remove outliers from R2R using hampel
 [YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hampel, Set.cap.hampel_DX, Set.cap.hampel_T);
+
+%[YY,idx_outliers_hampel, xmedian, xsigma] = hampel(R2R_valid_before_hampel, Set.cap.hampel_nb_of_std,  Set.cap.hampel_adjacentSampleToComputeMean); %R2R_valid_before_hampel, Set.cap.hampel_DX, Set.cap.hampel_T
 idx_to_delete = [];
 idx_to_delete_after_outliers = [];
 Tab_outlier.outliers_hampel_abs = sum(idx_outliers_hampel);
@@ -210,6 +212,12 @@ disp(['Nr of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outliers_all
 disp(['Fraction of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outliers_all_pct) ])
 
 %%  CALCULATE VARIABLES
+%% amplitude of the peak
+[minimum,locs_min]=findpeaks(-capFiltered,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
+minimum                         = capFiltered(locs_min); 
+%height_peaks = abs(minimum)+pks(idx_wo_outliers);
+
+%
 median_R2R_valid        = median(R2R_valid);
 mode_R2R_valid          = mode(R2R_valid);
 [hist_R2R_valid,bins]   = hist(R2R_valid,[Set.min_R2R:0.01:1]);
@@ -260,9 +268,14 @@ if length(R2R_valid_locs)>1,
 end
 
 %% How "much time of the run" was deleted related to the detection of outlier?
-Tab_outlier.durationRun_s       = max(t);
-Tab_outlier.duration_NotValidSegments_s   = max(t)-sum(R2R(idx_valid_R2R));
+%% How "much time of the run" was deleted related to the detection of outlier?
+Tab_outlier.durationRun_s                   = max(t);
+Tab_outlier.duration_NotValidSegments_s     = max(t)-sum(R2R(idx_valid_R2R));
+Tab_outlier.nrblock                         = i_block; 
+Tab_outlier.nrblock_combinedFiles           = NrBlock;
+if Set.OutlierModus == 1; 
 display(Tab_outlier)
+end
 
 
 if length(R2R_valid) < 100,
@@ -312,7 +325,7 @@ end
 out.hf = [];
 
 if TOPLOT
-    hf = figure('Name',FigInfo,'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
+    hf = figure('Name',sprintf('block%02d',i_block),'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
     
     %% single HR-peak
 %     t = t*1000; 
@@ -322,7 +335,7 @@ if TOPLOT
     ha1 = subplot(4,4,[1:4]); 
     plot(t,capSignal,'b'); hold on;
     plot(t,capFiltered,'g'); 
-    plot(t(locs_min(idx_wo_outliers)),capFiltered(locs_min(idx_wo_outliers)),'bo','MarkerSize',6);
+    plot(t(locs_min),capFiltered(locs_min),'bo','MarkerSize',6);
 
     plot(t(locs_peak(idx_wo_outliers)),capFiltered(locs_peak(idx_wo_outliers)),'ko','MarkerSize',6);
     plot(t(maybe_valid_pos_ecg_locs),capFiltered(maybe_valid_pos_ecg_locs),'kv','MarkerSize',6,'MarkerEdgeColor',[0.5 0.5 0.5]);
@@ -330,7 +343,7 @@ if TOPLOT
     plot(t(R_valid_locs),capFiltered(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
     %valid R2R intervals -> filled TRIANGLE
     plot(t(R2R_valid_locs),capFiltered(R2R_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
-    plot(t(locs(idx_outliers)),capFiltered(locs(idx_outliers)),'bx');
+    plot(t(locs_peak(idx_outliers)),capFiltered(locs_peak(idx_outliers)),'bx');
    
     %line for 
     plot([t(R2R_valid_locs(idx_valid_R2R_consec)) - R2R_valid(idx_valid_R2R_consec); t(R2R_valid_locs(idx_valid_R2R_consec))], ...
@@ -389,8 +402,8 @@ if TOPLOT
     ylabel('R2R(n+1)');
     title('Poincaré plot');
     axis square
-    ig_set_xy_axes_equal;
-    ig_add_equality_line;
+    %ig_set_xy_axes_equal;
+    %ig_add_equality_line;
     
     if R2R_valid_spectrum,
         subplot(4,4,16);
