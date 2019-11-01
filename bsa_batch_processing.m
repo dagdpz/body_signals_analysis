@@ -53,6 +53,8 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_T
 out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191010',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20191010');
 out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191014',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20191014');
 out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191015',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20191015');
+out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191017',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20191017');
+out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191021',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20191021');
 
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190808', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190808\bodysignals_without_behavior');
 out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190808\bodysignals_without_behavior',pathExcel,settings_filename,'',false,'dataOrigin','TDT');
@@ -107,7 +109,42 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\
 pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx';
 settings_filename = 'bsa_settings_Curius2019.m'; % full path will be complemented in bsa_ecg_analyze_one_session
 
-out = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190821',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190821');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190913',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190913');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190905',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190905');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190820',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190820');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190814',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190814');
+%out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190809',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190809');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190801',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190801');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190729',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190729');
+
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190912',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190912');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190910',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190910');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190903',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190903');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190815',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190815');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190808',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190808');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190806',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190806');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190802',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190802');
+
+pathExcel = 'Y:\Logs\Inactivation\Cornelius\Cornelius_Inactivation_log_since201901_1.xlsx';
+settings_filename = 'bsa_settings_Cornelius2019.m';
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191010',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20191010');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190314',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190314');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190228',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190228');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190214',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190214');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190207',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190201',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190201');
+
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190313',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190313');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190304',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190304');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190227',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190227');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190213',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190213');
+out_cap = bsa_respiration_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190216\bodysignals_without_behavior',pathExcel,settings_filename,'',false,'dataOrigin','TDT');
+out_cap = bsa_respiration_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190131\bodysignals_without_behavior',pathExcel,settings_filename,'',false,'dataOrigin','TDT');
+
+
+bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190124', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190124\bodysignals_without_behavior');
+out_cap = bsa_respiration_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190124\bodysignals_without_behavior',pathExcel,settings_filename,'',false,'dataOrigin','TDT');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190129',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190129');
 
 
 
@@ -137,7 +174,7 @@ sessions = {
 
 
     'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190124\bodysignals_without_behavior'; 
-    'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190129\bodysignals_without_behavior';
+    'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190129';
     'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190201';
     'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207';
     'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190214';
@@ -153,16 +190,16 @@ sessions = {
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190802';
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190806';
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190808';
-    'Y:\Projects\PhysiologicalRecording\Data\Curius\20190815'
-   % 'Y:\Projects\PhysiologicalRecording\Data\Curius\20190821'
-   % 'Y:\Projects\PhysiologicalRecording\Data\Curius\20190822'
+   'Y:\Projects\PhysiologicalRecording\Data\Curius\20190815'
+   %% 'Y:\Projects\PhysiologicalRecording\Data\Curius\20190821'
+   %% 'Y:\Projects\PhysiologicalRecording\Data\Curius\20190822'
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190903' %baseline Injection
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190910' %baseline Injection
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190912' %baseline Injection
 
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190729';
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190801';
-    'Y:\Projects\PhysiologicalRecording\Data\Curius\20190809';
+    %'Y:\Projects\PhysiologicalRecording\Data\Curius\20190809';
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190814';
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190820'
    % 'Y:\Projects\PhysiologicalRecording\Data\Curius\20190826'
@@ -171,8 +208,11 @@ sessions = {
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190913'
 
     };
-targetBrainArea = 'mdPul_AddedSessionNr';
-inactivation_sessions = {'20190729' '20190801' '20190809' '20190814' '20190820'  '20190905'  '20190913' }; %'20190828' 
+targetBrainArea = 'mdPul';
+inactivation_sessions = {'20190729' '20190801' '20190814' '20190820'  '20190905'  '20190913' }; %'20190828'  % '20190809'
+addtoDropbox = 'C:\Users\kkaduk\Dropbox\DAG\Kristin\Statistic\body_signal_analysis';
+bsa_ecg_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\', sessions, inactivation_sessions, targetBrainArea, addtoDropbox, monkey)
+bsa_cap_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\', sessions, inactivation_sessions, targetBrainArea, addtoDropbox, monkey)
 
 %% Curius
 % MEDIAL Dorsal PUlvinar - different baseline
@@ -298,15 +338,17 @@ monkey = 'Cornelius';
 
 addtoDropbox = 'C:\Users\kkaduk\Dropbox\DAG\Kristin\Statistic\body_signal_analysis';
 bsa_ecg_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\', sessions, inactivation_sessions, targetBrainArea, addtoDropbox, monkey)
+bsa_cap_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\', sessions, inactivation_sessions, targetBrainArea, addtoDropbox, monkey)
 
 %%
-monkey = 'Cornelius'; 
-targetBrainArea = 'dPul_dPulreplication'; %mdPul %ldPul_mdPul %ldPul %dPul_Cur_Cor %mdPul_AddedSessionNr
+monkey = 'Curius'; 
+targetBrainArea = 'mdPul'; %mdPul %ldPul_mdPul %ldPul %dPul_Cur_Cor %mdPul_AddedSessionNr
 Stats_beforeComputedWithR = 0; %[1,2]; 
 Text = 0; 
 BaselineInjection = 0; %[5,6,7]; %Settings -> red color circle for baseline Injection sessions
-path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\ECG\',targetBrainArea]; 
+path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\CAP\',targetBrainArea]; 
 bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR, Text,BaselineInjection)
+bsa_graphs_cap(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR, Text,BaselineInjection)
 
 %%
 monkey = 'Curius';  %Curius
@@ -341,21 +383,21 @@ sessions = {
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190809';
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190814';
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190820'
-   % 'Y:\Projects\PhysiologicalRecording\Data\Curius\20190826'
-   % 'Y:\Projects\PhysiologicalRecording\Data\Curius\20190828'
+   %% 'Y:\Projects\PhysiologicalRecording\Data\Curius\20190826'
+   %% 'Y:\Projects\PhysiologicalRecording\Data\Curius\20190828'
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190905'
     'Y:\Projects\PhysiologicalRecording\Data\Curius\20190913'
 
     };
 targetBrainArea = 'mdPul_AddedSessionNr';
-inactivation_sessions = {'20190729' '20190801' '20190809' '20190814' '20190820'  '20190905'  '20190913' }; %'20190828' 
+inactivation_sessions = {'20190729' '20190801' '20190809' '20190814' '20190820'  '20190905'  '20190913' }; %'20190828'  
 
 path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\ECG\',targetBrainArea]; 
 bsa_evaluate_outliers(monkey, sessions,targetBrainArea, inactivation_sessions, path_SaveFig )
 
 %%
 monkey = 'Cornelius'; 
-targetBrainArea = 'dPul_dPulreplication';
+targetBrainArea = 'dPul2';
 path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\ECG\',targetBrainArea]; 
 
 bsa_meanHR(monkey,targetBrainArea,path_SaveFig)

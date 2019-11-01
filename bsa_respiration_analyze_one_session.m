@@ -1,4 +1,4 @@
-function out = bsa_respiration_analyze_one_session(session_path,pathExcel,settings_filename,varargin)
+function out_cap = bsa_respiration_analyze_one_session(session_path,pathExcel,settings_filename,varargin)
 %bsa_ecg_analyze_one_session  - analyzing ECG in one session (in multiple runs/blocks)
 %
 % USAGE:
@@ -117,6 +117,7 @@ if ~isempty(pathExcel)
 end
 
 %%
+
   if strcmp(par.dataOrigin, 'TDT'),
       load([session_path filesep 'bodysignals_wo_behavior.mat']);
       Fs        = dat.ECG_SR;
@@ -144,7 +145,7 @@ if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
 end
     
 %%
-for i_block = 1:n_blocks, % for each run/block
+for i_block = 1: n_blocks, % for each run/block
     NrBlock = [];   
    % get the information about the task or rest
     if ~strcmp(par.dataOrigin, 'TDT'),
@@ -193,41 +194,43 @@ for i_block = 1:n_blocks, % for each run/block
         end
     end
     
-     disp(sprintf('Processing block %d',i_block));
-     
-     if strcmp(par.dataOrigin, 'TDT'),
-         ecgSignal   = double(ECG{i_block});
-         capSignal   = double(CAP{i_block});
-         poxSignal   = double(POX{i_block});
-
-     else
-         OUT = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(i_block).name]); 
-         ecgSignal   = OUT.ECG1;
-         capSignal   = OUT.CAP1;
-         poxSignal   = OUT.POX1;
-
-         Fs          = OUT.Fs;
-     end
- 
-      % respiration
-        [ out_cap(i_block), Tab_outlier(i_block) ]= bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,1,i_block,NrBlock);
-
-     
-   %ECG
-       [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,i_block,NrBlock);
-
-    print(out(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],i_block),'-dpng','-r0');
-    if ~par.keepRunFigs
-        close(out(i_block).hf);
+    disp(sprintf('Processing block %d',i_block));
+    
+    if strcmp(par.dataOrigin, 'TDT'),
+        ecgSignal   = double(ECG{i_block});
+        capSignal   = double(CAP{i_block});
+        poxSignal   = double(POX{i_block});
+        
+    else
+        OUT = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(i_block).name]);
+        ecgSignal   = OUT.ECG1;
+        capSignal   = OUT.CAP1;
+        poxSignal   = OUT.POX1;
+        
+        Fs          = OUT.Fs;
     end
     
-   
+    % respiration
+    [ out_cap(i_block), Tab_outlier_cap(i_block) ]= bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,1,i_block,NrBlock);
+    print(out_cap(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep 'cap_'],i_block),'-dpng','-r0');
+    if ~par.keepRunFigs
+        close(out_cap(i_block).hf);
+    end
+%     %ECG
+%     [ out(i_block), Tab_outlier_ecg(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,i_block,NrBlock);
+%     print(out(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep 'ecg_'],i_block),'-dpng','-r0');
+%     if ~par.keepRunFigs
+%         close(out(i_block).hf);
+%     end
+    
+    
 
 end
 
-save([par.saveResults filesep session_name '_cap.mat'],'out','out_cap','Tab_outlier','par','ses','session_name','session_path');
+%save([par.saveResults filesep session_name '.mat'],'out','out_cap','Tab_outlier_ecg','Tab_outlier_cap','par','ses','session_name','session_path');
+save([par.saveResults filesep session_name '_cap.mat'],'out_cap','Tab_outlier_cap','par','ses','session_name','session_path');
 
-
+% 
 blks = 1:n_blocks;
 taskMFC = [0.3922    0.4745    0.6353];
 restMFC = [1 1 1];
@@ -241,30 +244,74 @@ else
     restMFC = [0.8 0.8 0.8];
 end
 
+% 
+% ig_figure('Name',[session_path '->' par.saveResults],'Position',[200 200 900 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
+% ha(1) = subplot(4,1,1);
+% plot(blks(rest_idx),[out(rest_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC); hold on;
+% plot(blks(task_idx),[out(task_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
+% plot(blks(rest_idx),[out(rest_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC);
+% plot(blks(task_idx),[out(task_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
+% ylabel('Mean (o) & med (s) of R2R (bpm)');
+% 
+% ha(2) = subplot(4,1,2);
+% plot(blks(rest_idx),[out(rest_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',restMFC); hold on;
+% plot(blks(task_idx),[out(task_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',taskMFC);
+% ylabel('RMSSD of R2R interval (ms)');
+% 
+% ha(3) = subplot(4,1,3);
+% plot(blks(rest_idx),[out(rest_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',restMFC);  hold on;
+% plot(blks(task_idx),[out(task_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',taskMFC);
+% ylabel('SD of R2R interval (bpm)');
+% 
+% ha(4) = subplot(4,1,4);
+% plot(blks(rest_idx),[out(rest_idx).lfPower],'ro','MarkerFaceColor',restMFC); hold on;
+% plot(blks(task_idx),[out(task_idx).lfPower],'ro','MarkerFaceColor',taskMFC); 
+% plot(blks(rest_idx),[out(rest_idx).hfPower],'go','MarkerFaceColor',restMFC);
+% plot(blks(task_idx),[out(task_idx).hfPower],'go','MarkerFaceColor',taskMFC);
+% legend({'lf rest','lf task','hf rest','hf task'},'location','Best');
+% xlabel('blocks');
+% ylabel('LF and HF power (ms^2)');
+% 
+% 
+% if ~isempty(ses),
+%    
+%     for ax = 1:length(ha),
+%         axes(ha(ax));
+%         ig_add_vertical_line(ses.first_inj_block -0.5);
+%         
+%     end
+%     
+% end
+% 
+% 
+% print(gcf,[par.saveResults filesep session_name '_R2R_TC.pdf'],'-dpdf','-r0');
+
+
+%respiration
 
 ig_figure('Name',[session_path '->' par.saveResults],'Position',[200 200 900 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
 ha(1) = subplot(4,1,1);
-plot(blks(rest_idx),[out(rest_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC); hold on;
-plot(blks(task_idx),[out(task_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
-plot(blks(rest_idx),[out(rest_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC);
-plot(blks(task_idx),[out(task_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
-ylabel('Mean (o) & med (s) of R2R (bpm)');
+plot(blks(rest_idx),[out_cap(rest_idx).mean_B2B_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC); hold on;
+plot(blks(task_idx),[out_cap(task_idx).mean_B2B_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
+plot(blks(rest_idx),[out_cap(rest_idx).median_B2B_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC);
+plot(blks(task_idx),[out_cap(task_idx).median_B2B_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
+ylabel('Mean (o) & med (s) of B2B (bpm)');
 
 ha(2) = subplot(4,1,2);
-plot(blks(rest_idx),[out(rest_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',restMFC); hold on;
-plot(blks(task_idx),[out(task_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',taskMFC);
-ylabel('RMSSD of R2R interval (ms)');
+plot(blks(rest_idx),[out_cap(rest_idx).rmssd_B2B_valid_ms],'bo','MarkerFaceColor',restMFC); hold on;
+plot(blks(task_idx),[out_cap(task_idx).rmssd_B2B_valid_ms],'bo','MarkerFaceColor',taskMFC);
+ylabel('RMSSD of B2B interval (ms)');
 
 ha(3) = subplot(4,1,3);
-plot(blks(rest_idx),[out(rest_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',restMFC);  hold on;
-plot(blks(task_idx),[out(task_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',taskMFC);
-ylabel('SD of R2R interval (bpm)');
+plot(blks(rest_idx),[out_cap(rest_idx).std_B2B_valid_bpm],'bo','MarkerFaceColor',restMFC);  hold on;
+plot(blks(task_idx),[out_cap(task_idx).std_B2B_valid_bpm],'bo','MarkerFaceColor',taskMFC);
+ylabel('SD of B2B interval (bpm)');
 
 ha(4) = subplot(4,1,4);
-plot(blks(rest_idx),[out(rest_idx).lfPower],'ro','MarkerFaceColor',restMFC); hold on;
-plot(blks(task_idx),[out(task_idx).lfPower],'ro','MarkerFaceColor',taskMFC); 
-plot(blks(rest_idx),[out(rest_idx).hfPower],'go','MarkerFaceColor',restMFC);
-plot(blks(task_idx),[out(task_idx).hfPower],'go','MarkerFaceColor',taskMFC);
+plot(blks(rest_idx),[out_cap(rest_idx).lfPower],'ro','MarkerFaceColor',restMFC); hold on;
+plot(blks(task_idx),[out_cap(task_idx).lfPower],'ro','MarkerFaceColor',taskMFC); 
+plot(blks(rest_idx),[out_cap(rest_idx).hfPower],'go','MarkerFaceColor',restMFC);
+plot(blks(task_idx),[out_cap(task_idx).hfPower],'go','MarkerFaceColor',taskMFC);
 legend({'lf rest','lf task','hf rest','hf task'},'location','Best');
 xlabel('blocks');
 ylabel('LF and HF power (ms^2)');
@@ -281,7 +328,6 @@ if ~isempty(ses),
 end
 
 
-print(gcf,[par.saveResults filesep session_name '_R2R_TC.pdf'],'-dpdf','-r0');
-
+print(gcf,[par.saveResults filesep session_name '_B2B_TC.pdf'],'-dpdf','-r0');
 warning on;
 

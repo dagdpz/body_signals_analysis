@@ -64,19 +64,22 @@ t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sa
 
 % Step1: detrending
 capSignal = detrend(capSignal);
+
+capFiltered = smoothdata(capSignal, 'gaussian'); 
+
 % Step2: create a butterworth filter order selection (low pass filter)
-Fn  = Fs/2;                                                 % Nyquist Frequency (Hz)
-Wp  = 40/Fn;                                                % Passband Frequency (Normalised)
-Ws  = 100/Fn;                                               % Stopband Frequency (Normalised)
-Rp  = 1;                                                    % Passband Ripple (dB)
-Rs  = 150;                                                  % Stopband Ripple (dB)
-[n,Wn]  = buttord(Wp,Ws,Rp,Rs);                             % Filter Order
-[z,p,k] = butter(n,Wn);
-[sos,g] = zp2sos(z,p,k);
-
-
-% Filter raw ECG using filtfilt from Matlab
-capFiltered = filtfilt(sos, g, capSignal); 
+% Fn  = Fs/2;                                                 % Nyquist Frequency (Hz)
+% Wp  = 40/Fn;                                                % Passband Frequency (Normalised)
+% Ws  = 100/Fn;                                               % Stopband Frequency (Normalised)
+% Rp  = 1;                                                    % Passband Ripple (dB)
+% Rs  = 150;                                                  % Stopband Ripple (dB)
+% [n,Wn]  = buttord(Wp,Ws,Rp,Rs);                             % Filter Order
+% [z,p,k] = butter(n,Wn);
+% [sos,g] = zp2sos(z,p,k);
+% 
+% 
+% % Filter raw ECG using filtfilt from Matlab
+% capFiltered = filtfilt(sos, g, capSignal); 
 
 
 
@@ -135,7 +138,7 @@ median(capFiltered_pos)
 [pos_ecg_pks,pos_ecg_locs]  = findpeaks(capFiltered_pos,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs));
 
 % find ecg peaks closest (in time) to valid energyProfile_tc peaks, within search_segment_n_samples
-search_segment_n_samples    = fix(appr_ecg_peak2peak_n_samples* Set.cap.fraction_R2R_look4peak);
+search_segment_n_samples    = fix(appr_ecg_peak2peak_n_samples* Set.cap.fraction_B2B_look4peak);
 maybe_valid_pos_ecg_locs    = [];
 for p = 1:length(idx_wo_outliers)
     idx_overlap = intersect( pos_ecg_locs, locs_peak(idx_wo_outliers(p))-search_segment_n_samples : locs_peak(idx_wo_outliers(p))+search_segment_n_samples );
@@ -148,28 +151,28 @@ end
 
 
 
-%% R2R intervals
-R2R             = [NaN diff(t(maybe_valid_pos_ecg_locs))]; % 
-median_R2R      = median(R2R);
-mode_R2R        = mode(R2R);
-[hist_R2R,bins] = hist(R2R,[Set.cap.min_P2P:0.01:1]);
+%% Breathing to breathing intervals
+B2B             = [NaN diff(t(maybe_valid_pos_ecg_locs))]; % 
+median_B2B      = median(B2B);
+mode_B2B        = mode(B2B);
+[hist_B2B,bins] = hist(B2B,[Set.cap.min_P2P:0.01:1]);
 
-% invalidate all R2R less than minFactor_R2RMode (e.g. 0.66) of mode and more than maxFactor_R2RMode (e.g. 1.5) of mode
-idx_valid_R2R         = find((R2R> Set.minFactor_R2RMode*mode_R2R | R2R <  Set.maxFactor_R2RMode *mode_R2R));
-idx_Invalid_R2R       = find((R2R< Set.minFactor_R2RMode*mode_R2R | R2R >  Set.maxFactor_R2RMode *mode_R2R));
+% invalidate all B2B less than minFactor_B2BMode (e.g. 0.66) of mode and more than maxFactor_B2BMode (e.g. 1.5) of mode
+idx_valid_B2B         = find((B2B> Set.cap.minFactor_B2BMode*mode_B2B | B2B <  Set.cap.maxFactor_B2BMode *mode_B2B));
+idx_Invalid_B2B       = find((B2B< Set.cap.minFactor_B2BMode*mode_B2B | B2B >  Set.cap.maxFactor_B2BMode *mode_B2B));
 
-detectedOutliers_mode = (length(idx_Invalid_R2R)/length(R2R))*100; 
-disp(['Fraction of R2R outliers detected using deviations from R2R mode: ', num2str(detectedOutliers_mode) ])
-Tab_outlier.outlier_Mode_abs = length(idx_Invalid_R2R);
-Tab_outlier.outlier_Mode_pct = round((length(idx_Invalid_R2R)/length(R2R))*100 ,4); 
+detectedOutliers_mode = (length(idx_Invalid_B2B)/length(B2B))*100; 
+disp(['Fraction of B2B outliers detected using deviations from B2B mode: ', num2str(detectedOutliers_mode) ])
+Tab_outlier.outlier_Mode_abs = length(idx_Invalid_B2B);
+Tab_outlier.outlier_Mode_pct = round((length(idx_Invalid_B2B)/length(B2B))*100 ,4); 
 
-t_valid_R2R                         = t(maybe_valid_pos_ecg_locs(idx_valid_R2R));
-R2R_valid_before_hampel             = R2R(idx_valid_R2R);
-Tab_outlier.NrR2R_beforehampel      = length(R2R_valid_before_hampel); 
-%% remove outliers from R2R using hampel
-[YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hampel, Set.cap.hampel_DX, Set.cap.hampel_T);
+t_valid_B2B                         = t(maybe_valid_pos_ecg_locs(idx_valid_B2B));
+B2B_valid_before_hampel             = B2B(idx_valid_B2B);
+Tab_outlier.NrB2B_beforehampel      = length(B2B_valid_before_hampel); 
+%% remove outliers from B2B using hampel
+[YY,idx_outliers_hampel] = hampel(t_valid_B2B,B2B_valid_before_hampel, Set.cap.hampel_DX, Set.cap.hampel_T);
 
-%[YY,idx_outliers_hampel, xmedian, xsigma] = hampel(R2R_valid_before_hampel, Set.cap.hampel_nb_of_std,  Set.cap.hampel_adjacentSampleToComputeMean); %R2R_valid_before_hampel, Set.cap.hampel_DX, Set.cap.hampel_T
+%[YY,idx_outliers_hampel, xmedian, xsigma] = hampel(B2B_valid_before_hampel, Set.cap.hampel_nb_of_std,  Set.cap.hampel_adjacentSampleToComputeMean); %B2B_valid_before_hampel, Set.cap.hampel_DX, Set.cap.hampel_T
 idx_to_delete = [];
 idx_to_delete_after_outliers = [];
 Tab_outlier.outliers_hampel_abs = sum(idx_outliers_hampel);
@@ -180,8 +183,8 @@ if sum(idx_outliers_hampel), % there are outliers
     for k = 1:length(idx_outliers_hampel),
         idx_to_delete = [idx_to_delete idx_outliers_hampel(k)];
         
-        if idx_outliers_hampel(k)+1 <= length(idx_valid_R2R), % outlier not last R2R
-            if t_valid_R2R(idx_outliers_hampel(k)+1) - t_valid_R2R(idx_outliers_hampel(k)) < 1.5*mode_R2R,
+        if idx_outliers_hampel(k)+1 <= length(idx_valid_B2B), % outlier not last B2B
+            if t_valid_B2B(idx_outliers_hampel(k)+1) - t_valid_B2B(idx_outliers_hampel(k)) < 1.5*mode_B2B,
                 idx_to_delete = [idx_to_delete idx_outliers_hampel(k)+1];
                 idx_to_delete_after_outliers = [idx_to_delete_after_outliers idx_outliers_hampel(k)+1];
                 
@@ -190,29 +193,29 @@ if sum(idx_outliers_hampel), % there are outliers
         end
         
     end
-    idx_valid_R2R(idx_to_delete) = []; % delete outliers, and also next R2R after each outlier, if it is consecutive
+    idx_valid_B2B(idx_to_delete) = []; % delete outliers, and also next B2B after each outlier, if it is consecutive
     
 end
-detectedOutlier2                = 100-((length(idx_valid_R2R)/length(R2R))*100); 
-disp(['Fraction of R2R outliers detected using deviations from R2R mode and Hampel: ', num2str(detectedOutlier2) ])
+detectedOutlier2                = 100-((length(idx_valid_B2B)/length(B2B))*100); 
+disp(['Fraction of B2B outliers detected using deviations from B2B mode and Hampel: ', num2str(detectedOutlier2) ])
 
 Tab_outlier.outliers_delete_abs = length(idx_to_delete);
 %
-Tab_outlier.outliers_hampel_pct = 100- (((length(idx_valid_R2R)+Tab_outlier.outlier_Mode_abs)/length(R2R))*100) ;
+Tab_outlier.outliers_hampel_pct = 100- (((length(idx_valid_B2B)+Tab_outlier.outlier_Mode_abs)/length(B2B))*100) ;
 
 %R-peaks
-idx_valid_R     = unique([idx_valid_R2R idx_valid_R2R-1]); % add start of each valid R2R interval to valid R peaks
+idx_valid_R     = unique([idx_valid_B2B idx_valid_B2B-1]); % add start of each valid B2B interval to valid R peaks
 R_valid_locs    = maybe_valid_pos_ecg_locs(idx_valid_R);
-%R2Rinterval
-R2R_valid_locs  = maybe_valid_pos_ecg_locs(idx_valid_R2R);
-R2R_valid       = R2R(idx_valid_R2R);
+%B2Binterval
+B2B_valid_locs  = maybe_valid_pos_ecg_locs(idx_valid_B2B);
+B2B_valid       = B2B(idx_valid_B2B);
 
-Tab_outlier.NrRpeaks_valid    = length(R_valid_locs); 
-Tab_outlier.NrR2R_valid       = length(R2R_valid); 
+Tab_outlier.NrRpeaks_valid      = length(R_valid_locs); 
+Tab_outlier.NrB2B_valid         = length(B2B_valid); 
 Tab_outlier.outliers_all_abs    = Tab_outlier.outliers_delete_abs  +   Tab_outlier.outlier_Mode_abs    + Tab_outlier.outlier;
 Tab_outlier.outliers_all_pct    = (Tab_outlier.outliers_all_abs/Tab_outlier.NrRpeaks_orig)*100;
-disp(['Nr of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outliers_all_abs) ])
-disp(['Fraction of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outliers_all_pct) ])
+disp(['Nr of deleted R peaks & B2B outliers: ', num2str(Tab_outlier.outliers_all_abs) ])
+disp(['Fraction of deleted R peaks & B2B outliers: ', num2str(Tab_outlier.outliers_all_pct) ])
 
 %%  CALCULATE VARIABLES
 %% amplitude of the peak
@@ -221,38 +224,38 @@ minimum                         = capFiltered(locs_min);
 %height_peaks = abs(minimum)+pks(idx_wo_outliers);
 
 %
-median_R2R_valid        = median(R2R_valid);
-mode_R2R_valid          = mode(R2R_valid);
-[hist_R2R_valid,bins]   = hist(R2R_valid,[Set.min_R2R:0.01:1]);
+median_B2B_valid        = median(B2B_valid);
+mode_B2B_valid          = mode(B2B_valid);
+[hist_B2B_valid,bins]   = hist(B2B_valid,[Set.cap.min_P2P:0.01:5]);
 
-R2R_valid_bpm           = 60./R2R_valid;
-mean_R2R_valid_bpm      = mean(R2R_valid_bpm);
-median_R2R_valid_bpm    = median(R2R_valid_bpm);
-std_R2R_valid_bpm       = std(R2R_valid_bpm);
+B2B_valid_bpm           = 60./B2B_valid;
+mean_B2B_valid_bpm      = mean(B2B_valid_bpm);
+median_B2B_valid_bpm    = median(B2B_valid_bpm);
+std_B2B_valid_bpm       = std(B2B_valid_bpm);
 
 
-% find consecutive R2Rs
-idx_valid_R2R_consec = find([NaN diff(t(R2R_valid_locs))]< Set.maxFactor_R2RMode * mode_R2R_valid);
-R2R_valid_bpm_consec = R2R_valid_bpm(idx_valid_R2R_consec);
-Tab_outlier.R2R_consec = numel(idx_valid_R2R_consec);
+% find consecutive B2Bs
+idx_valid_B2B_consec = find([NaN diff(t(B2B_valid_locs))]< Set.cap.maxFactor_B2BMode * mode_B2B_valid);
+B2B_valid_bpm_consec = B2B_valid_bpm(idx_valid_B2B_consec);
+Tab_outlier.B2B_consec = numel(idx_valid_B2B_consec);
 
 % RMSSD ("root mean square of successive differences")
 % the square root of the mean of the squares of the successive differences between ***adjacent*** intervals
-R2R_diff = diff(R2R_valid);
-R2R_bpm_diff = diff(R2R_valid_bpm);
+B2B_diff = diff(B2B_valid);
+B2B_bpm_diff = diff(B2B_valid_bpm);
 
-rmssd_R2R_valid_bpm     = sqrt(mean(R2R_bpm_diff(idx_valid_R2R_consec-1).^2));
-rmssd_R2R_valid_ms      = sqrt(mean((1000*R2R_diff(idx_valid_R2R_consec-1)).^2));
+rmssd_B2B_valid_bpm     = sqrt(mean(B2B_bpm_diff(idx_valid_B2B_consec-1).^2));
+rmssd_B2B_valid_ms      = sqrt(mean((1000*B2B_diff(idx_valid_B2B_consec-1)).^2));
 
-R2R_valid_spectrum = false;
-if length(R2R_valid_locs)>1,
-    R2R_valid_spectrum = true;
+B2B_valid_spectrum = false;
+if length(B2B_valid_locs)>1,
+    B2B_valid_spectrum = true;
     % BPS spectrum
     % https://de.mathworks.com/matlabcentral/answers/143654-need-an-example-for-calculating-power-spectrum-density
     resampling_rate = 5; % Hz
-    t_interp = t(R2R_valid_locs(1)):1/resampling_rate:t(R2R_valid_locs(end));
+    t_interp = t(B2B_valid_locs(1)):1/resampling_rate:t(B2B_valid_locs(end));
 
-    BPS = interp1(t(R2R_valid_locs),R2R_valid,t_interp,'linear');
+    BPS = interp1(t(B2B_valid_locs),B2B_valid,t_interp,'linear');
 
     % compute the PSD, units of Pxx are squared seconds/Hz.
     % [Pxx,freq] = periodogram(BPS-mean(BPS),[],numel(BPS),resampling_rate);
@@ -273,7 +276,7 @@ end
 %% How "much time of the run" was deleted related to the detection of outlier?
 %% How "much time of the run" was deleted related to the detection of outlier?
 Tab_outlier.durationRun_s                   = max(t);
-Tab_outlier.duration_NotValidSegments_s     = max(t)-sum(R2R(idx_valid_R2R));
+Tab_outlier.duration_NotValidSegments_s     = max(t)-sum(B2B(idx_valid_B2B));
 Tab_outlier.nrblock                         = i_block; 
 Tab_outlier.nrblock_combinedFiles           = NrBlock;
 if Set.OutlierModus == 1; 
@@ -281,38 +284,38 @@ display(Tab_outlier)
 end
 
 
-if length(R2R_valid) < 100,
-    out.Rpeak_t                 = NaN;
-    out.Rpeak_sample            = NaN;
-    out.R2R_t                   = NaN;
-    out.R2R_sample              = NaN;   
-    out.R2R_valid               = NaN;
-    out.R2R_valid_bpm           = NaN;
-    out.idx_valid_R2R_consec    = NaN;
-    out.mean_R2R_valid_bpm      = NaN;
-    out.median_R2R_valid_bpm    = NaN;
-    out.std_R2R_valid_bpm       = NaN;
-    out.rmssd_R2R_valid_ms      = NaN;
-    out.rmssd_R2R_valid_bpm     = NaN;
-    out.Pxx                     = NaN;
-    out.freq                    = NaN;
-    out.vlfPower                = NaN;
-    out.lfPower                 = NaN;
-    out.hfPower                 = NaN;
-    out.totPower                = NaN;
+if length(B2B_valid) < Set.B2B_minValidData,
+    out.Rpeak_t                 = [];
+    out.Rpeak_sample            = [];
+    out.B2B_t                   = [];
+    out.B2B_sample              = [];   
+    out.B2B_valid               = [];
+    out.B2B_valid_bpm           = [];
+    out.idx_valid_B2B_consec    = [];
+    out.mean_B2B_valid_bpm      = [];
+    out.median_B2B_valid_bpm    = [];
+    out.std_B2B_valid_bpm       = [];
+    out.rmssd_B2B_valid_ms      = [];
+    out.rmssd_B2B_valid_bpm     = [];
+    out.Pxx                     = [];
+    out.freq                    = [];
+    out.vlfPower                = [];
+    out.lfPower                 = [];
+    out.hfPower                 = [];
+    out.totPower                = [];
 else
     out.Rpeak_t                 = t(R_valid_locs);
     out.Rpeak_sample            = R_valid_locs;
-    out.R2R_t                   = t(R2R_valid_locs);
-    out.R2R_sample              = R2R_valid_locs;
-    out.R2R_valid               = R2R_valid;
-    out.R2R_valid_bpm           = R2R_valid_bpm;
-    out.idx_valid_R2R_consec    = idx_valid_R2R_consec; % index into R2R_valid vector!
-    out.mean_R2R_valid_bpm      = mean_R2R_valid_bpm;
-    out.median_R2R_valid_bpm    = median_R2R_valid_bpm;
-    out.std_R2R_valid_bpm       = std_R2R_valid_bpm;
-    out.rmssd_R2R_valid_ms      = rmssd_R2R_valid_ms;
-    out.rmssd_R2R_valid_bpm     = rmssd_R2R_valid_bpm;
+    out.B2B_t                   = t(B2B_valid_locs);
+    out.B2B_sample              = B2B_valid_locs;
+    out.B2B_valid               = B2B_valid;
+    out.B2B_valid_bpm           = B2B_valid_bpm;
+    out.idx_valid_B2B_consec    = idx_valid_B2B_consec; % index into B2B_valid vector!
+    out.mean_B2B_valid_bpm      = mean_B2B_valid_bpm;
+    out.median_B2B_valid_bpm    = median_B2B_valid_bpm;
+    out.std_B2B_valid_bpm       = std_B2B_valid_bpm;
+    out.rmssd_B2B_valid_ms      = rmssd_B2B_valid_ms;
+    out.rmssd_B2B_valid_bpm     = rmssd_B2B_valid_bpm;
     out.Pxx                     = Pxx;
     out.freq                    = freq;
     out.vlfPower                = vlfPower;
@@ -336,27 +339,27 @@ if TOPLOT
 %     set(gca,'xlim',[172 173]);    
 %     
     ha1 = subplot(4,4,[1:4]); 
-    plot(t,capSignal,'b'); hold on;
-    plot(t,capFiltered,'g'); 
+    plot(t,capSignal,'g'); hold on;
+    plot(t,capFiltered,'b'); 
     plot(t(locs_min),capFiltered(locs_min),'bo','MarkerSize',6);
 
     plot(t(locs_peak(idx_wo_outliers)),capFiltered(locs_peak(idx_wo_outliers)),'ko','MarkerSize',6);
     plot(t(maybe_valid_pos_ecg_locs),capFiltered(maybe_valid_pos_ecg_locs),'kv','MarkerSize',6,'MarkerEdgeColor',[0.5 0.5 0.5]);
      % valid R peaks
     plot(t(R_valid_locs),capFiltered(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
-    %valid R2R intervals -> filled TRIANGLE
-    plot(t(R2R_valid_locs),capFiltered(R2R_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
+    %valid B2B intervals -> filled TRIANGLE
+    plot(t(B2B_valid_locs),capFiltered(B2B_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
     plot(t(locs_peak(idx_outliers)),capFiltered(locs_peak(idx_outliers)),'bx');
    
     %line for 
-    plot([t(R2R_valid_locs(idx_valid_R2R_consec)) - R2R_valid(idx_valid_R2R_consec); t(R2R_valid_locs(idx_valid_R2R_consec))], ...
-         [capFiltered(R2R_valid_locs(idx_valid_R2R_consec)); capFiltered(R2R_valid_locs(idx_valid_R2R_consec))],'k');
+    plot([t(B2B_valid_locs(idx_valid_B2B_consec)) - B2B_valid(idx_valid_B2B_consec); t(B2B_valid_locs(idx_valid_B2B_consec))], ...
+         [capFiltered(B2B_valid_locs(idx_valid_B2B_consec)); capFiltered(B2B_valid_locs(idx_valid_B2B_consec))],'k');
  
  
      
     set(gca,'Xlim',[0 max(t)]);
     xlabel('Time (s)');
-    title(sprintf('CAP: %d valid peaks, %d valid P2P intervals',length(R_valid_locs),length(R2R_valid_locs)));
+    title(sprintf('CAP: %d valid peaks, %d valid P2P intervals',length(R_valid_locs),length(B2B_valid_locs)));
     if isempty(idx_outliers)
     legend({'capSignal','capFiltered','allPeaks','only posPeaks','valid Peaks','valid P2Pinterval'},'location','Best');
     else
@@ -365,50 +368,50 @@ if TOPLOT
  
     
     ha3 = subplot(4,4,[9:12]);
-    plot(t(R2R_valid_locs),R2R_valid,'m.'); hold on
+    plot(t(B2B_valid_locs),B2B_valid,'m.'); hold on
     set(gca,'Xlim',[0 max(t)]);
-    plot(t(R2R_valid_locs(idx_valid_R2R_consec)),R2R_valid(idx_valid_R2R_consec),'k.','MarkerSize',6); hold on
-    % plot(t(R2R_valid_locs(idx_valid_R2R_consec)),R2R_valid(idx_valid_R2R_consec) - R2R_diff(idx_valid_R2R_consec-1),'ks','MarkerSize',3);
-    plot(t_valid_R2R(idx_to_delete_after_outliers),R2R_valid_before_hampel(idx_to_delete_after_outliers),'cx'); hold on
-    plot(t_valid_R2R(idx_outliers_hampel),R2R_valid_before_hampel(idx_outliers_hampel),'rx'); hold on
+    plot(t(B2B_valid_locs(idx_valid_B2B_consec)),B2B_valid(idx_valid_B2B_consec),'k.','MarkerSize',6); hold on
+    % plot(t(B2B_valid_locs(idx_valid_B2B_consec)),B2B_valid(idx_valid_B2B_consec) - B2B_diff(idx_valid_B2B_consec-1),'ks','MarkerSize',3);
+    plot(t_valid_B2B(idx_to_delete_after_outliers),B2B_valid_before_hampel(idx_to_delete_after_outliers),'cx'); hold on
+    plot(t_valid_B2B(idx_outliers_hampel),B2B_valid_before_hampel(idx_outliers_hampel),'rx'); hold on
     
-    if R2R_valid_spectrum,
+    if B2B_valid_spectrum,
         % plot(t_interp,BPS,'y','Color',[0.4706    0.3059    0.4471]);
     end
     
     set(gca,'Xlim',[0 max(t)]);
-    title(sprintf('R2R (s): %d valid, %d consecutive, %d outliers, RMSSD %.3f bpm | %.1f ms',...
-        length(R2R_valid_locs),length(idx_valid_R2R_consec),length(unique([idx_outliers_hampel' idx_to_delete_after_outliers])), rmssd_R2R_valid_bpm, rmssd_R2R_valid_ms));
-    ylabel('R2R (s)');
+    title(sprintf('B2B (s): %d valid, %d consecutive, %d outliers, RMSSD %.3f bpm | %.1f ms',...
+        length(B2B_valid_locs),length(idx_valid_B2B_consec),length(unique([idx_outliers_hampel' idx_to_delete_after_outliers])), rmssd_B2B_valid_bpm, rmssd_B2B_valid_ms));
+    ylabel('B2B (s)');
     legend({'valid','consecutive','after outliers','hampel outliers'},'location','Best');
     
     
     subplot(4,4,13);
-    plot(bins,hist_R2R); hold on;
-    plot(median_R2R,0,'rv','MarkerSize',6);
-    plot(mode_R2R,0,'mv','MarkerSize',6);
-    plot(bins,hist_R2R_valid,'m');
-    title(sprintf('%d all R2R, %d valid R2R',length(R2R), length(R2R_valid)));
-    xlabel('R2R (s)');
+    plot(bins,hist_B2B); hold on;
+    plot(median_B2B,0,'rv','MarkerSize',6);
+    plot(mode_B2B,0,'mv','MarkerSize',6);
+    plot(bins,hist_B2B_valid,'m');
+    title(sprintf('%d all B2B, %d valid B2B',length(B2B), length(B2B_valid)));
+    xlabel('B2B (s)');
     ylabel('count');
     
     subplot(4,4,14);
-    boxplot(R2R_valid_bpm); 
-    title(sprintf('mean %.1f med %.1f SD %.1f bpm',mean_R2R_valid_bpm,median_R2R_valid_bpm,std_R2R_valid_bpm));
+    boxplot(B2B_valid_bpm); 
+    title(sprintf('mean %.1f med %.1f SD %.1f bpm',mean_B2B_valid_bpm,median_B2B_valid_bpm,std_B2B_valid_bpm));
     ylabel('BPM');
     
     subplot(4,4,15);
-    plot(R2R_valid_bpm(1:end-1),R2R_valid_bpm(2:end),'k.','MarkerEdgeColor',[0.5 0.5 0.5]); hold on
-    plot(R2R_valid_bpm_consec(1:end-1),R2R_valid_bpm_consec(2:end),'m.','MarkerEdgeColor',[0.4235    0.2510    0.3922]);
+    plot(B2B_valid_bpm(1:end-1),B2B_valid_bpm(2:end),'k.','MarkerEdgeColor',[0.5 0.5 0.5]); hold on
+    plot(B2B_valid_bpm_consec(1:end-1),B2B_valid_bpm_consec(2:end),'m.','MarkerEdgeColor',[0.4235    0.2510    0.3922]);
     
-    xlabel('R2R(n)');
-    ylabel('R2R(n+1)');
+    xlabel('B2B(n)');
+    ylabel('B2B(n+1)');
     title('Poincaré plot');
     axis square
-    %ig_set_xy_axes_equal;
-    %ig_add_equality_line;
+    ig_set_xy_axes_equal;
+    ig_add_equality_line;
     
-    if R2R_valid_spectrum,
+    if B2B_valid_spectrum,
         subplot(4,4,16);
         % plot(freq,Pxx,'k'); hold on;
         % plot(freq_w,Pxx_w,'m'); hold on;

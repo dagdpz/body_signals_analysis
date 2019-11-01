@@ -1,4 +1,4 @@
-function bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR,Text,BaselineInjection)
+function bsa_graphs_cap(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR,Text,BaselineInjection)
 %Todo:
 % How to input better all the different datasets
 %USAGE:
@@ -9,9 +9,6 @@ function bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeCompute
 %       behavior_Data       - excel file
 %       targetBrainArea     - name of the mfile with specific session/monkey settings
 %		path_SaveFig        - see % define default arguments and their potential values
-%% potential Input
-% S_con: data of Control-Sessions... each Variable has the data for a
-% session, UNKNOWN: WHICH SESSION
 %
 % OUTPUTS:
 %		display & saves graphs
@@ -32,26 +29,26 @@ function bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeCompute
 
 close all;
 %% dorsal pulvinar
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_HeartrateVaribility_PerSession_Control_' ,targetBrainArea])
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions', filesep,monkey '_Structure_HeartrateVaribility_PerSessionPerBlock_Control_',targetBrainArea ])
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_Respiration_PerSession_Control_' ,targetBrainArea])
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions', filesep,monkey '_Structure_Respiration_PerSessionPerBlock_Control_',targetBrainArea ])
 
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation_',targetBrainArea ])
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_HeartrateVaribility_PerSession_Inactivation_' ,targetBrainArea])
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_HeartrateVaribility_PerSessionPerBlock_' ,targetBrainArea])
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_Respiration_PerSessionPerBlock_Inactivation_',targetBrainArea ])
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_Respiration_PerSession_Inactivation_' ,targetBrainArea])
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_Respiration_PerSessionPerBlock_' ,targetBrainArea])
 
 
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Control_',targetBrainArea ]);
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Injection_',targetBrainArea ]);
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Table_Respiration_MeanForBlock_Task_Control_',targetBrainArea ]);
+load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Table_Respiration_MeanForBlock_Task_Injection_',targetBrainArea ]);
 
 if Stats_beforeComputedWithR == 0
  names = fieldnames(S_ina); 
  DVs =   names(1:6); 
 else
-load(['C:\Users\kkaduk\Dropbox\DAG\Kristin\Statistic\body_signal_analysis\', monkey, filesep,monkey ,'_MultComp_PValues_HeartrateVaribility_PerSession_',targetBrainArea ]);
+load(['C:\Users\kkaduk\Dropbox\DAG\Kristin\Statistic\body_signal_analysis\', monkey, filesep,monkey ,'_MultComp_PValues_Respiration_PerSession_',targetBrainArea ]);
 Tabl_MultComp = struct2table(tabl_MultCom_pValues_Data);
 DVs =   unique(Tabl_MultComp.Variable);
 end
-NoBlocks = 1;
+NoBlocks = 0;
 
 
         if ~exist(path_SaveFig, 'dir');   mkdir(path_SaveFig); end
@@ -82,7 +79,7 @@ NoBlocks = 1;
         for I_Ses = 1: length(S_Blocks2)
             [count_con, count_ina, count_c, count_i] = plot_oneVar_Block_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, [S_Blocks2(I_Ses).Block],[S_Blocks2(I_Ses).(DVs{ind_DV})],count_con, count_ina , count_c, count_i );
             %[Graph, Ymin ,Ymax] =
-            % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
+            % ylabel('mean B2B (bmp)','fontsize',14,'fontweight','b' );
         end
          plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)]);
         plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)]);
@@ -124,36 +121,36 @@ NoBlocks = 1;
     figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
     set(gcf,'Name',DVs{ind_DV});
     [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})],BaselineInjection);
-    % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
+    % ylabel('mean B2B (bmp)','fontsize',14,'fontweight','b' );
     Name_DV = strsplit(char(DVs{ind_DV}), '_');
     %title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
     ylabel(char(DVs{ind_DV}),'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
     
     max_yValue = Ymax*1.13;  %Ymax+80
-    min_yValue = Ymin*0.93;   %Ymax-20
+    min_yValue = Ymin*0.9;   %Ymax-20
     Y_C(1) = max_yValue -50;
     Y_C(2) = max_yValue -60;
     Y_C(3) = max_yValue -80;
     Y_C(4) = max_yValue -80;
     
-    if strcmp(DVs{ind_DV} , 'mean_R2R_bpm')
-        yaxis = 'heart rate (bpm)';
+    if strcmp(DVs{ind_DV} , 'mean_B2B_bpm')
+        yaxis = 'respiration rate (bpm)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
-        max_yValue = Ymax+40;
-        min_yValue = Ymin -10;
-        Y_C(1) = max_yValue -40;
-        Y_C(2) = max_yValue -45;
-        Y_C(3) = max_yValue -50;
-        Y_C(4) = max_yValue -50;
-   elseif    strcmp(DVs{ind_DV} , 'rmssd_R2R_ms')
-        yaxis = 'RMSSD of R2R (ms)';
+        max_yValue = Ymax+5;
+        min_yValue = Ymin -5;
+        Y_C(1) = max_yValue -7;
+        Y_C(2) = max_yValue -8;
+        Y_C(3) = max_yValue -9;
+        Y_C(4) = max_yValue -9;
+   elseif    strcmp(DVs{ind_DV} , 'rmssd_B2B_ms')
+        yaxis = 'RMSSD of B2B (ms)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
         Y_C(1) = max_yValue *0.56;
         Y_C(2) = max_yValue *0.53;
         Y_C(3) = max_yValue *0.5;
         Y_C(4) = max_yValue *0.5;
-      elseif    strcmp(DVs{ind_DV} , 'std_R2R_bpm')
-        yaxis = 'std of R2R (bpm)';
+      elseif    strcmp(DVs{ind_DV} , 'std_B2B_bpm')
+        yaxis = 'std of B2B (bpm)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
         Y_C(1) = max_yValue *0.56;
         Y_C(2) = max_yValue *0.53;
@@ -220,7 +217,7 @@ NoBlocks = 1;
     set(gcf,'Name',DVs{ind_DV});
 
     [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})],BaselineInjection);
-    % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
+    % ylabel('mean B2B (bmp)','fontsize',14,'fontweight','b' );
     Name_DV = strsplit(char(DVs{ind_DV}), '_');
    % title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
     ylabel(char(DVs{ind_DV}),'fontsize',20,'fontweight','b' , 'Interpreter', 'none');
@@ -234,8 +231,8 @@ NoBlocks = 1;
     Y_C(4) = max_yValue -80;
     
     
-    if strcmp(DVs{ind_DV} , 'mean_R2R_bpm')
-        yaxis = 'heart rate (bpm)';
+    if strcmp(DVs{ind_DV} , 'mean_B2B_bpm')
+        yaxis = 'respiration rate (bpm)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
           max_yValue = Ymax+40;
         min_yValue = Ymin -10;
@@ -244,15 +241,15 @@ NoBlocks = 1;
         Y_C(3) = max_yValue -50;
         Y_C(4) = max_yValue -50;
         
-    elseif    strcmp(DVs{ind_DV} , 'rmssd_R2R_ms')
-        yaxis = 'RMSSD of R2R (ms)';
+    elseif    strcmp(DVs{ind_DV} , 'rmssd_B2B_ms')
+        yaxis = 'RMSSD of B2B (ms)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
         Y_C(1) = max_yValue *0.56;
         Y_C(2) = max_yValue *0.53;
         Y_C(3) = max_yValue *0.5;
         Y_C(4) = max_yValue *0.5;
-     elseif    strcmp(DVs{ind_DV} , 'std_R2R_bpm')
-        yaxis = 'std of R2R (bpm)';
+     elseif    strcmp(DVs{ind_DV} , 'std_B2B_bpm')
+        yaxis = 'std of B2B (bpm)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
         Y_C(1) = max_yValue *0.56;
         Y_C(2) = max_yValue *0.53;
@@ -306,7 +303,7 @@ NoBlocks = 1;
         % Y_C(3) = max_yValue - ( (max_yValue/3) -60)%80;
         % Y_C(4) = max_yValue - ( (max_yValue/3) -80)%80;
         
-        %Y = [nanmean([S_con.mean_R2R_bpm.pre_rest]),nanmean([S_con.mean_R2R_bpm.pst_rest]),nanmean([S_con.mean_R2R_bpm.pre_task]),nanmean([S_con.mean_R2R_bpm.pst_task])]
+        %Y = [nanmean([S_con.mean_B2B_bpm.pre_rest]),nanmean([S_con.mean_B2B_bpm.pst_rest]),nanmean([S_con.mean_B2B_bpm.pre_task]),nanmean([S_con.mean_B2B_bpm.pst_task])]
         %Y = [200 , 210, 220, 230,200 , 210, 220, 230 ];
         for NrContrasts = 1: 4
             ext_sigline(Contrast(NrContrasts,:),char(Stat.Star(Row(NrContrasts))),Y_C(NrContrasts)); hold on;
@@ -327,12 +324,12 @@ end
 
 %% overview of all Variables in Bargraphs
 figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
-set(gcf,'Name',['AcrossSessions: R2R variables', monkey ,targetBrainArea]);
+set(gcf,'Name',['AcrossSessions: B2B variables', monkey ,targetBrainArea]);
 
 ha(1) = subplot(3,3,1);
-BarGraph_one_var_pre_post_rest_task([S_con.mean_R2R_bpm],[S_ina.mean_R2R_bpm]);
-title('Mean R2R (bmp)');
-ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
+BarGraph_one_var_pre_post_rest_task([S_con.mean_B2B_bpm],[S_ina.mean_B2B_bpm]);
+title('Mean B2B (bmp)');
+ylabel('mean B2B (bmp)','fontsize',14,'fontweight','b' );
 text(1.5 ,240,'Control')
 text(1 ,220,'rest')
 text(3 ,220,'task')
@@ -343,16 +340,16 @@ text(6 ,220,'rest')
 text(8 ,220,'task')
 
 ha(2) = subplot(3,3,2);
-BarGraph_one_var_pre_post_rest_task([S_con.median_R2R_bpm],[S_ina.median_R2R_bpm]);
-title('Median R2R (bmp)');
+BarGraph_one_var_pre_post_rest_task([S_con.median_B2B_bpm],[S_ina.median_B2B_bpm]);
+title('Median B2B (bmp)');
 
 ha(3) = subplot(3,3,3);
-BarGraph_one_var_pre_post_rest_task([S_con.rmssd_R2R_ms],[S_ina.rmssd_R2R_ms]);
-title('RMSSD R2R (ms)');
+BarGraph_one_var_pre_post_rest_task([S_con.rmssd_B2B_ms],[S_ina.rmssd_B2B_ms]);
+title('RMSSD B2B (ms)');
 
 ha(4) = subplot(3,3,4);
-BarGraph_one_var_pre_post_rest_task([S_con.std_R2R_bpm],[S_ina.std_R2R_bpm]);
-title('SD R2R (bmp)');
+BarGraph_one_var_pre_post_rest_task([S_con.std_B2B_bpm],[S_ina.std_B2B_bpm]);
+title('SD B2B (bmp)');
 
 ha(5) = subplot(3,3,5);
 BarGraph_one_var_pre_post_rest_task([S_con.lfPower],[S_ina.lfPower]);
@@ -461,11 +458,11 @@ set(ha([7 8]),'Xlim',[0 0.6]);
 %for i = 1:12
 h(1) = figure(1);
 %end
-savefig(h, [path_SaveFig filesep targetBrainArea ,'_' monkey '_OverviewBarGraph_Heartratevariability.fig'])
-print(h,[path_SaveFig filesep 'png' filesep targetBrainArea,'_', monkey, '_OverviewBarGraph_Heartratevariability'], '-dpng')
+savefig(h, [path_SaveFig filesep targetBrainArea ,'_' monkey '_OverviewBarGraph_Respiration.fig'])
+print(h,[path_SaveFig filesep 'png' filesep targetBrainArea,'_', monkey, '_OverviewBarGraph_Respiration'], '-dpng')
 set(h,'Renderer','Painters');
 set(h,'PaperPositionMode','auto')
-compl_filename =  [path_SaveFig filesep 'ai' filesep targetBrainArea,'_', monkey, '_OverviewBarGraph_Heartratevariability.ai'] ;
+compl_filename =  [path_SaveFig filesep 'ai' filesep targetBrainArea,'_', monkey, '_OverviewBarGraph_Respiration.ai'] ;
 print(h,'-depsc',compl_filename);
 
 
@@ -675,19 +672,19 @@ plot(  8, nanmean([S_ina.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSiz
 plot(  9, nanmean([S_ina.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',ina_d_col) ;
 
 
-for i = 1: length([S_con.pre_rest])
- text(1,Con(1,i),num2str(i),'fontsize',15)
- text(2,Con(2,i),num2str(i),'fontsize',15)
- text(3,Con(3,i),num2str(i),'fontsize',15)
- text(4,Con(4,i),num2str(i),'fontsize',15)
-end
- for i = 1: length([S_ina.pre_rest])
- text(6,Ina(1,i),num2str(i),'fontsize',15)
- text(7,Ina(2,i),num2str(i),'fontsize',15)
- text(8,Ina(3,i),num2str(i),'fontsize',15)
- text(9,Ina(4,i),num2str(i),'fontsize',15)
-
-end
+% for i = 1: length([S_con.pre_rest])
+%  text(1,Con(1,i),num2str(i),'fontsize',15)
+%  text(2,Con(2,i),num2str(i),'fontsize',15)
+%  text(3,Con(3,i),num2str(i),'fontsize',15)
+%  text(4,Con(4,i),num2str(i),'fontsize',15)
+% end
+%  for i = 1: length([S_ina.pre_rest])
+%  text(6,Ina(1,i),num2str(i),'fontsize',15)
+%  text(7,Ina(2,i),num2str(i),'fontsize',15)
+%  text(8,Ina(3,i),num2str(i),'fontsize',15)
+%  text(9,Ina(4,i),num2str(i),'fontsize',15)
+% 
+% end
 C1 = struct2cell(S_con);
 C2 = struct2cell(S_ina);
 

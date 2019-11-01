@@ -25,9 +25,6 @@ function bsa_ecg_summarize_many_sessions(path_SaveFig, sessions, inactivation_se
 % Set sessions and inactivation sessions
 % Each session should be processed with bsa_ecg_analyze_one_session -> session_name '_ecg.mat' should exist
 %%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
-
-
-
 ind_con = 0;
 ind_ina = 0;
 ind_con_Blocks = 0;

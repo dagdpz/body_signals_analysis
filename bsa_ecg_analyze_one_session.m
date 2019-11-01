@@ -137,7 +137,7 @@ if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
 end
 
 %%
-for i_block = 1 :n_blocks, % for each run/block
+for i_block = 1 : n_blocks, % for each run/block
     NrBlock = []; 
     % get the information about the task or rest
     if ~strcmp(par.dataOrigin, 'TDT'),
