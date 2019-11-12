@@ -66,6 +66,10 @@ settings_filename = 'bsa_settings_Magnus2019.m';
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131');
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190213',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20190213');
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190404',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20190404');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191108',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191108');
+%changed task type!!!
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191110',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191110');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191111',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191111');
 
 %% CURIUS
 pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx';

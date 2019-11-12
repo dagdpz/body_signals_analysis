@@ -1,5 +1,5 @@
 % settings for BSA analysis, Cornelius dPul/vPul inactivation - ECG, 2019
-Set.task.Type       = 4; 
+Set.task.Type       = 2; 
 Set.task.reward     = 2; 
 Set.task.mintrials  = 25;  %main task
 Set.task2.Type     = 1;
