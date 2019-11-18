@@ -70,6 +70,14 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\
 %changed task type!!!
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191110',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191110');
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191111',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191111');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191113',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191113');
+
+
+%% BACCHUS
+pathExcel = 'Y:\Logs\Inactivation\Bacchus\Bacchus_bodySignals_inactivation_log.xlsx';
+settings_filename = 'bsa_settings_Bacchus2019.m';
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20191112',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Bacchus\20191112');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20191113',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Bacchus\20191113');
 
 %% CURIUS
 pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx';
@@ -405,11 +413,7 @@ targetBrainArea = 'dPul2';
 path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\ECG\',targetBrainArea]; 
 
 bsa_meanHR(monkey,targetBrainArea,path_SaveFig)
-%%
-project = 'Body_signals';
-versions = {'dPul_inactivation'};
-ph_initiation(project,versions)
-
+%% debug in the function: ph_session_processing
 project = 'PhysiologicalRecording';
 versions = {'dPul_inactivation'};
 ph_initiation(project,versions)
