@@ -61,10 +61,12 @@ NoBlocks = 1;
 
  Stat = [];   
   for ind_DV = 1: length(DVs)  
-    %% Blocks
+    %% Blocks - task
     if NoBlocks
+                task = 1;
+
         figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
-        set(gcf,'Name',DVs{ind_DV}); hold on;
+        set(gcf,'Name',[ 'Task:' DVs{ind_DV}]); hold on;
         count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
         
         
@@ -80,23 +82,27 @@ NoBlocks = 1;
             legend('show','Location','best')
 
         for I_Ses = 1: length(S_Blocks2)
-            [count_con, count_ina, count_c, count_i] = plot_oneVar_Block_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, [S_Blocks2(I_Ses).Block],[S_Blocks2(I_Ses).(DVs{ind_DV})],count_con, count_ina , count_c, count_i );
+            [count_con, count_ina, count_c, count_i] = plot_oneVar_Block_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, [S_Blocks2(I_Ses).Block],[S_Blocks2(I_Ses).(DVs{ind_DV})],count_con, count_ina , count_c, count_i,task );
             %[Graph, Ymin ,Ymax] =
             % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
         end
          plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)]);
         plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)]);
-       
-        set(gca,'xlim',[0 length(S_Blocks2)],'Xtick',[0 : length(S_Blocks2)])
+        xlim_max = 0; 
+        for I_Ses = 1: length(S_Blocks2)
+        Vmax = length(S_Blocks2(I_Ses).Block.pre_task_idx) + length(S_Blocks2(I_Ses).Block.pst_task_idx);
+        if xlim_max < Vmax
+            xlim_max = Vmax;
+        end
+        end
+        set(gca,'xlim',[0 xlim_max+1 ],'Xtick',[0 : xlim_max])
         C1 = struct2cell([S_Blocks2(I_Ses).(DVs{ind_DV})]);
         Ymin = min([C1{:}]);
         Ymax = max([C1{:}]);
         
         line([3.5 3.5],[Ymin Ymax],'Color',[0 0 0],'HandleVisibility','off')
         %text(3.5,Ymax -10,'Inactivation','fontsize',15)
-        
-        % eine Funktion die zuerst Control plotted se
-        
+                
         
         Name_DV = strsplit(char(DVs{ind_DV}), '_');
        % title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
@@ -110,15 +116,76 @@ NoBlocks = 1;
         
 
 
-        print(h,[path_SaveFig filesep 'png' filesep targetBrainArea '_', monkey, '_',  DVs{ind_DV} '_Blocks_' ], '-dpng')
+        print(h,[path_SaveFig filesep 'png' filesep targetBrainArea '_', monkey, '_',  DVs{ind_DV} '_Task_Blocks' ], '-dpng')
         set(h,'Renderer','Painters');
         set(h,'PaperPositionMode','auto')
-        compl_filename =  [path_SaveFig filesep 'ai' filesep targetBrainArea '_', monkey, '_',  DVs{ind_DV} '_Blocks.ai'] ;
+        compl_filename =  [path_SaveFig filesep 'ai' filesep targetBrainArea '_', monkey, '_',  DVs{ind_DV} '_Task_Blocks.ai'] ;
         print(h,'-depsc',compl_filename);
         close all;
     end
     
-    
+  %% Blocks - rest
+    if NoBlocks
+        task = 0;
+        figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
+        set(gcf,'Name',[ 'Rest:' DVs{ind_DV}]); hold on;
+        count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
+        
+        
+         
+        MeanForBlock_Task_Control_Task            = MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pre_rest'),:);
+        MeanForBlock_Task_Control_Task            = [MeanForBlock_Task_Control_Task; MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pst_rest'),:)];
+        MeanForBlock_Task_Injection_Task          = MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pre_rest'),:);
+        Table_MeanForBlock_Task_Injection_Task    = [MeanForBlock_Task_Injection_Task; MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pst_rest'),:)];
+       
+        VarName = [ 'mean_', DVs{ind_DV}] ;
+        plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)]);
+        plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)]);
+            legend('show','Location','best')
+
+        for I_Ses = 1: length(S_Blocks2)
+            [count_con, count_ina, count_c, count_i] = plot_oneVar_Block_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, [S_Blocks2(I_Ses).Block],[S_Blocks2(I_Ses).(DVs{ind_DV})],count_con, count_ina , count_c, count_i , task);
+            %[Graph, Ymin ,Ymax] =
+            % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
+        end
+         plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)]);
+        plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)]);
+        xlim_max = 0; 
+        for I_Ses = 1: length(S_Blocks2)
+        Vmax = length(S_Blocks2(I_Ses).Block.pre_rest_idx) + length(S_Blocks2(I_Ses).Block.pst_rest_idx);
+        if xlim_max < Vmax
+            xlim_max = Vmax;
+        end
+        end
+        set(gca,'xlim',[0 xlim_max+1 ],'Xtick',[0 : xlim_max])
+        C1 = struct2cell([S_Blocks2(I_Ses).(DVs{ind_DV})]);
+        Ymin = min([C1{:}]);
+        Ymax = max([C1{:}]);
+        
+        line([3.5 3.5],[Ymin Ymax],'Color',[0 0 0],'HandleVisibility','off')
+        %text(3.5,Ymax -10,'Inactivation','fontsize',15)
+                
+        
+        Name_DV = strsplit(char(DVs{ind_DV}), '_');
+       % title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
+        ylabel(char(DVs{ind_DV}),'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
+        xlabel('Blocks','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
+        
+        
+        
+        h = [];
+        h(1) = figure(1);
+        
+
+
+        print(h,[path_SaveFig filesep 'png' filesep targetBrainArea '_', monkey, '_',  DVs{ind_DV} '_Rest_Blocks' ], '-dpng')
+        set(h,'Renderer','Painters');
+        set(h,'PaperPositionMode','auto')
+        compl_filename =  [path_SaveFig filesep 'ai' filesep targetBrainArea '_', monkey, '_',  DVs{ind_DV} '_Rest_Blocks.ai'] ;
+        print(h,'-depsc',compl_filename);
+        close all;
+    end
+       
     %% Session - task
     Stat = []; 
     figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
@@ -493,7 +560,7 @@ end
 
 
 
-function [count_con, count_ina, count_c, count_i] =  plot_oneVar_Block_pre_post_rest_task(Experiment, Block,Variable, count_con, count_ina, count_c, count_i)
+function [count_con, count_ina, count_c, count_i] =  plot_oneVar_Block_pre_post_rest_task(Experiment, Block,Variable, count_con, count_ina, count_c, count_i, task)
 %[Graph, Ymin ,Ymax] =
 
 count_con= [0 0 0]; count_ina = [0 0 0];
@@ -510,30 +577,36 @@ con_d_col_trans = [0.0706     0.2118   0.1412 0.4];
 ina_b_col_trans = [0    0.7    0.9 0.4];
 ina_d_col_trans = [0    0   0.9 0.4];
 
-
+if task == 1
+    NameIdx_Run = {'pre_task_idx', 'pst_task_idx'};
+    NameRun     = {'pre_task', 'pst_task'};
+else
+    NameIdx_Run = {'pre_rest_idx', 'pst_rest_idx'};
+    NameRun     = {'pre_rest', 'pst_rest'};
+end
 
 % plot(  1, nanmean([Block.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
 % plot(  2, nanmean([Block.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col);
 if  strcmp(Experiment, 'Control')
-    plot(   1:length([Block.pre_task_idx]),[Variable.pre_task], 'o','color',[0 0 0] ,'MarkerSize',11,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
-    plot(   4:(length([Block.pst_task_idx])+3),[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',11,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
+    plot(   1:length([Block.(NameIdx_Run{1})]),[Variable.(NameRun{1})], 'o','color',[0 0 0] ,'MarkerSize',11,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
+    plot(   4:(length([Block.(NameIdx_Run{2})])+3),[Variable.(NameRun{2})], 'o','color',[0 0 0] ,'MarkerSize',11,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
     count_con = count_con + [0 0.15 0.15];
     
-    line(1:length([Block.pre_task_idx]),[Variable.pre_task],'Color',con_b_col_trans,'LineWidth', 1.5)
-    line(4:(length([Block.pst_task_idx])+3),[Variable.pst_task],'Color',con_d_col_trans,'LineWidth',  1.5)
+    line(1:length([Block.(NameIdx_Run{1})]),[Variable.(NameRun{1})],'Color',con_b_col_trans,'LineWidth', 1.5)
+    line(4:(length([Block.(NameIdx_Run{2})])+3),[Variable.(NameRun{2})],'Color',con_d_col_trans,'LineWidth',  1.5)
 
-   % text(1:length([Block.pre_task_idx]),[Variable.pre_task],num2str(count_c),'fontsize',15)
-   % text(4:(length([Block.pst_task_idx])+3),[Variable.pst_task],num2str(count_c),'fontsize',15)
+    text(1:length([Block.(NameIdx_Run{1})]),[Variable.(NameRun{1})],num2str(count_c),'fontsize',15)
+    text(4:(length([Block.(NameIdx_Run{2})])+3),[Variable.(NameRun{2})],num2str(count_c),'fontsize',15)
     count_c = count_c +1;
 elseif  strcmp(Experiment, 'Injection')
     
-    plot(   1:length([Block.pre_task_idx]),[Variable.pre_task], 'o','color',[0 0 0] ,'MarkerSize',11,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
-    plot(   4:(length([Block.pst_task_idx])+3),[Variable.pst_task], 'o','color',[0 0 0] ,'MarkerSize',11,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
+    plot(   1:length([Block.(NameIdx_Run{1})]),[Variable.(NameRun{1})], 'o','color',[0 0 0] ,'MarkerSize',11,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
+    plot(   4:(length([Block.(NameIdx_Run{2})])+3),[Variable.(NameRun{2})], 'o','color',[0 0 0] ,'MarkerSize',11,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
     count_ina = count_ina - [0  0.1 0.1];
-    line(1:length([Block.pre_task_idx]),[Variable.pre_task],'Color',ina_b_col_trans,'LineWidth', 1.5)
-    line(4:(length([Block.pst_task_idx])+3),[Variable.pst_task],'Color',ina_d_col_trans,'LineWidth',  1.5)
-   %text(1:length([Block.pre_task_idx]),[Variable.pre_task],num2str(count_i),'fontsize',15)
-   %text(  4:(length([Block.pst_task_idx])+3),[Variable.pst_task],num2str(count_i),'fontsize',15)
+    line(1:length([Block.(NameIdx_Run{1})]),[Variable.(NameRun{1})],'Color',ina_b_col_trans,'LineWidth', 1.5)
+    line(4:(length([Block.(NameIdx_Run{2})])+3),[Variable.(NameRun{2})],'Color',ina_d_col_trans,'LineWidth',  1.5)
+   text(1:length([Block.(NameIdx_Run{1})]),[Variable.(NameRun{1})],num2str(count_i),'fontsize',15)
+   text(  4:(length([Block.(NameIdx_Run{2})])+3),[Variable.(NameRun{2})],num2str(count_i),'fontsize',15)
     count_i = count_i +1;
     
 end

@@ -71,6 +71,17 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191110',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191110');
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191111',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191111');
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191113',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191113');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191119',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191119');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191120',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191120');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191121',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191121');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191127',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191127');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191128',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191128');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191204',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191204');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191205',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191205');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191210',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191210');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191211',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191211');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191212',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191212');
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191213',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191213');
 
 
 %% BACCHUS
@@ -350,16 +361,39 @@ monkey = 'Cornelius';
 
 addtoDropbox = 'C:\Users\kkaduk\Dropbox\DAG\Kristin\Statistic\body_signal_analysis';
 bsa_ecg_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\', sessions, inactivation_sessions, targetBrainArea, addtoDropbox, monkey)
-bsa_cap_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\', sessions, inactivation_sessions, targetBrainArea, addtoDropbox, monkey)
+%bsa_cap_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\', sessions, inactivation_sessions, targetBrainArea, addtoDropbox, monkey)
+
+%% MAGNUS
+monkey = 'Magnus';
+sessions = {
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191121';
+%     'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191127';
+%      'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191128'
+%      'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191204' 
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191205' 
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191210' 
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191212' 
+
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191113';
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191120';
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191211';
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191213';
+
+    };
+targetBrainArea = 'dPul_work';
+inactivation_sessions = {'20191121'  '20191205' '20191210' '20191212'}; % ''20191127' '20191128'   '20191204'
+addtoDropbox = 'C:\Users\kkaduk\Dropbox\DAG\Kristin\Statistic\body_signal_analysis';
+bsa_ecg_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\', sessions, inactivation_sessions, targetBrainArea, addtoDropbox, monkey)
 
 %%
-monkey = 'Curius'; 
-targetBrainArea = 'mdPul'; %mdPul %ldPul_mdPul %ldPul %dPul_Cur_Cor %mdPul_AddedSessionNr
+monkey = 'Magnus'; 
+targetBrainArea = 'dPul_work'; %mdPul %ldPul_mdPul %ldPul %dPul_Cur_Cor %mdPul_AddedSessionNr
 Stats_beforeComputedWithR = 0; %[1,2]; 
 Text = 0; 
 BaselineInjection = 0; %[5,6,7]; %Settings -> red color circle for baseline Injection sessions
-path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\CAP\',targetBrainArea]; 
+path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\ECG\',targetBrainArea]; 
 bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR, Text,BaselineInjection)
+%%CAP
 bsa_graphs_cap(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR, Text,BaselineInjection)
 
 %%
