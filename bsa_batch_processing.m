@@ -447,11 +447,3 @@ targetBrainArea = 'dPul2';
 path_SaveFig = ['Y:\Projects\PhysiologicalRecording\Figures\',monkey, '\ECG\',targetBrainArea]; 
 
 bsa_meanHR(monkey,targetBrainArea,path_SaveFig)
-%% debug in the function: ph_session_processing
-project = 'PhysiologicalRecording';
-versions = {'dPul_inactivation'};
-ph_initiation(project,versions)
-
-project = 'PhysiologicalRecording';
-versions = {'ECG_reaching'};
-ph_initiation(project,versions)
