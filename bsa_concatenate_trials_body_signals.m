@@ -54,9 +54,10 @@ fprintf('->Loaded\n');
 Fs = trial(1).TDT_ECG1_samplingrate;
 
 if isempty(fieldnames(First_trial_INI))  
-    out.ECG1 = double([ trial.TDT_ECG1]);
+   % choose  between [trial.TDT_ECG4]) or TDT_ECG1
+    out.ECG1 = double([ trial.TDT_ECG4]);
 else
-out.ECG1 = double([First_trial_INI.ECG1 trial.TDT_ECG1]);
+out.ECG1 = double([First_trial_INI.ECG1 trial.TDT_ECG4]);
 end
 out.t    = double(0:1/Fs:1/Fs*(length(out.ECG1)-1));
 out.Fs   = double(Fs);

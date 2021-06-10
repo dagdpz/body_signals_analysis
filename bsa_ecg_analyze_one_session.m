@@ -71,7 +71,7 @@ if isempty(par.saveResults),
     par.saveResults = session_path;
 end
 
-session_name_idx = strfind(session_path,'201');
+session_name_idx = strfind(session_path,'20');
 session_name = session_path(session_name_idx(1):session_name_idx(1)+7);
 
 
@@ -196,6 +196,7 @@ for i_block = 1 : n_blocks, % for each run/block
         ecgSignal   = ecg.ECG1;
         Fs          = ecg.Fs;
     end
+    plot(ecgSignal)
     [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,i_block,NrBlock);
     print(out(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],i_block),'-dpng','-r0');
     if ~par.keepRunFigs

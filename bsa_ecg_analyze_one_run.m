@@ -79,9 +79,7 @@ Rs  = 150;                                                  % Stopband Ripple (d
 % title(sprintf('n = %d Butterworth Lowpass Filter',n))
 
 % Filter raw ECG using filtfilt from Matlab
-ecgFiltered = filtfilt(sos, g, ecgSignal); 
-
-
+ecgFiltered = filtfilt(sos, g, ecgSignal);
 % Bandbass to isolate artifact
 % Wp  = [20 40]/Fn;                                             % Passband Frequency (Normalised)
 % Ws  = [15 50]/Fn;                                             % Stopband Frequency (Normalised)
@@ -160,10 +158,6 @@ else % chop to segments
     end
 end
     
-
-
-
-
 % Find spectrum of energyProfile
 % ft_energyProfile_tc = fft(energyProfile_tc - mean(energyProfile_tc))/n_samples;         % Fourier Transform
 % Fv = linspace(0, 1, fix(n_samples/2)+1)*Fn;     % Frequency Vector

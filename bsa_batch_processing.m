@@ -90,10 +90,19 @@ settings_filename = 'bsa_settings_Bacchus2019.m';
 out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20191112',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Bacchus\20191112');
 out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20191113',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Bacchus\20191113');
 
+
+
+
+
 %% CURIUS
 pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx';
 settings_filename = 'bsa_settings_Curius2019.m'; % full path will be complemented in bsa_ecg_analyze_one_session
 
+%% electrophysiology-study
+out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20210318',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20210318');
+
+
+%Inactivation study
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190625',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190625');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190703',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190703');
 out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190701',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Curius\20190701');
@@ -169,7 +178,36 @@ bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\201
 out_cap = bsa_respiration_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190124\bodysignals_without_behavior',pathExcel,settings_filename,'',false,'dataOrigin','TDT');
 out_cap = bsa_respiration_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190129',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190129');
 
+% Magnus
+pathExcel = 'Y:\Logs\Inactivation\Magnus\Magnus_bodySignals_inactivation_log.xlsx';
+settings_filename = 'bsa_settings_Magnus2019.m';
 
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191121',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191121');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191205',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191205');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191210',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191210');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191212',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191212');
+
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191113',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191113');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191120',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191120');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191211',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191211');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191213',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191213');
+
+
+
+
+
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191121';
+%     'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191127';
+%      'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191128'
+%      'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191204' 
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191205' 
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191210' 
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191212' 
+
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191113';
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191120';
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191211';
+    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191213';
 
 %% create Table to have the information for a session as overview
 session_path = 'Y:\Projects\PhysiologicalRecording\Data\Curius';
