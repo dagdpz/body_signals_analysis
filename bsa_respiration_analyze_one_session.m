@@ -71,7 +71,7 @@ if isempty(par.saveResults),
     par.saveResults = session_path;
 end
 
-session_name_idx = strfind(session_path,'201');
+session_name_idx = strfind(session_path,'20');
 session_name = session_path(session_name_idx(1):session_name_idx(1)+7);
 
 

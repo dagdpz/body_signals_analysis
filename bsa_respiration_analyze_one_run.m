@@ -65,7 +65,7 @@ t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sa
 % Step1: detrending
 capSignal = detrend(capSignal);
 
-capFiltered = smoothdata(capSignal, 'gaussian'); 
+capFiltered = smooth(capSignal)'; 
 
 % Step2: create a butterworth filter order selection (low pass filter)
 % Fn  = Fs/2;                                                 % Nyquist Frequency (Hz)
