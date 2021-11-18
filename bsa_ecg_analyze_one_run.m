@@ -1,11 +1,42 @@
 function out = bsa_ecg_analyze_one_run(ecgSignal,Fs,TOPLOT,FigInfo)
+%bsa_ecg_analyze_one_run  - analyses ECG in one run/block
+%
+% USAGE:
+% out = bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r));
+%
+% INPUTS:
+%		ecgSignal		- ECG
+%		Fs              - sampling rate (Hz)
+%       TOPLOT          - plot figure
+%       FigInfo         - info for figure
+%
+% OUTPUTS:
+%		out             - see structure
+%
+% REQUIRES:	Igtools
 % needs MATLAB 2014 or later for wavelet toolbox!
+%
+% See also BSA_ECG_ANALYZE_ONE_SESSION
+%
+%
+% Author(s):	I.Kagan, DAG, DPZ
+% URL:		http://www.dpz.eu/dag
+%
+% Change log:
+% 20190226:	Created function (Igor Kagan)
+% ...
+% $Revision: 1.0 $  $Date: 2019-02-26 14:11:47 $
+
+% ADDITIONAL INFO:
+% CAREFUL - the function filtfilt has the same name in the fieldtrip toolbox
 %
 % https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0140783
 % https://github.com/fieldtrip/fieldtrip/blob/master/ft_heartrate.m
 
 % filtering according to https://de.mathworks.com/matlabcentral/answers/270238-how-can-i-filter-ecg-signals-with-high-motion-artifact
 % (or see also https://de.mathworks.com/matlabcentral/answers/364788-ecg-signal-artifact-removing)
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
+
 
 %{
 [remove "{" above to run it for debugging specific blocks]
@@ -27,10 +58,13 @@ end
 n_samples       = length(ecgSignal);
 t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sample is time 0! (not 1/Fs)
 
+% properties for the ECG detection
 min_R2R                         = 0.25; % s
 eP_tc_minpeakheight_med_prop    = 0.33; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
 MAD_sensitivity_p2p_diff        = 3;
 hampel_T                        = 4; % threshold for hamplel outlier detection
+segment_length                  = 300; % s (set to 0 if no segmentation) -- segment signal prior to wavelet transform
+segment_overlap                 = 50;  % s 
 
 
 ecgSignal = detrend(ecgSignal);
@@ -48,7 +82,7 @@ Rs  = 150;                                                  % Stopband Ripple (d
 % freqz(sos,512,Fs);
 % title(sprintf('n = %d Butterworth Lowpass Filter',n))
 
-% Filter raw ECG
+% Filter raw ECG using filtfilt from fieldtrip
 ecgFiltered = filtfilt(sos, g, ecgSignal); 
 
 
@@ -90,21 +124,51 @@ rangeOfInterest = [1 12]; % Hz
 minFreq = rangeOfInterest(1);
 maxFreq = rangeOfInterest(2);
 scalesPerDecade = 32;
-sig = struct('val',ecgFiltered, 'period', 1/Fs);
+
 waveName = {'morl', []};
 % we ignore components outside of the doubled range of interest
 sca = wavelet_init_scales(minFreq/2, 2*maxFreq, scalesPerDecade);
-cwtstruct = cwtft(sig, 'wavelet', waveName, 'scales', sca);
 
-% 1 global wavelet filtering
-% filterSTD = 8/scalesPerDecade;
-% filterAveragingPeriod = fix(30*Fs);
-% 1.1 compute spectrum and average it in a sliding window
-energyProfile = abs(cwtstruct.cfs).^2;
-% energyProfileMean = movingmean(energyProfile, filterAveragingPeriod, 2); %2 stands for average along time
+if ~segment_length || t(end) < segment_length, % process entire block at once - can be very slow for large blocks
+    sig = struct('val',ecgFiltered, 'period', 1/Fs);
+       
+    energyProfile_tc = get_energy_profile(sig,waveName,sca);
+    n_segments = 0;
+    
+else % chop to segments
+    n_segment = round2(segment_length*Fs,2); % round to even
+    n_overlap = round2(segment_overlap*Fs,2);
+    % energyProfile_tc = zeros(1,n_samples);
+    
+    seg_ind = buffer(1:n_samples,n_segment,n_overlap,'nodelay');
+    n_segments = size(seg_ind,2);
+    disp(sprintf('chopping to %d segments of %.1f s with %.1f s overlap',n_segments,segment_length,segment_overlap));
+    for s = 1:n_segments, % for each segment
+        ind = seg_ind(:,s);
+        ind = ind(ind>0); % only important for the last segment
+        sig = struct('val',ecgFiltered(ind), 'period', 1/Fs);
+        energyProfile_tc_segm = get_energy_profile(sig,waveName,sca);
+        if s == 1, % first segment
+            energyProfile_tc = energyProfile_tc_segm(1:end - n_overlap/2);
+        elseif s<n_segments,
+            energyProfile_tc = [energyProfile_tc energyProfile_tc_segm(n_overlap/2+1:end - n_overlap/2)];
+        else % last segment
+            energyProfile_tc = [energyProfile_tc energyProfile_tc_segm(n_overlap/2+1:end)];
+        end
+        
+%         if s == size(seg_ind,2)-1, % one before last segment
+%             ind_last = seg_ind(:,s+1);
+%             ind_last = ind_last(ind_last>0);
+%             if numel(ind_last) < fix(segment_length*Fs)/3, % last segment is shorter than 1/3 of desired segment length
+%                 ind = [ind; ind_last]; % add last short segment to the previous segment
+%             end
+%         end
+        
+    end
+end
+    
 
-energyProfile_tc = mean(abs(energyProfile));
-clear energyProfile
+
 
 
 % Find spectrum of energyProfile
@@ -310,10 +374,16 @@ if TOPLOT
     
     plot([t(R2R_valid_locs(idx_valid_R2R_consec)) - R2R_valid(idx_valid_R2R_consec); t(R2R_valid_locs(idx_valid_R2R_consec))], ...
          [ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec)); ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec))],'k');
-    
+ 
+    if n_segments, % mark segment borders
+        ig_add_multiple_vertical_lines(t(seg_ind(1,2:end)),'Color',[0.9294    0.6941    0.1255]);
+    end
+     
     set(gca,'Xlim',[0 max(t)]);
     xlabel('Time (s)');
     title(sprintf('ECG: %d valid peaks, %d valid R2R intervals',length(R_valid_locs),length(R2R_valid_locs)));
+    
+ 
        
     
     
@@ -401,8 +471,10 @@ ds = 1/scalesPerDecade;
 nSc =  fix(log2(scMax/sc0)/ds);
 scales = {sc0, ds, nSc}; % we use default formula for scales: sc0*2.^((0:nSc-1)*ds)
 
-
-
-
+function energyProfile_tc = get_energy_profile(sig,waveName,sca)
+cwtstruct = cwtft(sig, 'wavelet', waveName, 'scales', sca);
+energyProfile = abs(cwtstruct.cfs).^2;
+energyProfile_tc = mean(abs(energyProfile));
+clear cwtstruct energyProfile
 
 

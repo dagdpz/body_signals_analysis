@@ -1,4 +1,38 @@
 function out = bsa_concatenate_trials_body_signals(combined_matfile_path, returnECGonly, TOPLOT, export2dlm)
+%bsa_concatenate_trials_body_signals  - concatenates body signal streams into one vector (First_trial_INI trial1 ITI trial2 ITI...)
+%
+% USAGE:
+% ecg = bsa_concatenate_trials_body_signals('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190207\Corcombined2019-02-07_04_block_01.mat', 1); % get ecg only
+%
+% INPUTS:
+%		combined_matfile_path		- path to combined mat file
+%		returnECGonly               - (self-explanatory)
+%       TOPLOT                      - plot signals
+%       export2dlm                  - export for Kubios
+%
+% OUTPUTS:
+%		out		- see structure
+%
+% REQUIRES:	NONE
+%
+% See also BSA_CONCATENATE_TRIALS_ANY_STREAM
+%
+%
+% Author(s):	I.Kagan, DAG, DPZ
+% URL:		http://www.dpz.eu/dag
+%
+% Change log:
+% 20190226:	Created function (Igor Kagan)
+% ...
+% $Revision: 1.0 $  $Date: 2019-02-26 12:16:25 $
+
+% ADDITIONAL INFO:
+% What is the function doing?
+% 1. combines the data from all trials & the data which were recorded before starting the task 
+% 2. plot all the data
+% 3. save the concatenated trials as .txt-file
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
+
 
 if nargin < 2,
     returnECGonly = false;
@@ -12,8 +46,9 @@ if nargin < 4,
     export2dlm = false;
 end
 
-load(combined_matfile_path);
-
+fprintf('Loading %s...',combined_matfile_path);
+load(combined_matfile_path,'-mat');
+fprintf('->Loaded\n');
 [pathstr,name,ext] = fileparts(combined_matfile_path);
 
 Fs = trial(1).TDT_ECG1_samplingrate;

@@ -1,59 +1,61 @@
-function out = bsa_ecg_analyze_one_session(session_path,varargin)
-%bsa_ecg_analyze_one_session  - analyzing ECG in one session (in multiple runs/blocks)
+function bsa_R_triggered_avg_one_session(session_path,data_path,varargin)
+IN PROGRESS
+%bsa_R_triggered_avg_one_session  -  R-triggered average of a signal (ECG or LFP) in one session (per run/block)
 %
 % USAGE:
-% out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131','Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131');
-% out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190207','Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207');
-% out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Magnus\20190131\bodysignals_without_behavior','',false,'dataOrigin','TDT');
-% out = bsa_ecg_analyze_one_session(session_path,'',false,'dataOrigin','TDT','sessionInfo',ses);
+% usage example1;
+% usage example2;
+%		...
 %
 % INPUTS:
-%		session_path		- Path to session data
-%		varargin (optional) - see % define default arguments and their potential values                     
+%		input 1		- exlanation
+%		...
 %
 % OUTPUTS:
-%		out                 - see struct
+%		output1		- explanation
+%		...
 %
-% REQUIRES:	Igtools, bsa_concatenate_trials_body_signals, bsa_ecg_analyze_one_run
+% REQUIRES:	...
 %
-% See also BSA_ECG_ANALYZE_ONE_RUN, BSA_ECG_ANALYZE_MANY_SESSIONS
+% See also ...
 %
 %
 % Author(s):	I.Kagan, DAG, DPZ
 % URL:		http://www.dpz.eu/dag
 %
 % Change log:
-% 20190226:	Created function (Igor Kagan)
+% yyyymmdd:	Created function (Author(s) firstname familyname)
 % ...
-% $Revision: 1.0 $  $Date: 2019-02-26 14:22:52 $
+% $Revision: 1.0 $  $Date: 2019-02-26 16:00:15 $
 
 % ADDITIONAL INFO:
-% What is the function doing?
-%1) loads the created mat-file from bsa_read_and_save_TDT_data_without_behavior.m
-%2) bsa_concatenate_trials_body_signals 
-%3) bsa_ecg_analyze_one_run -> preprocessing the ECG, create R-R intervals
-%4) Plot & save as PDFs
+% ...
 %%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
 
-warning off;
+win_t = [-0.4 0.4]; 
 
 % define default arguments and their potential values
-def_saveResults = session_path; % 1st optional argument (directory to save results, if empty then save to session_path)
-def_keepRunFigs = false;        % 2nd optional argument
-def_dataOrigin = 'combined';    % 3rd optional argument pair
+def_saveResults = session_path;
+def_keepRunFigs = false; 
+def_dataStream = 'LFPx';
+val_dataStream = {'LFPx','ECG1'};
+chk_dataStream = @(x) any(validatestring(x,val_dataStream));
+def_dataOrigin = 'combined';
 val_dataOrigin = {'combined','TDT'};
 chk_dataOrigin = @(x) any(validatestring(x,val_dataOrigin));
-def_sessionInfo = [];           % 4 optional argument pair (can be defined in bsa_ecg_analyze_many_sessions)
+
 
 p = inputParser; % in order of arguments
-addRequired(p, 'session_path',@ischar);
-addOptional(p, 'saveResults',def_saveResults,@ischar);
-addOptional(p, 'keepRunFigs',def_keepRunFigs,@islogical);
+addRequired(p,'session_path',@ischar);
+addRequired(p,'data_path',@ischar);
+addParameter(p,'saveResults',def_saveResults,@ischar);
+addParameter(p,'keepRunFigs',def_keepRunFigs,@islogical);
+addParameter(p,'dataStream',def_dataStream,chk_dataStream);
 addParameter(p,'dataOrigin',def_dataOrigin,chk_dataOrigin);
-addParameter(p,'sessionInfo',def_sessionInfo,@isstruct);
 
-parse(p,session_path,varargin{:});
+parse(p,session_path,data_path,varargin{:});
 par = p.Results;
+
 
 if isempty(par.saveResults),
     par.saveResults = session_path;
@@ -61,7 +63,8 @@ end
 
 session_name_idx = strfind(session_path,'201');
 session_name = session_path(session_name_idx(1):session_name_idx(1)+7);
-
+ecg = load([session_path filesep session_name '_ecg.mat']);
+ses = ecg.ses;
 
 if ~exist(par.saveResults,'dir'),
    mkdir(par.saveResults); 
@@ -73,24 +76,14 @@ if strcmp(par.dataOrigin, 'TDT'),
     ECG = dat.ECG;
     n_blocks = length(dat.ECG);
 else
-    combined_matfiles=dir([session_path filesep '*.mat']);
+    combined_matfiles=dir([data_path filesep '*.mat']);
     n_blocks = length(combined_matfiles);
 end
 
 disp(['Found ' num2str(n_blocks) ' blocks']);
 
 
-ses = par.sessionInfo;
 
-% % Magnus 20190131
-% ses.first_inj_block = 5;
-% ses.type = ... % 1 task, 0 rest
-% [
-% 1
-% 0
-% 1
-% 0
-% ];
 
 % Magnus 20190206
 % ses.first_inj_block = 6;
@@ -116,7 +109,7 @@ ses = par.sessionInfo;
 % 1
 % ]; 
 
-% % Magnus 20190208
+% Magnus 20190208
 % ses.first_inj_block = 9;
 % ses.type = ... % 1 task, 0 rest
 % [
@@ -132,7 +125,7 @@ ses = par.sessionInfo;
 
 
 for r = 1:n_blocks, % for each run/block
-    
+
     % first check if to skip the block
     if ~isempty(ses),
         if ses.type(r) == -2,
@@ -146,18 +139,25 @@ for r = 1:n_blocks, % for each run/block
      if strcmp(par.dataOrigin, 'TDT'),
          ecgSignal   = double(ECG{r});
      else
-         ecg = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(r).name], 1); % get ecg only
-         ecgSignal   = ecg.ECG1;
-         Fs          = ecg.Fs;
+         data = bsa_concatenate_trials_any_stream([data_path filesep combined_matfiles(r).name], par.dataStream);
+         n_chans=size(data.stream,1);
      end
-     out(r) = bsa_ecg_analyze_one_run(ecgSignal,Fs,1,sprintf('block%02d',r));
-     print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
-     if ~par.keepRunFigs
-         close(out(r).hf);
+     
+     
+     figure;
+     for ch = 1:n_chans,
+         RTA(r,ch) = bsa_R_triggered_avg(ecg.out(r).Rpeak_t, data.t, data.stream(ch,:), win_t);
+         subplot(4,4,ch);
+         plot(RTA(r,ch).t,RTA(r,ch).mean);
+%        print(out(r).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],r),'-dpng','-r0');
+%          if ~par.keepRunFigs
+%              close(out(r).hf);
+%          end
+         
+         
      end
-   
-   
 end
+return;
 
 save([par.saveResults filesep session_name '_ecg.mat'],'out','par','ses','session_name','session_path');
 
