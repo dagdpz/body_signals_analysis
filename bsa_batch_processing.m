@@ -90,11 +90,55 @@ settings_filename = 'bsa_settings_Bacchus2019.m';
 out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20191112',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Bacchus\20191112');
 out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20191113',pathExcel,settings_filename,'Y:\Projects\PhysiologicalRecording\Data\Bacchus\20191113');
 
-%% ECG-channel 1 
+%% Ephys - ECG-channel 1 
 out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210720',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210720');
 out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210720',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20210720');
 out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211001',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211001');
 
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210723',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210723');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210729',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210729');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210730',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210730');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210803',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210803');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210805',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210805');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210806',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210806');
+
+
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210826',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210826');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210827',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210827');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210903',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210903');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210905',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210905');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210906',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210906');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210930',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210930');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211007',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211007');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211012',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211012');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211013',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211013');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211014',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211014');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211019',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211019');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211027',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211027');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211028',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211028');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211014',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211014');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211102',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211102');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211103',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211103');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211111',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211111');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211116',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211116');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211117',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211117');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211207',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211207');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211214',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211214');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211222',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211222');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20220105',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20220105');
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20220106',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20220106');
+
+%% Probl
+out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210829',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210829');
+
+
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211028',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20211028');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210826',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20210826');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210720',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20210720');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211001',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20211001');
 
 
 %% CURIUS
@@ -199,18 +243,18 @@ out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monk
 
 
 
-    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191121';
-%     'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191127';
-%      'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191128'
-%      'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191204' 
-    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191205' 
-    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191210' 
-    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191212' 
-
-    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191113';
-    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191120';
-    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191211';
-    'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191213';
+%     'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191121';
+% %     'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191127';
+% %      'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191128'
+% %      'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191204' 
+%     'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191205' 
+%     'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191210' 
+%     'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191212' 
+% 
+%     'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191113';
+%     'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191120';
+%     'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191211';
+%     'Y:\Projects\PhysiologicalRecording\Data\Magnus\20191213';
 
 %% create Table to have the information for a session as overview
 session_path = 'Y:\Projects\PhysiologicalRecording\Data\Curius';
@@ -221,7 +265,58 @@ pathExcel = 'Y:\Logs\Inactivation\Cornelius\Cornelius_Inactivation_log_since2019
 
 bsa_getSummary_SessionInfo(session_path, pathExcel )
 
-%% dorsal pulvinar
+%% dorsal pulvinar & VPL 
+monkey = 'Bacchus';
+sessions = {
+    'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210720';
+    'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211001';   
+    'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210826';
+    'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20211028'};
+targetBrainArea         = 'dPul_VPL';
+inactivation_sessions   = {'20210720' '20211001' };
+baseline_sessions       = {'20210826' '20211028' };
+addtoDropbox = 'C:\Users\kkaduk\Dropbox\PhD\Projects\body_signals_analysis\Statistic';
+bsa_ecg_summarize_many_sessions('C:\Users\kkaduk\Dropbox\PhD\Projects\body_signals_analysis\Data\', sessions, inactivation_sessions, targetBrainArea, addtoDropbox, monkey)
+
+monkey = 'Bacchus';  %Curius
+targetBrainArea = 'dPul_VPL'; 
+Stats_beforeComputedWithR = 0; 
+Text = 1; 
+path_SaveFig = ['Y:\Projects\Pulv_distractor_spatial_choice\Results\',monkey, '\ECG\',targetBrainArea];
+BaselineInjection = 0; %[5,6,7]; %Settings -> red color circle for baseline Injection sessions
+bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR, Text,BaselineInjection)
+
+% relationship between HRV and HR
+bsa_graphs_ecg_HRV_HR(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR, Text)
+%% CAP - 
+monkey = 'Bacchus';
+sessions = {
+    'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20210720';
+    'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20211001';   
+    'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20210826';
+    'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20211028'};
+targetBrainArea         = 'dPul_VPL';
+inactivation_sessions   = {'20210720' '20211001' };
+baseline_sessions       = {'20210826' '20211028' };
+addtoDropbox = 'C:\Users\kkaduk\Dropbox\PhD\Projects\body_signals_analysis\Statistic';
+bsa_cap_summarize_many_sessions('C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\', sessions, inactivation_sessions, targetBrainArea, addtoDropbox, monkey)
+%%%%%%%%
+monkey = 'Bacchus';  %Curius
+targetBrainArea = 'dPul_VPL'; 
+Stats_beforeComputedWithR = 0; 
+Text = 1; 
+path_SaveFig = ['Y:\Projects\Pulv_distractor_spatial_choice\Results\',monkey, '\ECG\',targetBrainArea];
+BaselineInjection = 0; %[5,6,7]; %Settings -> red color circle for baseline Injection sessions
+bsa_graphs_cap(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR, Text,BaselineInjection)
+
+%%
+monkey = 'Bacchus'; 
+targetBrainArea = 'dPul_VPL';
+path_SaveFig = ['Y:\Projects\Pulv_distractor_spatial_choice\Results\',monkey, '\ECG\',targetBrainArea]; 
+behavior_Data = ['Y:\Projects\PhysiologicalRecording\Figures\', monkey,'\behavior\Inactivation_20190124_20190129_20190201_20190207_20190214_20190228_20190314\Behavior_Inactivation_20190502-1403.mat']; 
+bsa_graphs_ecg_behavior(monkey,behavior_Data,targetBrainArea,path_SaveFig)
+%%
+
 monkey = 'Cornelius';
 
 sessions = {

@@ -63,6 +63,18 @@ NoBlocks = 1;
   for ind_DV = 1: length(DVs)  
     %% Blocks - task
     if NoBlocks
+        
+        if strcmp(Experiment , 'ephys')
+            % plot for each Block on the x-axis the dependent variable
+            % categorise for task vs rest
+            % cartegorise for brain area
+            %%TODO - change in S_Blocks -> experiment
+            
+        elseif strcmp(Experiment , 'Inactivation')
+        
+        
+        
+        
                 task = 1;
 
         figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
@@ -75,10 +87,12 @@ NoBlocks = 1;
         MeanForBlock_Task_Control_Task            = [MeanForBlock_Task_Control_Task; MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pst_task'),:)];
         MeanForBlock_Task_Injection_Task          = MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pre_task'),:);
         Table_MeanForBlock_Task_Injection_Task    = [MeanForBlock_Task_Injection_Task; MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pst_task'),:)];
+        BlockStartPost = max(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition); 
        
         VarName = [ 'mean_', DVs{ind_DV}] ;
-        plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)]);
-        plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)]);
+        plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)], BlockStartPost);
+        BlockStartPost = max(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition); 
+        plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)], BlockStartPost);
             legend('show','Location','best')
 
         for I_Ses = 1: length(S_Blocks2)
@@ -86,8 +100,8 @@ NoBlocks = 1;
             %[Graph, Ymin ,Ymax] =
             % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
         end
-         plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)]);
-        plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)]);
+       % plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)], BlockStartPost);
+       % plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)]);
         xlim_max = 0; 
         for I_Ses = 1: length(S_Blocks2)
         Vmax = length(S_Blocks2(I_Ses).Block.pre_task_idx) + length(S_Blocks2(I_Ses).Block.pst_task_idx);
@@ -185,6 +199,7 @@ NoBlocks = 1;
         print(h,'-depsc',compl_filename);
         close all;
     end
+    end
        
     %% Session - task
     Stat = []; 
@@ -206,7 +221,7 @@ NoBlocks = 1;
     if strcmp(DVs{ind_DV} , 'mean_R2R_bpm')
         yaxis = 'heart rate (bpm)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
-        max_yValue = Ymax+40;
+        max_yValue = Ymax+30;
         min_yValue = Ymin -10;
         Y_C(1) = max_yValue -40;
         Y_C(2) = max_yValue -45;
@@ -239,7 +254,7 @@ NoBlocks = 1;
         text(1 ,max_yValue -20,'rest','fontsize',15)
         text(3 ,max_yValue -20,'task','fontsize',15)
         
-        text(6.5,max_yValue -10,'Injection','fontsize',20)
+        text(6.5,max_yValue -10,S_Blocks2(1).Experiment,'fontsize',20)
         text(6 ,max_yValue -20,'rest','fontsize',15)
         text(8 ,max_yValue -20,'task','fontsize',15)
     end
@@ -538,7 +553,7 @@ print(h,'-depsc',compl_filename);
 
 
 
-function plot_oneVarMean_Block_pre_post_rest_task(Experiment, Block,Variable)
+function plot_oneVarMean_Block_pre_post_rest_task(Experiment, Block,Variable, BlockStartPost)
 %[Graph, Ymin ,Ymax] =
 con_b_col = [0.4667    0.6745    0.1882];
 con_d_col = [0.0706    0.2118    0.1412];
@@ -548,8 +563,8 @@ ina_d_col = [0          0    0.9];
 % plot(  1, nanmean([Block.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
 % plot(  2, nanmean([Block.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col);
 if  strcmp(Experiment, 'Control')
-    plot(   Block(1:3),Variable(1:3), '-','color',[0 0 0] ,'LineWidth',5,'color',con_b_col, 'DisplayName','Pre Control'); hold on;
-    plot(   Block(4:end),Variable(4:end), '-','color',[0 0 0] ,'LineWidth',5,'color',con_d_col, 'DisplayName','Post Control'); hold on;
+    plot(   Block(1:(BlockStartPost-1)),Variable(1:(BlockStartPost-1)), '-','color',[0 0 0] ,'LineWidth',5,'color',con_b_col, 'DisplayName','Pre Control'); hold on;
+    plot(   Block(BlockStartPost:end),Variable(BlockStartPost:end), '-','color',[0 0 0] ,'LineWidth',5,'color',con_d_col, 'DisplayName','Post Control'); hold on;
     %h.Color(4)=0.3;  % 70% transparent
     %p.Color(4)=0.8;  % 70% transparent
     
@@ -587,7 +602,7 @@ end
 
 % plot(  1, nanmean([Block.pre_rest]), 'o','color',[0 0 0] ,'MarkerSize',20,'markerfacecolor',con_b_col) ; hold on
 % plot(  2, nanmean([Block.pst_rest]), 'o','color', [0 0 0] ,'MarkerSize',20,'markerfacecolor',con_d_col);
-if  strcmp(Experiment, 'Control')
+if  strcmp(Experiment, 'Control') || strcmp(Experiment, 'VPL')
     plot(   1:length([Block.(NameIdx_Run{1})]),[Variable.(NameRun{1})], 'o','color',[0 0 0] ,'MarkerSize',11,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
     plot(   4:(length([Block.(NameIdx_Run{2})])+3),[Variable.(NameRun{2})], 'o','color',[0 0 0] ,'MarkerSize',11,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
     count_con = count_con + [0 0.15 0.15];

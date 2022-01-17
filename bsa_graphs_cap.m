@@ -169,7 +169,7 @@ NoBlocks = 0;
         text(1 ,max_yValue -20,'rest','fontsize',15)
         text(3 ,max_yValue -20,'task','fontsize',15)
         
-        text(6.5,max_yValue -10,'Injection','fontsize',20)
+        text(6.5,max_yValue -10,S_Blocks2(1).Experiment,'fontsize',20)
         text(6 ,max_yValue -20,'rest','fontsize',15)
         text(8 ,max_yValue -20,'task','fontsize',15)
     end

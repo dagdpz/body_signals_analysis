@@ -18,7 +18,7 @@ function out_cap = bsa_respiration_analyze_one_session(session_path,pathExcel,se
 %
 % See also BSA_ECG_ANALYZE_ONE_RUN, BSA_ECG_ANALYZE_MANY_SESSIONS
 %
-%
+%20211001
 % Author(s):	I.Kagan, DAG, DPZ
 % URL:		http://www.dpz.eu/dag
 %
@@ -317,7 +317,7 @@ xlabel('blocks');
 ylabel('LF and HF power (ms^2)');
 
 
-if ~isempty(ses),
+if ~isempty(ses) && ~(strcmp(ses.experiment(1) , 'ephys')),
    
     for ax = 1:length(ha),
         axes(ha(ax));

@@ -56,6 +56,8 @@ Fs = trial(1).TDT_ECG1_samplingrate;
 if isempty(fieldnames(First_trial_INI))  
    % choose  between [trial.TDT_ECG4]) or TDT_ECG1
     out.ECG1 = double([ trial.TDT_ECG1]);
+    out.ECG4 = double([ trial.TDT_ECG1]);
+
 else
 out.ECG1 = double([First_trial_INI.ECG1 trial.TDT_ECG1]);
 end
@@ -75,6 +77,8 @@ if TOPLOT,
    ha(1) = subplot(3,1,1);
    plot(out.t,out.ECG1);
    title('ECG1');
+  
+   
    ha(2) = subplot(3,1,2);
    plot(out.t,out.POX1);
    title('POX1');

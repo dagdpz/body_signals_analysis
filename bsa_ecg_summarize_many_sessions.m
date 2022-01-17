@@ -34,7 +34,7 @@ S_Blocks2 = [];
 Table = []; TableBlocks =[]; 
 for s = 1:length(sessions),
 	session_path = sessions{s};
-	session_name_idx = strfind(session_path,'201');
+	session_name_idx = strfind(session_path,'2021');
 	session_name = session_path(session_name_idx(1):session_name_idx(1)+7);
 
 	load([session_path filesep session_name '_ecg.mat']);
@@ -52,12 +52,25 @@ end
     rest_idx = [];   task_idx = []; 
 	rest_idx = find(ses.type == 0  ); %& ~isnan([out.mean_R2R_valid_bpm]')
     task_idx = find(ses.type == 1 ); %& ~isnan([out.mean_R2R_valid_bpm]')
+    if isempty(ses.first_inj_block)
+  
+    pre_rest_idx = 	rest_idx;
+	pre_task_idx = 	task_idx;
+	pst_rest_idx = 	rest_idx;
+	pst_task_idx = 	task_idx;
+    Experiment_name = ses.brain_area{1};  %'Ephys'; 
+    
+   
+    else
+    
+    
 	pre_rest_idx = 	rest_idx(rest_idx < ses.first_inj_block);
 	pre_task_idx = 	task_idx(task_idx < ses.first_inj_block);
 	pst_rest_idx = 	rest_idx(rest_idx >= ses.first_inj_block);
 	pst_task_idx = 	task_idx(task_idx >= ses.first_inj_block);
+    Experiment_name = 'Inactivation'; 
 
-
+    end
 	% for analysis across sessions
 
 	S_.mean_R2R_bpm.pre_rest = mean([out(pre_rest_idx).mean_R2R_valid_bpm]);
@@ -131,13 +144,13 @@ if ismember(session_name,inactivation_sessions)
         Experiment    = cell(1, size(TableInac,1))';
         Experiment(:) = VariableNames(indVar);
         TableInac.DependentVariable  = Experiment;       
-        Experiment(:) = {'Injection'};
+        Experiment(:) = {Experiment_name};
         TableInac.Experiment         = Experiment;
         Experiment(:) = {session_name};
         TableInac.Date               = Experiment;
         
         Table = [Table ;TableInac];
-        S_Blocks2(s).Experiment = {'Injection'};
+        S_Blocks2(s).Experiment = {Experiment_name};
 
         end
     end
@@ -378,8 +391,8 @@ writetable(Table, [Path_addtoDropbox ,filesep, monkey, filesep,monkey, '_Table_H
 
 
 %% save Table for further statistical analysis
-writetable(Table, ['C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\', 'Table_HeartrateVaribility_PerSession'], 'Delimiter', ' ')
-writetable(TableBlocks, ['C:\Users\kkaduk\Dropbox\promotion\Projects\BodySignal_Pulvinar\Data\', 'Table_HeartrateVaribility_PerSessionPerBlock'], 'Delimiter', ' ')
+writetable(Table, ['C:\Users\kkaduk\Dropbox\PhD\Projects\body_signals_analysis\Data\', 'Table_HeartrateVaribility_PerSession'], 'Delimiter', ' ')
+writetable(TableBlocks, ['C:\Users\kkaduk\Dropbox\PhD\Projects\body_signals_analysis\Data\', 'Table_HeartrateVaribility_PerSessionPerBlock'], 'Delimiter', ' ')
 
 
 

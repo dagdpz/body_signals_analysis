@@ -40,10 +40,11 @@ load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',
 load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Control_',targetBrainArea ]);
 load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Injection_',targetBrainArea ]);
 
-
+if Stats
 load(['C:\Users\kkaduk\Dropbox\DAG\Kristin\Statistic\body_signal_analysis\', monkey, filesep,monkey ,'_MultComp_PValues_HeartrateVaribility_PerSession_',targetBrainArea ]);
 Tabl_MultComp = struct2table(tabl_MultCom_pValues_Data);
 DVs =   unique(Tabl_MultComp.Variable);
+end
 
 NoBlocks = 1;
 HR_HRV = 1;
@@ -62,15 +63,27 @@ con_d_col = abs([0.0706    0.2118    0.1412] );
 ina_b_col = abs([0          0.7   0.9]);
 ina_d_col = abs([0          0    0.9] );
 
-% get the Variable names of all HRV measurements    
-HRV_DVs{2} = DVs{find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm')], 2) == 0)} ;
-ix = find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm')], 2) == 0);
-for ind = 1: length(ix)
-HRV_DVs{ind} = DVs{ix(ind)} ; 
+%get the Variable names of all HRV measurements
+if Stats
+    HRV_DVs{2} = DVs{find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm')], 2) == 0)} ;
+    ix = find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm')], 2) == 0);
+    for ind = 1: length(ix)
+        HRV_DVs{ind} = DVs{ix(ind)} ;
+    end
+    st = 3;
+        Experiment = 'Inactivation'; 
+
+else 
+    HRV_DVs = fieldnames(S_con ); 
+    for ind = 5: length(HRV_DVs)
+        HRV_DVs{ind} = []; 
+    end
+    st = 1;
+    Experiment = 'Ephys'; 
 end
 
 DeleteOutlier = 1; 
-for ind_DV =  3: length(HRV_DVs)
+for ind_DV =  st: length(HRV_DVs)
     
      if HR_HRV
          ln = 0; correctionFactor = 0; 
@@ -161,7 +174,7 @@ for ind_DV =  3: length(HRV_DVs)
         elseif strcmp(FitLineTO, 'Control')
             %only task,  pre & post, Control and Injection
             
-            indExp = strcmp([S_Blocks2(:).Experiment], 'Injection');
+            indExp = strcmp([S_Blocks2(:).Experiment], Experiment);
             C2 = struct2cell([S_Blocks2(indExp).(HRV_DVs{ind_DV})]);
             C1 = struct2cell([S_Blocks2(indExp).mean_R2R_bpm]);
             mdl = fitlm([C1{2,:,:},C1{4,:,:}],log([C2{2,:,:}, C2{4,:,:}]),'linear', 'RobustOpts', 'off');
