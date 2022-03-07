@@ -161,11 +161,11 @@ for i_block = 1 : n_blocks, % for each run/block
                 disp(['Block ' num2str(NrBlock) ' is excluded because of a -2 in the Excel-sheet'])
                 ses.type(i_block) = -2;   
             elseif ses.type(i_block) == -2  && task.type ~= Set.task.Type &&  ses.tasktype(ses.nrblock_combinedFiles == i_block) ~= -2 && numel(trial) > Set.task.mintrials
-                disp(['Condition does not match!! Excel-sheet colum tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(i_block)])
+                disp(['Condition does not match!! Excel-sheet colum tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(NrBlock)])
                 ses.type(i_block) =  ses.tasktype(ses.nrblock_combinedFiles == i_block);
                 disp('overwrote the information from behavior file with excel-sheet')
             else
-                disp(['Condition does not match!! Excel-sheet colum tasktype' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) 'is not identical with the information from behavior file'  num2str(ses.type(i_block) ) 'in Block' num2str(i_block)])
+                disp(['Condition does not match!! Excel-sheet colum tasktype' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) 'is not identical with the information from behavior file'  num2str(ses.type(i_block) ) 'in Block' num2str(NrBlock)])
             end
         end
         

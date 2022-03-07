@@ -1,4 +1,4 @@
-function bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR,Text,BaselineInjection)
+function bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeComputedWithR,Text,BaselineInjection, Experiment)
 %Todo:
 % How to input better all the different datasets
 %USAGE:
@@ -32,16 +32,16 @@ function bsa_graphs_ecg(monkey,targetBrainArea,path_SaveFig, Stats_beforeCompute
 
 close all;
 %% dorsal pulvinar
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_HeartrateVaribility_PerSession_Control_' ,targetBrainArea])
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions', filesep,monkey '_Structure_HeartrateVaribility_PerSessionPerBlock_Control_',targetBrainArea ])
+load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSession_Control_' ,targetBrainArea])
+load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions', filesep,monkey '_MatStruc_HR_HRV_PerSessionPerBlock_Control_',targetBrainArea ])
 
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_HeartrateVaribility_PerSessionPerBlock_Inactivation_',targetBrainArea ])
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_HeartrateVaribility_PerSession_Inactivation_' ,targetBrainArea])
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_HeartrateVaribility_PerSessionPerBlock_' ,targetBrainArea])
+load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSessionPerBlock_Inactivation_',targetBrainArea ])
+load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSession_Inactivation_' ,targetBrainArea])
+load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSessionPerBlock_' ,targetBrainArea])
 
 
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Control_',targetBrainArea ]);
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Injection_',targetBrainArea ]);
+load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Control_',targetBrainArea ]);
+load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Injection_',targetBrainArea ]);
 
 if Stats_beforeComputedWithR == 0
  names = fieldnames(S_ina); 
@@ -151,10 +151,11 @@ NoBlocks = 1;
         MeanForBlock_Task_Control_Task            = [MeanForBlock_Task_Control_Task; MeanForBlock_Task_Control(strcmp( MeanForBlock_Task_Control.Condition , 'pst_rest'),:)];
         MeanForBlock_Task_Injection_Task          = MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pre_rest'),:);
         Table_MeanForBlock_Task_Injection_Task    = [MeanForBlock_Task_Injection_Task; MeanForBlock_Task_Injection(strcmp( MeanForBlock_Task_Injection.Condition , 'pst_rest'),:)];
-       
+        BlockStartPost = max(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition); 
+    
         VarName = [ 'mean_', DVs{ind_DV}] ;
-        plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)]);
-        plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)]);
+        plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)],BlockStartPost);
+        plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)],BlockStartPost);
             legend('show','Location','best')
 
         for I_Ses = 1: length(S_Blocks2)
@@ -162,7 +163,7 @@ NoBlocks = 1;
             %[Graph, Ymin ,Ymax] =
             % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
         end
-         plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)]);
+         plot_oneVarMean_Block_pre_post_rest_task( MeanForBlock_Task_Control_Task.Experiment(1), 1: length(MeanForBlock_Task_Control_Task.NrBlock_BasedCondition),[MeanForBlock_Task_Control_Task.(VarName)], BlockStartPost);
         plot_oneVarMean_Block_pre_post_rest_task( Table_MeanForBlock_Task_Injection_Task.Experiment(1), 1: length(Table_MeanForBlock_Task_Injection_Task.NrBlock_BasedCondition),[Table_MeanForBlock_Task_Injection_Task.(VarName)]);
         xlim_max = 0; 
         for I_Ses = 1: length(S_Blocks2)

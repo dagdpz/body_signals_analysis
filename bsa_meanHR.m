@@ -26,9 +26,9 @@ function bsa_meanHR(monkey,targetBrainArea,path_SaveFig)
 
 % ADDITIONAL INFO:
 
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_HeartrateVaribility_PerSession_Inactivation_' ,targetBrainArea])
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_HeartrateVaribility_PerSession_Control_' ,targetBrainArea])
-load(['Y:\Projects\PhysiologicalRecording\Data\', monkey, filesep,'AllSessions',filesep,monkey '_Structure_HeartrateVaribility_PerSessionPerBlock_' ,targetBrainArea])
+load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation/ECG/AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSession_Inactivation_' ,targetBrainArea])
+load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation/ECG/AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSession_Control_' ,targetBrainArea])
+load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation/ECG/AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSessionPerBlock_' ,targetBrainArea])
 
 
 
