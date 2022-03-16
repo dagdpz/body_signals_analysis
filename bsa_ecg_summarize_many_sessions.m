@@ -389,8 +389,8 @@ writetable(Table, [Path_addtoDropbox ,filesep, monkey, filesep,monkey, '_Table_H
 
 
 %% save Table for further statistical analysis
-writetable(Table, ['C:\Users\kkaduk\Dropbox\PhD\Projects\body_signals_analysis\Data\', 'Table_HeartrateVaribility_PerSession'], 'Delimiter', ' ')
-writetable(TableBlocks, ['C:\Users\kkaduk\Dropbox\PhD\Projects\body_signals_analysis\Data\', 'Table_HeartrateVaribility_PerSessionPerBlock'], 'Delimiter', ' ')
+writetable(Table, ['C:\Users\kkaduk\Dropbox\PhD\Projects\Monkey_Ina_ECG_Respiration\body_signals_analysis\Data\', monkey, filesep,monkey, '_Table_HR_HRV_PerSession_', targetBrainArea], 'Delimiter', ' ')
+writetable(TableBlocks, ['C:\Users\kkaduk\Dropbox\PhD\Projects\Monkey_Ina_ECG_Respiration\body_signals_analysis\Data\', monkey, filesep,monkey, '_Table_HR_HRV_PerSession_PerBlocks_', targetBrainArea], 'Delimiter', ' ')
 
 
 
