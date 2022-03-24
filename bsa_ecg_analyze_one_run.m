@@ -280,6 +280,8 @@ end
 
 
 %%  CALCULATE VARIABLES
+mean_R2R_valid        = mean(R2R_valid);
+
 median_R2R_valid        = median(R2R_valid);
 mode_R2R_valid          = mode(R2R_valid);
 [hist_R2R_valid,bins]   = hist(R2R_valid,bins);
@@ -348,7 +350,7 @@ if length(R2R_valid) < Set.R2R_minValidData,
     out.R2R_valid               = [];
     out.R2R_valid_bpm           = [];
     out.idx_valid_R2R_consec    = [];
-    out.mean_R2R_valid_bpm      = [];
+    out.mean_R2R_valid_bpm      = nan;
     out.median_R2R_valid_bpm    = [];
     out.std_R2R_valid_bpm       = [];
     out.rmssd_R2R_valid_ms      = [];

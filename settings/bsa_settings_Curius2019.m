@@ -29,8 +29,8 @@ Set.hampel_DX                       = 10; % (# R peaks) half width of hampel win
 
 
 % properties for the respiration peak detection
-Set.cap.min_P2P                         = 1.7; % s
-Set.cap.eP_tc_minpeakheight_med_prop    = 1; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
+Set.cap.min_P2P                         = 1; % s
+Set.cap.eP_tc_minpeakheight_med_prop    = 0.3; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
 Set.cap.MAD_sensitivity_p2p_diff        = 8; % sensitivity factor for threshold calculation -  larger value -> less sensitive (i.e. less outliers)
 Set.cap.MAD_sensitivity_p2m_diff        = 0; % sensitivity factor for threshold calculation -  smaller value -> smaller threshold -> less sensitive (i.e. less outliers)
 Set.cap.MinPeakProminenceCoef           = 0.3; 
@@ -42,5 +42,5 @@ Set.cap.hampel_T                        = 7 ; % threshold for hamplel outlier de
 Set.cap.hampel_DX                       = 10; % (# R peaks) half width of hampel window for outlier detection
 Set.cap.hampel_nb_of_std                = 10; 
 Set.cap.hampel_adjacentSampleToComputeMean = 3; 
-Set.B2B_minValidData                    = 50; 
+Set.B2B_minValidData                    = 30; 
 

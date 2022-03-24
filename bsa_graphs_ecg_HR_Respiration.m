@@ -1,4 +1,4 @@
-function bsa_graphs_ecg_HRV_HR(monkey,targetBrainArea,path_SaveFig, Stats,Text)
+function bsa_graphs_ecg_HR_Respiration(monkey,targetBrainArea,path_SaveFig, Stats,Text)
 %Todo:
 % How to input better all the different datasets
 %USAGE:
@@ -29,16 +29,13 @@ function bsa_graphs_ecg_HRV_HR(monkey,targetBrainArea,path_SaveFig, Stats,Text)
 
 close all;
 %% dorsal pulvinar
-load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSession_Control_' ,targetBrainArea])
-load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions', filesep,monkey '_MatStruc_HR_HRV_PerSessionPerBlock_Control_',targetBrainArea ])
-
-load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSessionPerBlock_Inactivation_',targetBrainArea ])
-load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSession_Inactivation_' ,targetBrainArea])
-load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSessionPerBlock_' ,targetBrainArea])
-
-
-load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Control_',targetBrainArea ]);
-load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Injection_',targetBrainArea ]);
+ecg{1} = load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSession_Control_' ,targetBrainArea]); 
+ecg{2} = load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions', filesep,monkey '_MatStruc_HR_HRV_PerSessionPerBlock_Control_',targetBrainArea ]); 
+ecg{3} = load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSessionPerBlock_Inactivation_',targetBrainArea ]); 
+ecg{4} = load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSession_Inactivation_' ,targetBrainArea]); 
+ecg{5} = load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_MatStruc_HR_HRV_PerSessionPerBlock_' ,targetBrainArea]); 
+ecg{6} = load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Control_',targetBrainArea ]);
+ecg{7} = load(['Y:\Projects\Pulv_Inac_ECG_respiration\Results\', monkey, filesep,'Inactivation\ECG\AllSessions',filesep,monkey '_Table_MeanForBlock_Task_Injection_',targetBrainArea ]);
 
 if Stats == 0
     names = fieldnames(S_ina);
@@ -51,13 +48,13 @@ end
 
 
 NoBlocks = 1;
-HR_HRV = 1;
+HR_HRV = 0;
 
 
 
-if ~exist([path_SaveFig  filesep 'HR_HRV'], 'dir');   mkdir([path_SaveFig  filesep 'HR_HRV']); end
-if ~exist([path_SaveFig filesep 'HR_HRV' filesep 'png'], 'dir');mkdir([path_SaveFig filesep 'HR_HRV'  filesep 'png']); end
-if ~exist([path_SaveFig filesep 'HR_HRV' filesep 'ai'], 'dir');mkdir([path_SaveFig filesep 'HR_HRV'  filesep 'ai']); end
+if ~exist([path_SaveFig  filesep 'HR_Respiration'], 'dir');   mkdir([path_SaveFig  filesep 'HR_Respiration']); end
+if ~exist([path_SaveFig filesep 'HR_Respiration' filesep 'png'], 'dir');mkdir([path_SaveFig filesep 'HR_Respiration'  filesep 'png']); end
+if ~exist([path_SaveFig filesep 'HR_Respiration' filesep 'ai'], 'dir');mkdir([path_SaveFig filesep 'HR_Respiration'  filesep 'ai']); end
 
 
 %% HR & HRV in Sessions
@@ -86,26 +83,36 @@ else
     Experiment = 'Ephys';
 end
 
-DeleteOutlier = 0;
-for ind_DV =  st: length(HRV_DVs)
+
+getDataPath = 'Y:\Projects\Pulv_Inac_ECG_respiration\Results\';
+cap{1} = load([getDataPath, monkey, filesep,'\Inactivation\CAP\AllSessions',filesep,monkey '_MatStruc_Respiration_PerSession_Control_' ,targetBrainArea]);
+cap{2} = load([getDataPath, monkey, filesep,'\Inactivation\CAP\AllSessions', filesep,monkey '_MatStruc_Respiration_PerSessionPerBlock_Control_',targetBrainArea ]); 
+
+cap{3} = load([getDataPath, monkey, filesep,'\Inactivation\CAP\AllSessions',filesep,monkey '_MatStruc_Respiration_PerSessionPerBlock_Inactivation_',targetBrainArea ]);
+cap{4} = load([getDataPath, monkey, filesep,'\Inactivation\CAP\AllSessions',filesep,monkey '_MatStruc_Respiration_PerSession_Inactivation_' ,targetBrainArea]);
+cap{5} = load([getDataPath, monkey, filesep,'\Inactivation\CAP\AllSessions',filesep,monkey '_MatStruc_Respiration_PerSessionPerBlock_' ,targetBrainArea]);
+
+cap{6} = load([getDataPath, monkey, filesep,'\Inactivation\CAP\AllSessions',filesep,monkey '_Respiration_MeanForBlock_Task_Control_',targetBrainArea ]);
+cap{7} = load([getDataPath, monkey, filesep,'\Inactivation\CAP\AllSessions',filesep,monkey '_Respiration_MeanForBlock_Task_Injection_',targetBrainArea ]);
+
+
+
+DeleteOutlier = 1;
+%for ind_DV =  st: length(HRV_DVs)
     
-    if HR_HRV
+   % if HR_HRV
         ln = 0; correctionFactor = 0;
         figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
         ha(1) = subplot(2,2,1);
         
-        set(gcf,'Name',HRV_DVs{ind_DV}); hold on;
+        set(gcf,'Name','HR_Respiration'); hold on;
         count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
-        for I_Ses = 1: length(S_Blocks2)
-            [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, ...
-                [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
+        for I_Ses =  1:length(cap{5}.S_Blocks2)
+            [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(cap{5}.S_Blocks2(I_Ses).Experiment, ...
+                [ecg{5}.S_Blocks2(I_Ses).mean_R2R_bpm],[cap{5}.S_Blocks2(I_Ses).mean_B2B_bpm],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
                 ln,correctionFactor);
         end
         
-        if strcmp(monkey, 'Cornelius') || strcmp(monkey, 'Magnus') && strcmp (Experiment, 'Inactivation') && strcmp(HRV_DVs{ind_DV}, 'rmssd_R2R_ms')
-        set(gca,'ylim',[0 25])
-        end
-
         C1 = struct2cell([S_Blocks2(:).mean_R2R_bpm]);
         Xmin = min([C1{2,:,:}, C1{4,:,:}]);
         Xmax = max([C1{2,:,:}, C1{4,:,:}]);
@@ -113,48 +120,6 @@ for ind_DV =  st: length(HRV_DVs)
         C2 = struct2cell([S_Blocks2(indExp).(HRV_DVs{ind_DV})]);
         C1 = struct2cell([S_Blocks2(indExp).mean_R2R_bpm]);
         
-        if strcmp(monkey , 'Curius') && strcmp(Experiment , 'Inactivation')
-            max_xValue = 140; min_xValue = 85;            set(gca,'xlim',[min_xValue max_xValue]);
-             if strcmp(HRV_DVs{ind_DV}, 'rmssd_R2R_ms')
-            max_yValue = 110; min_yValue = 0; set(gca,'ylim',[min_yValue max_yValue]);
-             end
-        end
-
-
-%                 FitLineTO = 'Control';
-% 
-%           if strcmp(FitLineTO, 'AllData')
-%             %only task,  pre & post, Control and Injection
-%             mdl = fitlm([C1{2,:,:},C1{4,:,:}],log([C2{2,:,:}, C2{4,:,:}]),'linear', 'RobustOpts', 'off');
-%             
-%         elseif strcmp(FitLineTO, 'Control')
-%             %only task,  pre & post, Control and Injection
-%             
-%             indExp = strcmp([S_Blocks2(:).Experiment], 'Inactivation');
-%             C2 = struct2cell([S_Blocks2(indExp).(HRV_DVs{ind_DV})]);
-%             C1 = struct2cell([S_Blocks2(indExp).mean_R2R_bpm]);
-%             mdl = fitlm([C1{2,:,:},C1{4,:,:}],[C2{2,:,:}, C2{4,:,:}],'linear', 'RobustOpts', 'off');
-%             h = plot(mdl)    ;
-%             set(h(2:4), 'Color', 'b')
-%             correctionFactor_Ina = 10/(abs(mdl.Coefficients.Estimate(2)*10));
-%             
-%             
-%             indExp = strcmp([S_Blocks2(:).Experiment], 'Control');
-%             C2 = struct2cell([S_Blocks2(indExp).(HRV_DVs{ind_DV})]);
-%             C1 = struct2cell([S_Blocks2(indExp).mean_R2R_bpm]);
-%             mdl = fitlm([C1{2,:,:},C1{4,:,:}],[C2{2,:,:}, C2{4,:,:}],'linear', 'RobustOpts', 'off');
-%             h = plot(mdl)    ;
-%             set(h(2:4), 'Color', 'g')
-%             
-%             
-%             
-%         end
-%                 correctionFactor_Ctr = 10/(abs(mdl.Coefficients.Estimate(2)*10));
-%         disp(['for every 10bpm increase in HR ' , HRV_DVs{ind_DV},' decreases by ', num2str(abs(mdl.Coefficients.Estimate(2)*10))])
-%         disp([HRV_DVs{ind_DV}, ': the correction factor used in the formula ' num2str(10/(abs(mdl.Coefficients.Estimate(2)*10)))])
-%         text(100,20 ,['for every 10bpm increase in HR ' , HRV_DVs{ind_DV},' decreases by ', num2str(abs(mdl.Coefficients.Estimate(2)*10))],'fontsize',15)
-%         title([HRV_DVs{ind_DV}, ': the correction factor  ' num2str(10/(abs(mdl.Coefficients.Estimate(2)*10)))])
-
         %
         %                 start_point = rand(1, 3);
         % model = @expfun;
@@ -185,8 +150,8 @@ for ind_DV =  st: length(HRV_DVs)
         line([Xmin,Xmax],[nanmean([S_control.pst_task]),nanmean([S_control.pst_task])],'color',con_d_col,'LineWidth',1.5,'LineStyle','--')
         line([Xmin,Xmax],[nanmean([S_inactivation.pre_task]),nanmean([S_inactivation.pre_task])],'color',ina_b_col,'LineWidth',1.5,'LineStyle','--')
         line([Xmin,Xmax],[nanmean([S_inactivation.pst_task]),nanmean([S_inactivation.pst_task])],'color',ina_d_col,'LineWidth',1.5,'LineStyle','--')
-        box on;
-        
+                box on; 
+
         %
         %         h = [];
         %         h(1) = figure(1);
@@ -199,8 +164,8 @@ for ind_DV =  st: length(HRV_DVs)
         
         %% natural logarithmus for the HRV y-axis to determine the correction factor
         ln = 1;
-        ha(2) = subplot(2,2,2);
-        %figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
+                ha(2) = subplot(2,2,2);
+%figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
         set(gcf,'Name',HRV_DVs{ind_DV}); hold on;
         count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
         for I_Ses = 1: length(S_Blocks2)
@@ -208,9 +173,7 @@ for ind_DV =  st: length(HRV_DVs)
                 [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
                 ln, correctionFactor);
         end
-        if strcmp(monkey, 'Cornelius') || strcmp(monkey, 'Magnus') && strcmp (Experiment, 'Inactivation') && strcmp(HRV_DVs{ind_DV}, 'rmssd_R2R_ms')
-        set(gca,'ylim',[0 25])
-        end
+        
         
         C2 = struct2cell([S_Blocks2(:).(HRV_DVs{ind_DV})]);
         Ymin = log(min([C2{2,:,:}, C2{4,:,:}])) ;
@@ -220,13 +183,6 @@ for ind_DV =  st: length(HRV_DVs)
         C1 = struct2cell([S_Blocks2(:).mean_R2R_bpm]);
         Xmin = min([C1{2,:,:},C1{4,:,:}]);
         Xmax = max([C1{2,:,:},C1{4,:,:}]);
-        
-          if strcmp(monkey , 'Curius') && strcmp(Experiment , 'Inactivation')
-            max_xValue = 140; min_xValue = 85;
-           % max_yValue = 110; min_yValue = 0;
-            set(gca,'xlim',[min_xValue max_xValue]);
-           % set(gca,'ylim',[min_yValue max_yValue]);
-        end
         FitLineTO = 'Control';
         if strcmp(FitLineTO, 'AllData')
             %only task,  pre & post, Control and Injection
@@ -241,8 +197,8 @@ for ind_DV =  st: length(HRV_DVs)
             mdl = fitlm([C1{2,:,:},C1{4,:,:}],log([C2{2,:,:}, C2{4,:,:}]),'linear', 'RobustOpts', 'off');
             h = plot(mdl)    ;
             set(h(2:4), 'Color', 'b')
-            correctionFactor_Ina = 10/(abs(mdl.Coefficients.Estimate(2)*10));
-            
+           correctionFactor_Ina = 10/(abs(mdl.Coefficients.Estimate(2)*10));
+
             
             indExp = strcmp([S_Blocks2(:).Experiment], 'Control');
             C2 = struct2cell([S_Blocks2(indExp).(HRV_DVs{ind_DV})]);
@@ -259,38 +215,38 @@ for ind_DV =  st: length(HRV_DVs)
         disp([HRV_DVs{ind_DV}, ': the correction factor used in the formula ' num2str(10/(abs(mdl.Coefficients.Estimate(2)*10)))])
         text(Xmin,Ymax ,['for every 10bpm increase in HR ' , HRV_DVs{ind_DV},' decreases by ', num2str(abs(mdl.Coefficients.Estimate(2)*10))],'fontsize',15)
         
-        correctionFactor_Ina = correctionFactor_Ctr;
+        correctionFactor_Ina = correctionFactor_Ctr; 
         
         title([HRV_DVs{ind_DV}, ': the correction factor  ' num2str(10/(abs(mdl.Coefficients.Estimate(2)*10)))])
         ylabel(['ln ' char(HRV_DVs{ind_DV})],'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         xlabel('heart rate (bpm)','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         set(gca,'ylim',[0 5])
-        box on;
-        
-        %         h = [];
-        %         h(1) = figure(1);
-        %         print(h,[path_SaveFig filesep 'HR_HRV' filesep 'png' filesep targetBrainArea '_', monkey, '_ln_',  HRV_DVs{ind_DV} '_heartrate' ], '-dpng')
-        %         set(h,'Renderer','Painters');
-        %         set(h,'PaperPositionMode','auto')
-        %         compl_filename =  [path_SaveFig filesep 'HR_HRV' filesep 'ai' filesep targetBrainArea '_', monkey,'_ln_',   HRV_DVs{ind_DV} '_heartrate.ai'] ;
-        %         print(h,'-depsc',compl_filename);
-        %         close all;
+                box on; 
+
+%         h = [];
+%         h(1) = figure(1);
+%         print(h,[path_SaveFig filesep 'HR_HRV' filesep 'png' filesep targetBrainArea '_', monkey, '_ln_',  HRV_DVs{ind_DV} '_heartrate' ], '-dpng')
+%         set(h,'Renderer','Painters');
+%         set(h,'PaperPositionMode','auto')
+%         compl_filename =  [path_SaveFig filesep 'HR_HRV' filesep 'ai' filesep targetBrainArea '_', monkey,'_ln_',   HRV_DVs{ind_DV} '_heartrate.ai'] ;
+%         print(h,'-depsc',compl_filename);
+%         close all;
         
         %% corrected HRV
         ha(3) = subplot(2,2,3);
-        
+
         ln = 3;
         %figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
         set(gcf,'Name',HRV_DVs{ind_DV}); hold on;
         count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
-        
+
         for I_Ses =  find(strcmp([S_Blocks2(:).Experiment], 'Control'))
-            
+           
             [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, ...
                 [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
                 ln, correctionFactor_Ctr);
         end
-        for I_Ses =find(strcmp([S_Blocks2(:).Experiment], 'Inactivation'))
+         for I_Ses =find(strcmp([S_Blocks2(:).Experiment], 'Inactivation'))
             [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, ...
                 [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
                 ln, correctionFactor_Ina);
@@ -298,12 +254,7 @@ for ind_DV =  st: length(HRV_DVs)
         C1 = struct2cell([S_Blocks2(:).mean_R2R_bpm]);
         Xmin = min([C1{2,:,:}, C1{4,:,:}]);
         Xmax = max([C1{2,:,:}, C1{4,:,:}]);
-        if strcmp(monkey , 'Curius') && strcmp(Experiment , 'Inactivation')
-            max_xValue = 140; min_xValue = 85;
-           % max_yValue = 110; min_yValue = 0;
-            set(gca,'xlim',[min_xValue max_xValue]);
-           % set(gca,'ylim',[min_yValue max_yValue]);
-        end
+        
         ylabel(['corrected ', char(HRV_DVs{ind_DV})],'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         xlabel('heart rate (bpm)','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         %% add the mean for over all sessions to the plot
@@ -312,10 +263,6 @@ for ind_DV =  st: length(HRV_DVs)
         S_inactivation_HRV = [S_ina.(HRV_DVs{ind_DV})];
         S_control_HR = [S_con.mean_R2R_bpm];
         S_inactivation_HR = [S_ina.mean_R2R_bpm];
-        
-        
-        
-        
         
         
         Y_pre_task_Contr = nanmean(bsa_correct_for_HR( [S_control_HR.pre_task],[S_control_HRV.pre_task], correctionFactor_Ctr,0));
@@ -329,20 +276,14 @@ for ind_DV =  st: length(HRV_DVs)
         line([Xmin,Xmax],[Y_pst_task_Inac,Y_pst_task_Inac],'color',ina_d_col,'LineWidth',1.5,'LineStyle','--')
         
         
-        box on;
+        box on; 
         
         
         %% plot the corrected HRV- data
         
-        
-        
-        
-        
-        
-        
         ha(4) = subplot(2,2,4);
         BarGraph_one_var_pre_post_rest_task([S_con.mean_R2R_bpm],[S_con.(HRV_DVs{ind_DV})], [S_ina.mean_R2R_bpm], [S_ina.(HRV_DVs{ind_DV})], correctionFactor_Ctr, correctionFactor_Ina);
-        % set(gca,'ylim',[0 800]);
+       % set(gca,'ylim',[0 800]);
         ylabel(['corrected ', char(HRV_DVs{ind_DV})],'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         
         
@@ -355,24 +296,12 @@ for ind_DV =  st: length(HRV_DVs)
         print(h,'-depsc',compl_filename);
         close all;
         
-%         
-%         %% create a dataset to 
-%         S_control_HRV = [S_con.(HRV_DVs{ind_DV})];
-%         S_inactivation_HRV = [S_ina.(HRV_DVs{ind_DV})];
-%         S_control_HR = [S_con.mean_R2R_bpm];
-%         S_inactivation_HR = [S_ina.mean_R2R_bpm];
-%         
-%         S_con.(['corrected_',HRV_DVs{ind_DV}])      =   bsa_correct_for_HR( [S_control_HR.pre_task],[S_control_HRV.pre_task], correctionFactor_Ctr,0)
-%   
-%         Y_pre_task_Contr = nanmean(bsa_correct_for_HR( [S_control_HR.pre_task],[S_control_HRV.pre_task], correctionFactor_Ctr,0));
-%         Y_pst_task_Contr = nanmean(bsa_correct_for_HR( [S_control_HR.pst_task],[S_control_HRV.pst_task], correctionFactor_Ctr,0));
-%         Y_pre_task_Inac = nanmean(bsa_correct_for_HR( [S_inactivation_HR.pre_task],[S_inactivation_HRV.pre_task], correctionFactor_Ina,0));
-%         Y_pst_task_Inac = nanmean(bsa_correct_for_HR( [S_inactivation_HR.pst_task],[S_inactivation_HRV.pst_task], correctionFactor_Ina,0));
-%       
-%         
         
-    end
-end
+        
+        
+        
+%    end
+%end
 
 function BarGraph_one_var_pre_post_rest_task(S_con_HR, S_con,S_ina_HR,S_ina, CF_Ctr, CF_Ina)
 MarkerSize_EachSession = 15;
@@ -414,7 +343,7 @@ set(gca,'xlim',[0 10],'Xtick',[1:4 6:9],'XTickLabel',{'pre' 'post' 'pre' 'post' 
 
 function [count_con, count_ina, count_c, count_i] =  plot_oneVar_secondVar_pre_post_rest_task(Experiment, Block,Variable, count_con, count_ina, count_c, count_i,DeleteOutlier,  ln, CF)
 %[Graph, Ymin ,Ymax] =
-markerSize = 12; 
+
 count_con= [0 0 0]; count_ina = [0 0 0];
 
 
@@ -455,11 +384,11 @@ else
 end
 
 if  strcmp(Experiment, 'Control')
-    plot(  [Block.pre_task],Y_pre_task, 'o','color',con_b_col ,'MarkerSize',markerSize,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
-    plot(  [Block.pst_task],Y_pst_task, 'o','color',con_d_col ,'MarkerSize',markerSize,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
+    plot(  [Block.pre_task],Y_pre_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
+    plot(  [Block.pst_task],Y_pst_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
     
-   %  plot(  [Block.pre_rest],Y_pre_rest, 'o','color',con_b_col ,'MarkerSize',markerSize,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
-   %  plot(  [Block.pst_rest],Y_pst_rest, 'o','color',con_d_col ,'MarkerSize',markerSize,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
+    % plot(  [Block.pre_rest],Y_pre_rest, 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
+    % plot(  [Block.pst_rest],Y_pst_rest, 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
     
     count_con = count_con + [0 0.15 0.15];
     % text([Block.pre_task],Y_pre_task,num2str(count_c),'fontsize',15)
@@ -469,10 +398,10 @@ if  strcmp(Experiment, 'Control')
     count_c = count_c +1;
 elseif  strcmp(Experiment, 'Inactivation')
     
-    plot(  [Block.pre_task],Y_pre_task, 'o','color',ina_b_col ,'MarkerSize',markerSize,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
-    plot(  [Block.pst_task],Y_pst_task, 'o','color',ina_d_col ,'MarkerSize',markerSize,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
-   % plot(  [Block.pre_rest],Y_pre_rest, 'o','color',ina_b_col ,'MarkerSize',markerSize,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
-   % plot(  [Block.pst_rest],Y_pst_rest, 'o','color',ina_d_col ,'MarkerSize',markerSize,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
+    plot(  [Block.pre_task],Y_pre_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
+    plot(  [Block.pst_task],Y_pst_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
+    % plot(  [Block.pre_rest],[Variable.pre_rest], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
+    % plot(  [Block.pst_rest],[Variable.pst_rest], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
     
     count_ina = count_ina - [0  0.1 0.1];
     
@@ -482,15 +411,15 @@ elseif  strcmp(Experiment, 'Inactivation')
     % text([Block.pst_rest],[Variable.pst_rest],num2str(count_c),'fontsize',15)
     count_i = count_i +1;
     
-elseif  strcmp(Experiment, 'Both')
+    elseif  strcmp(Experiment, 'Both')
     plot(  [Block.pre_task],Y_pre_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',con_b_col,'HandleVisibility','off'); hold on;
     plot(  [Block.pst_task],Y_pst_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',con_d_col,'HandleVisibility','off') ;
-   % plot(  [Block.pre_task],Y_pre_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
-  %  plot(  [Block.pst_task],Y_pst_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
+    plot(  [Block.pre_task],Y_pre_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
+    plot(  [Block.pst_task],Y_pst_task, 'o','color',[0 0 0] ,'MarkerSize',15,'markerfacecolor',ina_d_col,'HandleVisibility','off') ;
     % plot(  [Block.pre_rest],[Variable.pre_rest], 'o','color',[0 0 0] ,'MarkerSize',10,'markerfacecolor',ina_b_col,'HandleVisibility','off'); hold on;
     
     count_con = count_con + [0 0.15 0.15];
-    
+  
     
 end
 

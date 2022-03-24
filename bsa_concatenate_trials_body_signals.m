@@ -65,10 +65,15 @@ out.t    = double(0:1/Fs:1/Fs*(length(out.ECG1)-1));
 out.Fs   = double(Fs);
     
 
-if ~returnECGonly
-    out.POX1 = double([First_trial_INI.POX1 trial.TDT_POX1]);
-    out.CAP1 = double([First_trial_INI.CAP1 trial.TDT_CAP1]);
-end
+ if ~returnECGonly
+    if  isempty(fieldnames(First_trial_INI))
+    out.POX1 = double([ trial.TDT_POX1]);
+    out.CAP1 = double([ trial.TDT_CAP1]);
+    else
+     out.POX1 = double([First_trial_INI.POX1 trial.TDT_POX1]);
+     out.CAP1 = double([First_trial_INI.CAP1 trial.TDT_CAP1]);
+    end
+ end
 
 
 if TOPLOT,

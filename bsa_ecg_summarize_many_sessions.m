@@ -72,53 +72,91 @@ end
 
     end
 	% for analysis across sessions
+    idx = sort([rest_idx, task_idx]); 
+    for i = 1: length(idx)
+	out(idx(i)).mean_R2R_valid_ms = nanmean([out(idx(i)).R2R_valid])*1000;
+    end
+    
+    S_.mean_R2R_ms.pre_rest = nanmean([out(pre_rest_idx).mean_R2R_valid_ms]);
+	S_.mean_R2R_ms.pre_task = nanmean([out(pre_task_idx).mean_R2R_valid_ms]);
+	S_.mean_R2R_ms.pst_rest = nanmean([out(pst_rest_idx).mean_R2R_valid_ms]);
+	S_.mean_R2R_ms.pst_task = nanmean([out(pst_task_idx).mean_R2R_valid_ms]);
+    
+	S_.mean_R2R_bpm.pre_rest = nanmean([out(pre_rest_idx).mean_R2R_valid_bpm]);
+	S_.mean_R2R_bpm.pre_task = nanmean([out(pre_task_idx).mean_R2R_valid_bpm]);
+	S_.mean_R2R_bpm.pst_rest = nanmean([out(pst_rest_idx).mean_R2R_valid_bpm]);
+	S_.mean_R2R_bpm.pst_task = nanmean([out(pst_task_idx).mean_R2R_valid_bpm]);
 
-	S_.mean_R2R_bpm.pre_rest = mean([out(pre_rest_idx).mean_R2R_valid_bpm]);
-	S_.mean_R2R_bpm.pre_task = mean([out(pre_task_idx).mean_R2R_valid_bpm]);
-	S_.mean_R2R_bpm.pst_rest = mean([out(pst_rest_idx).mean_R2R_valid_bpm]);
-	S_.mean_R2R_bpm.pst_task = mean([out(pst_task_idx).mean_R2R_valid_bpm]);
+	S_.median_R2R_bpm.pre_rest = nanmean([out(pre_rest_idx).median_R2R_valid_bpm]);
+	S_.median_R2R_bpm.pre_task = nanmean([out(pre_task_idx).median_R2R_valid_bpm]);
+	S_.median_R2R_bpm.pst_rest = nanmean([out(pst_rest_idx).median_R2R_valid_bpm]);
+	S_.median_R2R_bpm.pst_task = nanmean([out(pst_task_idx).median_R2R_valid_bpm]);
 
-	S_.median_R2R_bpm.pre_rest = mean([out(pre_rest_idx).median_R2R_valid_bpm]);
-	S_.median_R2R_bpm.pre_task = mean([out(pre_task_idx).median_R2R_valid_bpm]);
-	S_.median_R2R_bpm.pst_rest = mean([out(pst_rest_idx).median_R2R_valid_bpm]);
-	S_.median_R2R_bpm.pst_task = mean([out(pst_task_idx).median_R2R_valid_bpm]);
+	S_.rmssd_R2R_ms.pre_rest = nanmean([out(pre_rest_idx).rmssd_R2R_valid_ms]);
+	S_.rmssd_R2R_ms.pre_task = nanmean([out(pre_task_idx).rmssd_R2R_valid_ms]);
+	S_.rmssd_R2R_ms.pst_rest = nanmean([out(pst_rest_idx).rmssd_R2R_valid_ms]);
+	S_.rmssd_R2R_ms.pst_task = nanmean([out(pst_task_idx).rmssd_R2R_valid_ms]);
+    
+    S_.rmssd_R2R_bpm.pre_rest = nanmean([out(pre_rest_idx).rmssd_R2R_valid_bpm]);
+	S_.rmssd_R2R_bpm.pre_task = nanmean([out(pre_task_idx).rmssd_R2R_valid_bpm]);
+	S_.rmssd_R2R_bpm.pst_rest = nanmean([out(pst_rest_idx).rmssd_R2R_valid_bpm]);
+	S_.rmssd_R2R_bpm.pst_task = nanmean([out(pst_task_idx).rmssd_R2R_valid_bpm]);
+    
+    S_.rmssd_R2R_ms.pre_rest = nanmean([out(pre_rest_idx).rmssd_R2R_valid_ms]);
+	S_.rmssd_R2R_ms.pre_task = nanmean([out(pre_task_idx).rmssd_R2R_valid_ms]);
+	S_.rmssd_R2R_ms.pst_rest = nanmean([out(pst_rest_idx).rmssd_R2R_valid_ms]);
+	S_.rmssd_R2R_ms.pst_task = nanmean([out(pst_task_idx).rmssd_R2R_valid_ms]);
+ 
+    correctionFactor_Ctr = 58.8; 
+    S_.rmssd_R2R_ms_Adj.pre_rest =  nanmean(bsa_correct_for_HR( [out(pre_rest_idx).rmssd_R2R_valid_ms],[out(pre_rest_idx).mean_R2R_valid_ms], correctionFactor_Ctr,0)); 
+    S_.rmssd_R2R_ms_Adj.pre_task =  nanmean(bsa_correct_for_HR( [out(pre_task_idx).rmssd_R2R_valid_ms],[out(pre_task_idx).mean_R2R_valid_ms], correctionFactor_Ctr,0)); 
+    S_.rmssd_R2R_ms_Adj.pst_rest =  nanmean(bsa_correct_for_HR( [out(pst_rest_idx).rmssd_R2R_valid_ms],[out(pst_rest_idx).mean_R2R_valid_ms], correctionFactor_Ctr,0)); 
+    S_.rmssd_R2R_ms_Adj.pst_task =  nanmean(bsa_correct_for_HR( [out(pst_task_idx).rmssd_R2R_valid_ms],[out(pst_task_idx).mean_R2R_valid_ms], correctionFactor_Ctr,0)); 
 
-	S_.rmssd_R2R_ms.pre_rest = mean([out(pre_rest_idx).rmssd_R2R_valid_ms]);
-	S_.rmssd_R2R_ms.pre_task = mean([out(pre_task_idx).rmssd_R2R_valid_ms]);
-	S_.rmssd_R2R_ms.pst_rest = mean([out(pst_rest_idx).rmssd_R2R_valid_ms]);
-	S_.rmssd_R2R_ms.pst_task = mean([out(pst_task_idx).rmssd_R2R_valid_ms]);
-
-	S_.std_R2R_bpm.pre_rest = mean([out(pre_rest_idx).std_R2R_valid_bpm]);
-	S_.std_R2R_bpm.pre_task = mean([out(pre_task_idx).std_R2R_valid_bpm]);
-	S_.std_R2R_bpm.pst_rest = mean([out(pst_rest_idx).std_R2R_valid_bpm]);
-	S_.std_R2R_bpm.pst_task = mean([out(pst_task_idx).std_R2R_valid_bpm]);
-
-	S_.lfPower.pre_rest = mean([out(pre_rest_idx).lfPower]);
-	S_.lfPower.pre_task = mean([out(pre_task_idx).lfPower]);
-	S_.lfPower.pst_rest = mean([out(pst_rest_idx).lfPower]);
-	S_.lfPower.pst_task = mean([out(pst_task_idx).lfPower]);
-
-	S_.hfPower.pre_rest = mean([out(pre_rest_idx).hfPower]);
-	S_.hfPower.pre_task = mean([out(pre_task_idx).hfPower]);
-	S_.hfPower.pst_rest = mean([out(pst_rest_idx).hfPower]);
-	S_.hfPower.pst_task = mean([out(pst_task_idx).hfPower]);
-
-
-	S_.totPower.pre_rest = mean([out(pre_rest_idx).totPower]);
-	S_.totPower.pre_task = mean([out(pre_task_idx).totPower]);
-	S_.totPower.pst_rest = mean([out(pst_rest_idx).totPower]);
-	S_.totPower.pst_task = mean([out(pst_task_idx).totPower]);
+    S_.rmssd_R2R_bpm_Adj.pre_rest =  nanmean(bsa_correct_for_HR( [out(pre_rest_idx).rmssd_R2R_valid_ms],[out(pre_rest_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0)); 
+    S_.rmssd_R2R_bpm_Adj.pre_task =  nanmean(bsa_correct_for_HR( [out(pre_task_idx).rmssd_R2R_valid_ms],[out(pre_task_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0)); 
+    S_.rmssd_R2R_bpm_Adj.pst_rest =  nanmean(bsa_correct_for_HR( [out(pst_rest_idx).rmssd_R2R_valid_ms],[out(pst_rest_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0)); 
+    S_.rmssd_R2R_bpm_Adj.pst_task =  nanmean(bsa_correct_for_HR( [out(pst_task_idx).rmssd_R2R_valid_ms],[out(pst_task_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0)); 
 
 
-	S_.freq.pre_rest = mean([out(pre_rest_idx).freq],2);
-	S_.freq.pre_task = mean([out(pre_task_idx).freq],2);
-	S_.freq.pst_rest = mean([out(pst_rest_idx).freq],2);
-	S_.freq.pst_task = mean([out(pst_task_idx).freq],2);
+    
+	S_.std_R2R_bpm.pre_rest = nanmean([out(pre_rest_idx).std_R2R_valid_bpm]);
+	S_.std_R2R_bpm.pre_task = nanmean([out(pre_task_idx).std_R2R_valid_bpm]);
+	S_.std_R2R_bpm.pst_rest = nanmean([out(pst_rest_idx).std_R2R_valid_bpm]);
+	S_.std_R2R_bpm.pst_task = nanmean([out(pst_task_idx).std_R2R_valid_bpm]);
+    
+    S_.std_R2R_bpm_Adj.pre_rest =  nanmean(bsa_correct_for_HR( [out(pre_rest_idx).std_R2R_valid_bpm],[out(pre_rest_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0)); 
+    S_.std_R2R_bpm_Adj.pre_task =  nanmean(bsa_correct_for_HR( [out(pre_task_idx).std_R2R_valid_bpm],[out(pre_task_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0)); 
+    S_.std_R2R_bpm_Adj.pst_rest =  nanmean(bsa_correct_for_HR( [out(pst_rest_idx).std_R2R_valid_bpm],[out(pst_rest_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0)); 
+    S_.std_R2R_bpm_Adj.pst_task =  nanmean(bsa_correct_for_HR( [out(pst_task_idx).std_R2R_valid_bpm],[out(pst_task_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0)); 
+    
 
-	S_.Pxx.pre_rest = mean([out(pre_rest_idx).Pxx],2);
-	S_.Pxx.pre_task = mean([out(pre_task_idx).Pxx],2);
-	S_.Pxx.pst_rest = mean([out(pst_rest_idx).Pxx],2);
-	S_.Pxx.pst_task = mean([out(pst_task_idx).Pxx],2);
+	S_.lfPower.pre_rest = nanmean([out(pre_rest_idx).lfPower]);
+	S_.lfPower.pre_task = nanmean([out(pre_task_idx).lfPower]);
+	S_.lfPower.pst_rest = nanmean([out(pst_rest_idx).lfPower]);
+	S_.lfPower.pst_task = nanmean([out(pst_task_idx).lfPower]);
+
+	S_.hfPower.pre_rest = nanmean([out(pre_rest_idx).hfPower]);
+	S_.hfPower.pre_task = nanmean([out(pre_task_idx).hfPower]);
+	S_.hfPower.pst_rest = nanmean([out(pst_rest_idx).hfPower]);
+	S_.hfPower.pst_task = nanmean([out(pst_task_idx).hfPower]);
+
+
+	S_.totPower.pre_rest = nanmean([out(pre_rest_idx).totPower]);
+	S_.totPower.pre_task = nanmean([out(pre_task_idx).totPower]);
+	S_.totPower.pst_rest = nanmean([out(pst_rest_idx).totPower]);
+	S_.totPower.pst_task = nanmean([out(pst_task_idx).totPower]);
+
+
+	S_.freq.pre_rest = nanmean([out(pre_rest_idx).freq],2);
+	S_.freq.pre_task = nanmean([out(pre_task_idx).freq],2);
+	S_.freq.pst_rest = nanmean([out(pst_rest_idx).freq],2);
+	S_.freq.pst_task = nanmean([out(pst_task_idx).freq],2);
+
+	S_.Pxx.pre_rest = nanmean([out(pre_rest_idx).Pxx],2);
+	S_.Pxx.pre_task = nanmean([out(pre_task_idx).Pxx],2);
+	S_.Pxx.pst_rest = nanmean([out(pst_rest_idx).Pxx],2);
+	S_.Pxx.pst_task = nanmean([out(pst_task_idx).Pxx],2);
 
 if ismember(session_name,inactivation_sessions)
     ind_ina = ind_ina + 1;
@@ -215,7 +253,11 @@ for iBlock =  1:   length(Blocks) %indBlock =  Blocks
     S_Blocks.Block(indBlock).mean_R2R_bpm         = 'NaN';
     S_Blocks.Block(indBlock).median_R2R_bpm       = 'NaN';
     S_Blocks.Block(indBlock).rmssd_R2R_ms         = 'NaN';
+    S_Blocks.Block(indBlock).rmssd_R2R_ms_Adj         = 'NaN';
+    
     S_Blocks.Block(indBlock).std_R2R_bpm          = 'NaN';
+    S_Blocks.Block(indBlock).std_R2R_bpm_Adj          = 'NaN';
+
     S_Blocks.Block(indBlock).lfPower                    = 'NaN';
     S_Blocks.Block(indBlock).hfPower                    = 'NaN';
     S_Blocks.Block(indBlock).Injection                  = 'NaN';
@@ -224,14 +266,23 @@ for iBlock =  1:   length(Blocks) %indBlock =  Blocks
     S_Blocks.Block(indBlock).Experiment                 = 'NaN';
     
     
-    
+     S_Blocks.Block(indBlock).mean_R2R_bpm            = [out(NrBlock).mean_R2R_valid_bpm];
+     S_Blocks.Block(indBlock).mean_R2R_valid_ms       = nanmean([out(NrBlock).R2R_valid])*1000;
+   
     S_Blocks.Block(indBlock).mean_R2R_bpm            = [out(NrBlock).mean_R2R_valid_bpm];
     S_Blocks.Block(indBlock).median_R2R_bpm          = [out(NrBlock).median_R2R_valid_bpm];
     S_Blocks.Block(indBlock).rmssd_R2R_ms            = [out(NrBlock).rmssd_R2R_valid_ms];
+    S_Blocks.Block(indBlock).rmssd_R2R_bpm           = [out(NrBlock).rmssd_R2R_valid_bpm];
+
     S_Blocks.Block(indBlock).std_R2R_bpm             = [out(NrBlock).std_R2R_valid_bpm];
     S_Blocks.Block(indBlock).lfPower                 = [out(NrBlock).lfPower];
     S_Blocks.Block(indBlock).hfPower                 = [out(NrBlock).hfPower];
-    
+
+    S_Blocks.Block(indBlock).rmssd_R2R_ms_Adj   =  bsa_correct_for_HR( [out(NrBlock).rmssd_R2R_valid_ms],nanmean([out(NrBlock).mean_R2R_valid_ms ]), correctionFactor_Ctr,0); 
+    S_Blocks.Block(indBlock).rmssd_R2R_bpm_Adj  =  bsa_correct_for_HR( [out(NrBlock).rmssd_R2R_valid_bpm],nanmean([out(NrBlock).rmssd_R2R_valid_bpm]), correctionFactor_Ctr,0); 
+    S_Blocks.Block(indBlock).std_R2R_bpm_Adj    =  bsa_correct_for_HR( [out(NrBlock).std_R2R_valid_bpm],[out(NrBlock).mean_R2R_valid_bpm], correctionFactor_Ctr,0); 
+
+  
     
     if ismember(NrBlock, pre_rest_idx)
         S_Blocks.Block(indBlock).Condition = 'pre_rest';
@@ -311,11 +362,10 @@ end
     S_Blocks2(s).Block.pst_rest_idx = pst_rest_idx';
     S_Blocks2(s).Block.pst_task_idx = pst_task_idx';
     
-% 
-%     S_Blocks2.mean_R2R_bpm.pre_rest = zeros(1,ini );
-% 	S_Blocks2.mean_R2R_bpm.pre_task = zeros(1,ini );
-% 	S_Blocks2.mean_R2R_bpm.pst_rest = zeros(1,ini );
-% 	S_Blocks2.mean_R2R_bpm.pst_task = zeros(1,ini );
+    S_Blocks2(s).mean_R2R_ms.pre_rest = [out(pre_rest_idx).mean_R2R_valid_ms];
+	S_Blocks2(s).mean_R2R_ms.pre_task = [out(pre_task_idx).mean_R2R_valid_ms];
+	S_Blocks2(s).mean_R2R_ms.pst_rest = [out(pst_rest_idx).mean_R2R_valid_ms];
+	S_Blocks2(s).mean_R2R_ms.pst_task = [out(pst_task_idx).mean_R2R_valid_ms];
 %     
     S_Blocks2(s).mean_R2R_bpm.pre_rest = [out(pre_rest_idx).mean_R2R_valid_bpm];
 	S_Blocks2(s).mean_R2R_bpm.pre_task = [out(pre_task_idx).mean_R2R_valid_bpm];
@@ -331,11 +381,34 @@ end
 	S_Blocks2(s).rmssd_R2R_ms.pre_task = [out(pre_task_idx).rmssd_R2R_valid_ms];
 	S_Blocks2(s).rmssd_R2R_ms.pst_rest = [out(pst_rest_idx).rmssd_R2R_valid_ms];
 	S_Blocks2(s).rmssd_R2R_ms.pst_task = [out(pst_task_idx).rmssd_R2R_valid_ms];
+    
+    S_Blocks2(s).rmssd_R2R_bpm.pre_rest = [out(pre_rest_idx).rmssd_R2R_valid_bpm];
+	S_Blocks2(s).rmssd_R2R_bpm.pre_task = [out(pre_task_idx).rmssd_R2R_valid_bpm];
+	S_Blocks2(s).rmssd_R2R_bpm.pst_rest = [out(pst_rest_idx).rmssd_R2R_valid_bpm];
+	S_Blocks2(s).rmssd_R2R_bpm.pst_task = [out(pst_task_idx).rmssd_R2R_valid_bpm];
+    
+       correctionFactor_Ctr = 58.8; 
+    S_Blocks2(s).rmssd_R2R_ms_Adj.pre_rest =  bsa_correct_for_HR( [out(pre_rest_idx).rmssd_R2R_valid_ms],[out(pre_rest_idx).mean_R2R_valid_ms], correctionFactor_Ctr,0); 
+    S_Blocks2(s).rmssd_R2R_ms_Adj.pre_task =  bsa_correct_for_HR( [out(pre_task_idx).rmssd_R2R_valid_ms],[out(pre_task_idx).mean_R2R_valid_ms], correctionFactor_Ctr,0); 
+    S_Blocks2(s).rmssd_R2R_ms_Adj.pst_rest =  bsa_correct_for_HR( [out(pst_rest_idx).rmssd_R2R_valid_ms],[out(pst_rest_idx).mean_R2R_valid_ms], correctionFactor_Ctr,0); 
+    S_Blocks2(s).rmssd_R2R_ms_Adj.pst_task =  bsa_correct_for_HR( [out(pst_task_idx).rmssd_R2R_valid_ms],[out(pst_task_idx).mean_R2R_valid_ms], correctionFactor_Ctr,0); 
+
+    S_Blocks2(s).rmssd_R2R_bpm_Adj.pre_rest =  bsa_correct_for_HR( [out(pre_rest_idx).rmssd_R2R_valid_bpm],[out(pre_rest_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0); 
+    S_Blocks2(s).rmssd_R2R_bpm_Adj.pre_task =  bsa_correct_for_HR( [out(pre_task_idx).rmssd_R2R_valid_bpm],[out(pre_task_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0); 
+    S_Blocks2(s).rmssd_R2R_bpm_Adj.pst_rest =  bsa_correct_for_HR( [out(pst_rest_idx).rmssd_R2R_valid_bpm],[out(pst_rest_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0); 
+    S_Blocks2(s).rmssd_R2R_bpm_Adj.pst_task =  bsa_correct_for_HR( [out(pst_task_idx).rmssd_R2R_valid_bpm],[out(pst_task_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0); 
 
 	S_Blocks2(s).std_R2R_bpm.pre_rest = [out(pre_rest_idx).std_R2R_valid_bpm];
 	S_Blocks2(s).std_R2R_bpm.pre_task = [out(pre_task_idx).std_R2R_valid_bpm];
 	S_Blocks2(s).std_R2R_bpm.pst_rest = [out(pst_rest_idx).std_R2R_valid_bpm];
 	S_Blocks2(s).std_R2R_bpm.pst_task = [out(pst_task_idx).std_R2R_valid_bpm];
+    
+        correctionFactor_Ctr = 58.8; 
+    S_Blocks2(s).std_R2R_bpm_Adj.pre_rest =  bsa_correct_for_HR( [out(pre_rest_idx).std_R2R_valid_bpm],[out(pre_rest_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0); 
+    S_Blocks2(s).std_R2R_bpm_Adj.pre_task =  bsa_correct_for_HR( [out(pre_task_idx).std_R2R_valid_bpm],[out(pre_task_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0); 
+    S_Blocks2(s).std_R2R_bpm_Adj.pst_rest =  bsa_correct_for_HR( [out(pst_rest_idx).std_R2R_valid_bpm],[out(pst_rest_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0); 
+    S_Blocks2(s).std_R2R_bpm_Adj.pst_task =  bsa_correct_for_HR( [out(pst_task_idx).std_R2R_valid_bpm],[out(pst_task_idx).mean_R2R_valid_bpm], correctionFactor_Ctr,0); 
+
 
 	S_Blocks2(s).lfPower.pre_rest = [out(pre_rest_idx).lfPower];
 	S_Blocks2(s).lfPower.pre_task = [out(pre_task_idx).lfPower];
@@ -355,13 +428,14 @@ end
 
 end
 
+
 TableBlocks_Control         = TableBlocks(strcmp(TableBlocks.Experiment, 'Control'),:);
 TableBlocks_Injection       = TableBlocks(strcmp(TableBlocks.Experiment, 'Injection'),:);
-MeanForBlock_Task_Control   = varfun(@mean,TableBlocks_Control,'InputVariables',{'mean_R2R_bpm','median_R2R_bpm','rmssd_R2R_ms', 'std_R2R_bpm', 'lfPower','hfPower'}, 'GroupingVariables',{'NrBlock_BasedCondition','Condition'});
-MeanForBlock_Task_Injection = varfun(@mean,TableBlocks_Injection,'InputVariables',{'mean_R2R_bpm','median_R2R_bpm','rmssd_R2R_ms', 'std_R2R_bpm', 'lfPower','hfPower'}, 'GroupingVariables',{'NrBlock_BasedCondition','Condition'});
+nanmeanForBlock_Task_Control   = varfun(@nanmean,TableBlocks_Control,'InputVariables',{'mean_R2R_bpm','median_R2R_bpm','rmssd_R2R_ms','rmssd_R2R_ms_Adj', 'std_R2R_bpm', 'std_R2R_bpm_Adj', 'lfPower','hfPower'}, 'GroupingVariables',{'NrBlock_BasedCondition','Condition'});
+nanmeanForBlock_Task_Injection = varfun(@nanmean,TableBlocks_Injection,'InputVariables',{'mean_R2R_bpm','median_R2R_bpm','rmssd_R2R_ms','rmssd_R2R_ms_Adj', 'std_R2R_bpm', 'std_R2R_bpm_Adj', 'lfPower','hfPower'}, 'GroupingVariables',{'NrBlock_BasedCondition','Condition'});
 
-MeanForBlock_Task_Control.Experiment = repmat(TableBlocks_Control.Experiment(1), size(MeanForBlock_Task_Control,1),1);
-MeanForBlock_Task_Injection.Experiment = repmat(TableBlocks_Injection.Experiment(1), size(MeanForBlock_Task_Injection,1),1);
+nanmeanForBlock_Task_Control.Experiment = repmat(TableBlocks_Control.Experiment(1), size(nanmeanForBlock_Task_Control,1),1);
+nanmeanForBlock_Task_Injection.Experiment = repmat(TableBlocks_Injection.Experiment(1), size(nanmeanForBlock_Task_Injection,1),1);
 
 %% save Data-Structures to plot
 if ~exist([path_SaveFig ,monkey , '\Inactivation\ECG\AllSessions'])
@@ -373,8 +447,8 @@ writetable(Table, [path_SaveFig , monkey , '\Inactivation\ECG\AllSessions\', mon
 writetable(TableBlocks, [path_SaveFig , monkey , '\Inactivation\ECG\AllSessions\', monkey,'_Table_HR_HRV_PerSession_PerBlock_', targetBrainArea], 'Delimiter', ' ')
 save([path_SaveFig , monkey , '\Inactivation\ECG\AllSessions\', monkey, '_Table_HR_HRV_PerSession_PerBlocks_' , targetBrainArea],'TableBlocks');
 
-save([path_SaveFig , monkey , '\Inactivation\ECG\AllSessions\',monkey '_Table_MeanForBlock_Task_Control_', targetBrainArea ],'MeanForBlock_Task_Control');
-save([path_SaveFig ,monkey , '\Inactivation\ECG\AllSessions\',monkey ,'_Table_MeanForBlock_Task_Injection_' , targetBrainArea],'MeanForBlock_Task_Injection');
+save([path_SaveFig , monkey , '\Inactivation\ECG\AllSessions\',monkey '_Table_nanmeanForBlock_Task_Control_', targetBrainArea ],'nanmeanForBlock_Task_Control');
+save([path_SaveFig ,monkey , '\Inactivation\ECG\AllSessions\',monkey ,'_Table_nanmeanForBlock_Task_Injection_' , targetBrainArea],'nanmeanForBlock_Task_Injection');
 
 save([path_SaveFig ,monkey , '\Inactivation\ECG\AllSessions\',monkey, '_MatStruc_HR_HRV_PerSession_Control_' , targetBrainArea],'S_con');
 save([path_SaveFig ,monkey , '\Inactivation\ECG\AllSessions\',monkey, '_MatStruc_HR_HRV_PerSession_Inactivation_' , targetBrainArea],'S_ina');

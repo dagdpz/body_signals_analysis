@@ -292,7 +292,7 @@ if length(B2B_valid) < Set.B2B_minValidData,
     out.B2B_valid               = [];
     out.B2B_valid_bpm           = [];
     out.idx_valid_B2B_consec    = [];
-    out.mean_B2B_valid_bpm      = [];
+    out.mean_B2B_valid_bpm      = nan;
     out.median_B2B_valid_bpm    = [];
     out.std_B2B_valid_bpm       = [];
     out.rmssd_B2B_valid_ms      = [];

@@ -49,6 +49,7 @@ if Stats_beforeComputedWithR == 0
 else
     load(['C:\Users\kkaduk\Dropbox\DAG\Kristin\Statistic\body_signal_analysis\', monkey, filesep, 'Stats', filesep,monkey ,'_' targetBrainArea, '_ECG_Anova_PostHoc_EffectSize_PerSession' ]);
     Tabl_MultComp = struct2table(emmeans_contrasts);
+   % i = strcmp(fieldnames(Tabl_MultComp), 'depVar'); 
     DVs =   unique(Tabl_MultComp.depVar);
 end
 NoBlocks = 0;
@@ -178,11 +179,8 @@ for ind_DV = 1: length(DVs)
             Ymax = max([C1{:}]);
             
             line([3.5 3.5],[Ymin Ymax],'Color',[0 0 0],'HandleVisibility','off')
-            %text(3.5,Ymax -10,'Inactivation','fontsize',15)
-            
             
             Name_DV = strsplit(char(DVs{ind_DV}), '_');
-            % title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
             ylabel(char(DVs{ind_DV}),'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
             xlabel('Blocks','fontsize',14,'fontweight','b', 'Interpreter', 'none' );
             
@@ -205,8 +203,9 @@ for ind_DV = 1: length(DVs)
     %% Session - task
     Stat = [];
     figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
+    if ~strcmp(DVs{ind_DV}, 'mean_R2R_bpm');  ha(1) = subplot(1,2,1);end
     set(gcf,'Name',DVs{ind_DV});
-    [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})],BaselineInjection);
+    [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})],BaselineInjection, Text);
     % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
     Name_DV = strsplit(char(DVs{ind_DV}), '_');
     %title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
@@ -224,32 +223,47 @@ for ind_DV = 1: length(DVs)
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
         max_yValue = Ymax+30;
         min_yValue = Ymin -10;
+        if strcmp(monkey , 'Curius') || strcmp(monkey , 'Magnus') && strcmp(Experiment , 'Inactivation')
+            max_yValue = 150;
+            min_yValue = 90;
+        end
+        
         Y_C(1) = max_yValue -40;
         Y_C(2) = max_yValue -45;
         Y_C(3) = max_yValue -50;
         Y_C(4) = max_yValue -50;
+        
     elseif    strcmp(DVs{ind_DV} , 'rmssd_R2R_ms')
         yaxis = 'RMSSD of R2R (ms)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
+        if strcmp(monkey , 'Cornelius') || strcmp(monkey , 'Magnus') && strcmp(Experiment , 'Inactivation')
+            max_yValue = 25;
+            min_yValue = 0;
+        end
         Y_C(1) = max_yValue *0.56;
         Y_C(2) = max_yValue *0.53;
         Y_C(3) = max_yValue *0.5;
         Y_C(4) = max_yValue *0.5;
-    elseif    strcmp(DVs{ind_DV} , 'std_R2R_bpm')
+        
+    elseif    strcmp(DVs{ind_DV} , 'std_R2R_bpm') 
         yaxis = 'std of R2R (bpm)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
+        if strcmp(monkey , 'Cornelius') || strcmp(monkey , 'Magnus')|| strcmp(monkey , 'Curius') && strcmp(Experiment , 'Inactivation')
+            max_yValue = 25;
+            min_yValue = 0;
+        end
         Y_C(1) = max_yValue *0.56;
         Y_C(2) = max_yValue *0.53;
         Y_C(3) = max_yValue *0.5;
         Y_C(4) = max_yValue *0.5;
-     elseif    strcmp(DVs{ind_DV} , 'hfPower')&& ~strcmp(monkey , 'Curius')
+    elseif    strcmp(DVs{ind_DV} , 'hfPower')&& ~strcmp(monkey , 'Curius')
         yaxis = 'high frequency power (0.15-0.5)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
         Y_C(1) = max_yValue*0.56;
         Y_C(2) = max_yValue*0.53;
         Y_C(3) = max_yValue*0.5 ;
         Y_C(4) = max_yValue*0.5 ;
-     elseif    strcmp(DVs{ind_DV} , 'lfPower')
+    elseif    strcmp(DVs{ind_DV} , 'lfPower')
         yaxis = 'low frequency power (0.04-0.15)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
         Y_C(1) = max_yValue*0.56;
@@ -262,7 +276,9 @@ for ind_DV = 1: length(DVs)
         Y_C(3) = max_yValue *0.5;
         Y_C(4) = max_yValue *0.5;
     end
+    
     if min_yValue < 0; min_yValue = 0; end;
+    
     set(gca,'ylim',[min_yValue max_yValue]);
     if Text
         text(1.5 ,max_yValue -10,'Control','fontsize',20)
@@ -276,10 +292,10 @@ for ind_DV = 1: length(DVs)
     if Stats_beforeComputedWithR(1) == 1
         Stat = Tabl_MultComp(strcmp(Tabl_MultComp.depVar, DVs{ind_DV}),:);
         
-        Row(1) =find(sum([strcmp(Stat.Comparison1, 'Control pre'), strcmp(Stat.Comparison2, 'Inactivation pre'), strcmp(Stat.TaskType, 'task') ],2)== 3);
-        Row(2) =find(sum([strcmp(Stat.Comparison1, 'Control pst'), strcmp(Stat.Comparison2, 'Inactivation pst'), strcmp(Stat.TaskType, 'task')],2)== 3);
-        Row(3) =find(sum([strcmp(Stat.Comparison1, 'Inactivation pre'), strcmp(Stat.Comparison2, 'Inactivation pst'), strcmp(Stat.TaskType, 'task')],2)== 3);
-        Row(4) =find(sum([strcmp(Stat.Comparison1, 'Control pre'), strcmp(Stat.Comparison2, 'Control pst'), strcmp(Stat.TaskType, 'task')],2)== 3);
+        Row(1) =find(sum([strcmp(Stat.Experiment_Comp1, 'Control'),      strcmp(Stat.Time_Comp1, 'pre'), strcmp(Stat.Experiment_Comp2, 'Inactivation'), strcmp(Stat.Time_Comp2, 'pre'), strcmp(Stat.TaskType, 'task') ],2)== 5);
+        Row(2) =find(sum([strcmp(Stat.Experiment_Comp1, 'Control'),      strcmp(Stat.Time_Comp1, 'pst'), strcmp(Stat.Experiment_Comp2, 'Inactivation'), strcmp(Stat.Time_Comp2, 'pst'), strcmp(Stat.TaskType, 'task')],2)== 5);
+        Row(3) =find(sum([strcmp(Stat.Experiment_Comp1, 'Inactivation'), strcmp(Stat.Time_Comp1, 'pre'), strcmp(Stat.Experiment_Comp2, 'Inactivation'), strcmp(Stat.Time_Comp2, 'pst'), strcmp(Stat.TaskType, 'task')],2)== 5);
+        Row(4) =find(sum([strcmp(Stat.Experiment_Comp1, 'Control'),      strcmp(Stat.Time_Comp1, 'pre'), strcmp(Stat.Experiment_Comp2, 'Control'), strcmp(Stat.Time_Comp2, 'pst'), strcmp(Stat.TaskType, 'task')],2)== 5);
         
         disp(DVs{ind_DV})
         disp(Stat(Row,:));
@@ -288,95 +304,39 @@ for ind_DV = 1: length(DVs)
         Contrast(3,:) = [8,9];
         Contrast(4,:) = [3,4];
         
-           
+        
         for NrContrasts = 1: 4
-           ext_sigline(Contrast(NrContrasts,:),char(Stat.pStar(Row(NrContrasts))),Y_C(NrContrasts)); hold on;
-
-           % ext_sigline(Contrast(NrContrasts,:),char(Stat.pStar(Row(NrContrasts))),[ ],Y_C(NrContrasts),'x'); hold on;
+            ext_sigline(Contrast(NrContrasts,:),char(Stat.pStar(Row(NrContrasts))),Y_C(NrContrasts)); hold on;
+            
+            % ext_sigline(Contrast(NrContrasts,:),char(Stat.pStar(Row(NrContrasts))),[ ],Y_C(NrContrasts),'x'); hold on;
+        end
+    end
+    
+    if ~strcmp(DVs{ind_DV}, 'mean_R2R_bpm');  ha(2) = subplot(1,2,2);
+        BarGraph_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})]);
+        set(gca,'ylim',[min_yValue max_yValue]);
+        hold on;
+        
+        
+        
+        if Stats_beforeComputedWithR(1) == 1
+            for NrContrasts = 1: 4
+                ext_sigline(Contrast(NrContrasts,:),char(Stat.pStar(Row(NrContrasts))),Y_C(NrContrasts)); hold on;
+                %ext_sigline(Contrast(NrContrasts,:),char(Stat.pStar(Row(NrContrasts))),[ ],Y_C(NrContrasts),'x'); hold on;
+            end
         end
     end
     
     
-    h = [];
-    h(1) = figure(1);
-    print(h,[path_SaveFig filesep 'png' filesep targetBrainArea '_' monkey '_', DVs{ind_DV} '_TaskStats'], '-dpng')
-    set(h,'Renderer','Painters');
-    set(h,'PaperPositionMode','auto')
-    compl_filename =  [path_SaveFig filesep 'ai' filesep targetBrainArea '_' monkey, '_' DVs{ind_DV} '_TaskStats.ai'] ;
-    print(h,'-depsc',compl_filename);
-hold on; 
-    
-    
-    %% Session - Rest
-%     figure('Position',[200 200 1200 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
-%     set(gcf,'Name',DVs{ind_DV});
-%     
-%     [Graph, Ymin ,Ymax] =  plot_one_var_pre_post_rest_task([S_con.(DVs{ind_DV})],[S_ina.(DVs{ind_DV})],BaselineInjection);
-%     % ylabel('mean R2R (bmp)','fontsize',14,'fontweight','b' );
-%     Name_DV = strsplit(char(DVs{ind_DV}), '_');
-%     % title(char(DVs{ind_DV}),'fontsize',20, 'Interpreter', 'none');
-%     ylabel(char(DVs{ind_DV}),'fontsize',20,'fontweight','b' , 'Interpreter', 'none');
-%     
-%     
-%     max_yValue = Ymax*1.13;  %Ymax+80
-%     min_yValue = Ymin*0.93;   %Ymax-20
-%     Y_C(1) = max_yValue -  50;
-%     Y_C(2) = max_yValue -60;
-%     Y_C(3) = max_yValue -80;
-%     Y_C(4) = max_yValue -80;
-%     
-%     
-%     if strcmp(DVs{ind_DV} , 'mean_R2R_bpm')
-%         yaxis = 'heart rate (bpm)';
-%         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
-%         max_yValue = Ymax+40;
-%         min_yValue = Ymin -10;
-%         Y_C(1) = max_yValue -40;
-%         Y_C(2) = max_yValue -45;
-%         Y_C(3) = max_yValue -50;
-%         Y_C(4) = max_yValue -50;
-%         
-%     elseif    strcmp(DVs{ind_DV} , 'rmssd_R2R_ms')
-%         yaxis = 'RMSSD of R2R (ms)';
-%         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
-%         Y_C(1) = max_yValue *0.56;
-%         Y_C(2) = max_yValue *0.53;
-%         Y_C(3) = max_yValue *0.5;
-%         Y_C(4) = max_yValue *0.5;
-%     elseif    strcmp(DVs{ind_DV} , 'std_R2R_bpm')
-%         yaxis = 'std of R2R (bpm)';
-%         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
-%         Y_C(1) = max_yValue *0.56;
-%         Y_C(2) = max_yValue *0.53;
-%         Y_C(3) = max_yValue *0.5;
-%         Y_C(4) = max_yValue *0.5;
-%     elseif strcmp(DVs{ind_DV} , 'hfPower') && strcmp(monkey , 'Curius')
-%         Y_C(1) = max_yValue *0.56;
-%         Y_C(2) = max_yValue *0.53;
-%         Y_C(3) = max_yValue *0.5;
-%         Y_C(4) = max_yValue *0.5;
-%     end
-%     if min_yValue < 0; min_yValue = 0; end;
-%     set(gca,'ylim',[min_yValue max_yValue]);
-%     if Text
-%         text(1.5 ,max_yValue -10,'Control','fontsize',20)
-%         text(1 ,max_yValue -20,'rest','fontsize',15)
-%         text(3 ,max_yValue -20,'task','fontsize',15)
-%         
-%         text(6.5,max_yValue -10,'Inactivation','fontsize',20)
-%         text(6 ,max_yValue -20,'rest','fontsize',15)
-%         text(8 ,max_yValue -20,'task','fontsize',15)
-%     end
-
- if Stats_beforeComputedWithR(1) == 1
+    if Stats_beforeComputedWithR(1) == 1
         Stat = Tabl_MultComp(strcmp(Tabl_MultComp.depVar, DVs{ind_DV}),:);
         
-        Row(1) =find(sum([strcmp(Stat.Comparison1, 'Control pre'), strcmp(Stat.Comparison2, 'Inactivation pre'), strcmp(Stat.TaskType, 'rest') ],2)== 3);
-        Row(2) =find(sum([strcmp(Stat.Comparison1, 'Control pst'), strcmp(Stat.Comparison2, 'Inactivation pst'), strcmp(Stat.TaskType, 'rest')],2)== 3);
-        Row(3) =find(sum([strcmp(Stat.Comparison1, 'Inactivation pre'), strcmp(Stat.Comparison2, 'Inactivation pst'), strcmp(Stat.TaskType, 'rest')],2)== 3);
-        Row(4) =find(sum([strcmp(Stat.Comparison1, 'Control pre'), strcmp(Stat.Comparison2, 'Control pst'), strcmp(Stat.TaskType, 'rest')],2)== 3);
+        Row(1) =find(sum([strcmp(Stat.Experiment_Comp1, 'Control'),      strcmp(Stat.Time_Comp1, 'pre'),      strcmp(Stat.Experiment_Comp2, 'Inactivation'),      strcmp(Stat.Time_Comp2, 'pre'),  strcmp(Stat.TaskType, 'rest') ],2)== 5);
+        Row(2) =find(sum([strcmp(Stat.Experiment_Comp1, 'Control'),      strcmp(Stat.Time_Comp1, 'pst'),      strcmp(Stat.Experiment_Comp2, 'Inactivation'),      strcmp(Stat.Time_Comp2, 'pst'),  strcmp(Stat.TaskType, 'rest')],2)== 5);
+        Row(3) =find(sum([strcmp(Stat.Experiment_Comp1, 'Inactivation'), strcmp(Stat.Time_Comp1, 'pre'),    strcmp(Stat.Experiment_Comp2, 'Inactivation'),      strcmp(Stat.Time_Comp2, 'pst'),  strcmp(Stat.TaskType, 'rest')],2)== 5);
+        Row(4) =find(sum([strcmp(Stat.Experiment_Comp1, 'Control'),      strcmp(Stat.Time_Comp1, 'pre'),      strcmp(Stat.Experiment_Comp2, 'Control'),      strcmp(Stat.Time_Comp2, 'pst'),       strcmp(Stat.TaskType, 'rest')],2)== 5);
         
-          disp(DVs{ind_DV})
+        disp(DVs{ind_DV})
         disp(Stat(Row,:));
         Contrast(1,:) = [1,6];
         Contrast(2,:) = [2,7];
@@ -385,19 +345,30 @@ hold on;
         
         for NrContrasts = 1: 4
             ext_sigline(Contrast(NrContrasts,:),char(Stat.pStar(Row(NrContrasts))),Y_C(NrContrasts)); hold on;
-
+            
             %ext_sigline(Contrast(NrContrasts,:),char(Stat.pStar(Row(NrContrasts))),[ ],Y_C(NrContrasts),'x'); hold on;
         end
     end
- 
-
+    if ~strcmp(DVs{ind_DV}, 'mean_R2R_bpm');
+        axis square; hold off;
+        ha(1) = subplot(1,2,1);
+        if Stats_beforeComputedWithR(1) == 1
+            
+            for NrContrasts = 1: 4
+                ext_sigline(Contrast(NrContrasts,:),char(Stat.pStar(Row(NrContrasts))),Y_C(NrContrasts)); hold on;
+                
+                %ext_sigline(Contrast(NrContrasts,:),char(Stat.pStar(Row(NrContrasts))),[ ],Y_C(NrContrasts),'x'); hold on;
+            end
+        end
+      end      
+        axis square; box on; 
     
     h = [];
     h(1) = figure(1);
-    print(h,[path_SaveFig filesep 'png' filesep targetBrainArea '_' monkey, '_', DVs{ind_DV} '_RestStats'], '-dpng')
+    print(h,[path_SaveFig filesep 'png' filesep targetBrainArea '_ecg_' monkey, '_', DVs{ind_DV} '_RestStats'], '-dpng')
     set(h,'Renderer','Painters');
     set(h,'PaperPositionMode','auto')
-    compl_filename =  [path_SaveFig filesep 'ai' filesep targetBrainArea '_' monkey, '_', DVs{ind_DV} '_RestStats.ai'] ;
+    compl_filename =  [path_SaveFig filesep 'ai' filesep targetBrainArea '_ecg_' monkey, '_', DVs{ind_DV} '_RestStats.ai'] ;
     print(h,'-depsc',compl_filename);
     close all;
     
@@ -696,7 +667,7 @@ end
 
 
 
-function [Graph, Ymin ,Ymax] = plot_one_var_pre_post_rest_task(S_con,S_ina,BaselineInjection)
+function [Graph, Ymin ,Ymax] = plot_one_var_pre_post_rest_task(S_con,S_ina,BaselineInjection, Text)
 
 con_b_col = [0.4667    0.6745    0.1882];
 con_d_col = [0.0706    0.2118    0.1412];
@@ -764,19 +735,20 @@ plot(  7, nanmean([S_ina.pst_rest]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSiz
 plot(  8, nanmean([S_ina.pre_task]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',ina_b_col);
 plot(  9, nanmean([S_ina.pst_task]), 'o','color',[0 0 0] ,'MarkerSize',MarkerSize_AllSession,'markerfacecolor',ina_d_col) ;
 
-
-for i = 1: length([S_con.pre_rest])
-    text(1,Con(1,i),num2str(i),'fontsize',15)
-    text(2,Con(2,i),num2str(i),'fontsize',15)
-    text(3,Con(3,i),num2str(i),'fontsize',15)
-    text(4,Con(4,i),num2str(i),'fontsize',15)
-end
-for i = 1: length([S_ina.pre_rest])
-    text(6,Ina(1,i),num2str(i),'fontsize',15)
-    text(7,Ina(2,i),num2str(i),'fontsize',15)
-    text(8,Ina(3,i),num2str(i),'fontsize',15)
-    text(9,Ina(4,i),num2str(i),'fontsize',15)
-    
+if Text == 1
+    for i = 1: length([S_con.pre_rest])
+        text(1,Con(1,i),num2str(i),'fontsize',15)
+        text(2,Con(2,i),num2str(i),'fontsize',15)
+        text(3,Con(3,i),num2str(i),'fontsize',15)
+        text(4,Con(4,i),num2str(i),'fontsize',15)
+    end
+    for i = 1: length([S_ina.pre_rest])
+        text(6,Ina(1,i),num2str(i),'fontsize',15)
+        text(7,Ina(2,i),num2str(i),'fontsize',15)
+        text(8,Ina(3,i),num2str(i),'fontsize',15)
+        text(9,Ina(4,i),num2str(i),'fontsize',15)
+        
+    end
 end
 C1 = struct2cell(S_con);
 C2 = struct2cell(S_ina);
@@ -833,25 +805,40 @@ Ymax=   max(Ymax) ;
 
 hold off;
 
-set(gca,'xlim',[0 10],'Xtick',[1:4 6:9],'XTickLabel',{'pre' 'post' 'pre' 'post' 'pre' 'post' 'pre' 'post'});
+set(gca,'xlim',[0 10],'Xtick',[1:4 6:9],'XTickLabel',{'pre' 'post' 'pre' 'post' 'pre' 'post' 'pre' 'post'}, 'FontSize', 10);
 
 function BarGraph_one_var_pre_post_rest_task(S_con,S_ina)
+MarkerSize_EachSession = 15;
 
 con_b_col = [0.4667    0.6745    0.1882];
 con_d_col = [0.0706    0.2118    0.1412];
 ina_b_col = [0          0.7   0.9];
 ina_d_col = [0          0    0.9];
 
+ig_bar_mean_se(1,[S_con.pre_rest],'sterr','FaceColor',con_b_col,'EdgeColor',con_b_col);
+plot(  1, [S_con.pre_rest], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
+ig_bar_mean_se(2,[S_con.pst_rest],'sterr','FaceColor',con_d_col,'EdgeColor',con_d_col);
+plot(  2, [S_con.pst_rest], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
-ig_bar_mean_se(1,[S_con.pre_rest],'sterr','FaceColor',[1 1 1],'EdgeColor',con_b_col);
-ig_bar_mean_se(2,[S_con.pst_rest],'sterr','FaceColor',[1 1 1],'EdgeColor',con_d_col);
 ig_bar_mean_se(3,[S_con.pre_task],'sterr','FaceColor',con_b_col,'EdgeColor',con_b_col);
+plot(  3, [S_con.pre_task], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+
 ig_bar_mean_se(4,[S_con.pst_task],'sterr','FaceColor',con_d_col,'EdgeColor',con_d_col);
+plot( 4, [S_con.pst_task], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
-ig_bar_mean_se(6,[S_ina.pre_rest],'sterr','FaceColor',[1 1 1],'EdgeColor',ina_b_col);
-ig_bar_mean_se(7,[S_ina.pst_rest],'sterr','FaceColor',[1 1 1],'EdgeColor',ina_d_col);
+
+ig_bar_mean_se(6,[S_ina.pre_rest],'sterr','FaceColor',ina_b_col,'EdgeColor',ina_b_col);
+plot( 6, [S_ina.pst_rest], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+
+ig_bar_mean_se(7,[S_ina.pst_rest],'sterr','FaceColor',ina_d_col,'EdgeColor',ina_d_col);
+plot(  7, [S_ina.pst_rest], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+
 ig_bar_mean_se(8,[S_ina.pre_task],'sterr','FaceColor',ina_b_col,'EdgeColor',ina_b_col);
-ig_bar_mean_se(9,[S_ina.pst_task],'sterr','FaceColor',ina_d_col,'EdgeColor',ina_d_col);
+plot(  8, [S_ina.pre_task], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
-set(gca,'xlim',[0 10],'Xtick',[1:4 6:9],'XTickLabel',{'pre' 'post' 'pre' 'post' 'pre' 'post' 'pre' 'post'});
+ig_bar_mean_se(9,[S_ina.pst_task],'sterr','FaceColor',ina_d_col,'EdgeColor',ina_d_col);
+plot(  9, [S_ina.pst_task], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+
+
+set(gca,'xlim',[0 10],'Xtick',[1:4 6:9],'XTickLabel',{'pre' 'post' 'pre' 'post' 'pre' 'post' 'pre' 'post'}, 'FontSize', 15);

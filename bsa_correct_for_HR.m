@@ -19,10 +19,9 @@ function [cHRV] = bsa_correct_for_HR(HR,HRV, CF, simulation)
 % Change log:
 % 20190904:	Created function (Kristin Kaduk)
 %
-
+CF = 58.8; 
 %cHRV(1) = HRV/exp((HR_ref - HR)/58.8);
 cHRV = HRV./exp(-(HR/CF));
-
 if simulation
 HR_ref  = 0; 
 

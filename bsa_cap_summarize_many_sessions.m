@@ -37,19 +37,13 @@ S_Blocks2 = [];
 Table = []; TableBlocks =[]; 
 for s = 1:length(sessions),
 	session_path = sessions{s};
-	session_name_idx = strfind(session_path,'2021');
+	session_name_idx = strfind(session_path,'20');
 	session_name = session_path(session_name_idx(1):session_name_idx(1)+7);
 
 	load([session_path filesep session_name '_cap.mat']); %CAP.mat
 
-    % remove -2: skipped sessions
-   % ses.type = ses.type(ses.type ~= -2)';
-%         if isempty(out_cap(indBlock).mean_B2B_valid_bpm)|| isnan(out_cap(indBlock).mean_B2B_valid_bpm)
-%         out_cap(13) = [];
-%          disp(sprintf('removed the skipped block %d',num2str()));
-%     end
 if sum(isnan([out_cap.mean_B2B_valid_bpm])) > 0
-    error('one Block has nan-value')
+   % error('one Block has nan-value')
    % out_cap(find(isnan([out_cap.mean_B2B_valid_bpm]))).mean_B2B_valid_bpm
 end
     rest_idx = [];   task_idx = []; 
@@ -76,52 +70,52 @@ end
       end
 	% for analysis across sessions
 
-	S_.mean_B2B_bpm.pre_rest = mean([out_cap(pre_rest_idx).mean_B2B_valid_bpm]);
-	S_.mean_B2B_bpm.pre_task = mean([out_cap(pre_task_idx).mean_B2B_valid_bpm]);
-	S_.mean_B2B_bpm.pst_rest = mean([out_cap(pst_rest_idx).mean_B2B_valid_bpm]);
-	S_.mean_B2B_bpm.pst_task = mean([out_cap(pst_task_idx).mean_B2B_valid_bpm]);
+	S_.mean_B2B_bpm.pre_rest = nanmean([out_cap(pre_rest_idx).mean_B2B_valid_bpm]);
+	S_.mean_B2B_bpm.pre_task = nanmean([out_cap(pre_task_idx).mean_B2B_valid_bpm]);
+	S_.mean_B2B_bpm.pst_rest = nanmean([out_cap(pst_rest_idx).mean_B2B_valid_bpm]);
+	S_.mean_B2B_bpm.pst_task = nanmean([out_cap(pst_task_idx).mean_B2B_valid_bpm]);
 
-	S_.median_B2B_bpm.pre_rest = mean([out_cap(pre_rest_idx).median_B2B_valid_bpm]);
-	S_.median_B2B_bpm.pre_task = mean([out_cap(pre_task_idx).median_B2B_valid_bpm]);
-	S_.median_B2B_bpm.pst_rest = mean([out_cap(pst_rest_idx).median_B2B_valid_bpm]);
-	S_.median_B2B_bpm.pst_task = mean([out_cap(pst_task_idx).median_B2B_valid_bpm]);
+	S_.median_B2B_bpm.pre_rest = nanmean([out_cap(pre_rest_idx).median_B2B_valid_bpm]);
+	S_.median_B2B_bpm.pre_task = nanmean([out_cap(pre_task_idx).median_B2B_valid_bpm]);
+	S_.median_B2B_bpm.pst_rest = nanmean([out_cap(pst_rest_idx).median_B2B_valid_bpm]);
+	S_.median_B2B_bpm.pst_task = nanmean([out_cap(pst_task_idx).median_B2B_valid_bpm]);
 
-	S_.rmssd_B2B_ms.pre_rest = mean([out_cap(pre_rest_idx).rmssd_B2B_valid_ms]);
-	S_.rmssd_B2B_ms.pre_task = mean([out_cap(pre_task_idx).rmssd_B2B_valid_ms]);
-	S_.rmssd_B2B_ms.pst_rest = mean([out_cap(pst_rest_idx).rmssd_B2B_valid_ms]);
-	S_.rmssd_B2B_ms.pst_task = mean([out_cap(pst_task_idx).rmssd_B2B_valid_ms]);
+	S_.rmssd_B2B_ms.pre_rest = nanmean([out_cap(pre_rest_idx).rmssd_B2B_valid_ms]);
+	S_.rmssd_B2B_ms.pre_task = nanmean([out_cap(pre_task_idx).rmssd_B2B_valid_ms]);
+	S_.rmssd_B2B_ms.pst_rest = nanmean([out_cap(pst_rest_idx).rmssd_B2B_valid_ms]);
+	S_.rmssd_B2B_ms.pst_task = nanmean([out_cap(pst_task_idx).rmssd_B2B_valid_ms]);
 
-	S_.std_B2B_bpm.pre_rest = mean([out_cap(pre_rest_idx).std_B2B_valid_bpm]);
-	S_.std_B2B_bpm.pre_task = mean([out_cap(pre_task_idx).std_B2B_valid_bpm]);
-	S_.std_B2B_bpm.pst_rest = mean([out_cap(pst_rest_idx).std_B2B_valid_bpm]);
-	S_.std_B2B_bpm.pst_task = mean([out_cap(pst_task_idx).std_B2B_valid_bpm]);
+	S_.std_B2B_bpm.pre_rest = nanmean([out_cap(pre_rest_idx).std_B2B_valid_bpm]);
+	S_.std_B2B_bpm.pre_task = nanmean([out_cap(pre_task_idx).std_B2B_valid_bpm]);
+	S_.std_B2B_bpm.pst_rest = nanmean([out_cap(pst_rest_idx).std_B2B_valid_bpm]);
+	S_.std_B2B_bpm.pst_task = nanmean([out_cap(pst_task_idx).std_B2B_valid_bpm]);
 
-	S_.lfPower.pre_rest = mean([out_cap(pre_rest_idx).lfPower]);
-	S_.lfPower.pre_task = mean([out_cap(pre_task_idx).lfPower]);
-	S_.lfPower.pst_rest = mean([out_cap(pst_rest_idx).lfPower]);
-	S_.lfPower.pst_task = mean([out_cap(pst_task_idx).lfPower]);
+	S_.lfPower.pre_rest = nanmean([out_cap(pre_rest_idx).lfPower]);
+	S_.lfPower.pre_task = nanmean([out_cap(pre_task_idx).lfPower]);
+	S_.lfPower.pst_rest = nanmean([out_cap(pst_rest_idx).lfPower]);
+	S_.lfPower.pst_task = nanmean([out_cap(pst_task_idx).lfPower]);
 
-	S_.hfPower.pre_rest = mean([out_cap(pre_rest_idx).hfPower]);
-	S_.hfPower.pre_task = mean([out_cap(pre_task_idx).hfPower]);
-	S_.hfPower.pst_rest = mean([out_cap(pst_rest_idx).hfPower]);
-	S_.hfPower.pst_task = mean([out_cap(pst_task_idx).hfPower]);
-
-
-	S_.totPower.pre_rest = mean([out_cap(pre_rest_idx).totPower]);
-	S_.totPower.pre_task = mean([out_cap(pre_task_idx).totPower]);
-	S_.totPower.pst_rest = mean([out_cap(pst_rest_idx).totPower]);
-	S_.totPower.pst_task = mean([out_cap(pst_task_idx).totPower]);
+	S_.hfPower.pre_rest = nanmean([out_cap(pre_rest_idx).hfPower]);
+	S_.hfPower.pre_task = nanmean([out_cap(pre_task_idx).hfPower]);
+	S_.hfPower.pst_rest = nanmean([out_cap(pst_rest_idx).hfPower]);
+	S_.hfPower.pst_task = nanmean([out_cap(pst_task_idx).hfPower]);
 
 
-	S_.freq.pre_rest = mean([out_cap(pre_rest_idx).freq],2);
-	S_.freq.pre_task = mean([out_cap(pre_task_idx).freq],2);
-	S_.freq.pst_rest = mean([out_cap(pst_rest_idx).freq],2);
-	S_.freq.pst_task = mean([out_cap(pst_task_idx).freq],2);
+	S_.totPower.pre_rest = nanmean([out_cap(pre_rest_idx).totPower]);
+	S_.totPower.pre_task = nanmean([out_cap(pre_task_idx).totPower]);
+	S_.totPower.pst_rest = nanmean([out_cap(pst_rest_idx).totPower]);
+	S_.totPower.pst_task = nanmean([out_cap(pst_task_idx).totPower]);
 
-	S_.Pxx.pre_rest = mean([out_cap(pre_rest_idx).Pxx],2);
-	S_.Pxx.pre_task = mean([out_cap(pre_task_idx).Pxx],2);
-	S_.Pxx.pst_rest = mean([out_cap(pst_rest_idx).Pxx],2);
-	S_.Pxx.pst_task = mean([out_cap(pst_task_idx).Pxx],2);
+
+	S_.freq.pre_rest = nanmean([out_cap(pre_rest_idx).freq],2);
+	S_.freq.pre_task = nanmean([out_cap(pre_task_idx).freq],2);
+	S_.freq.pst_rest = nanmean([out_cap(pst_rest_idx).freq],2);
+	S_.freq.pst_task = nanmean([out_cap(pst_task_idx).freq],2);
+
+	S_.Pxx.pre_rest = nanmean([out_cap(pre_rest_idx).Pxx],2);
+	S_.Pxx.pre_task = nanmean([out_cap(pre_task_idx).Pxx],2);
+	S_.Pxx.pst_rest = nanmean([out_cap(pst_rest_idx).Pxx],2);
+	S_.Pxx.pst_task = nanmean([out_cap(pst_task_idx).Pxx],2);
 
 if ismember(session_name,inactivation_sessions)
     ind_ina = ind_ina + 1;
@@ -367,35 +361,35 @@ MeanForBlock_Task_Control.Experiment = repmat(TableBlocks_Control.Experiment(1),
 MeanForBlock_Task_Injection.Experiment = repmat(TableBlocks_Injection.Experiment(1), size(MeanForBlock_Task_Injection,1),1);
 
 %% save Data-Structures to plot
-if ~exist(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions'])
- mkdir(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions'])
+if ~exist([path_SaveFig ,monkey , '\Inactivation\CAP\AllSessions'])
+ mkdir([path_SaveFig ,monkey , '\Inactivation\CAP\AllSessions'])
 end
-save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey ,'_Table_Respiration_PerSession_' , targetBrainArea ],'Table');
-writetable(Table, ['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\', monkey, '_Table_Respiration_PerSession_', targetBrainArea], 'Delimiter', ' ')
-
-writetable(TableBlocks, ['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\' monkey,'_Table_Respiration_PerSessionPerBlock_', targetBrainArea], 'Delimiter', ' ')
-save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\', monkey, '_Table_Respiration_PerSessionPerBlocks_' , targetBrainArea],'TableBlocks');
-
-save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey '_Table_Respiration_MeanForBlock_Task_Control_', targetBrainArea ],'MeanForBlock_Task_Control');
-save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey ,'_Table_Respiration_MeanForBlock_Task_Injection_' , targetBrainArea],'MeanForBlock_Task_Injection');
 
 
 
-save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey, '_Structure_Respiration_PerSession_Control_' , targetBrainArea],'S_con');
-save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey, '_Structure_Respiration_PerSession_Inactivation_' , targetBrainArea],'S_ina');
-save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey, '_Structure_Respiration_PerSessionPerBlock_Control_', targetBrainArea ],'S_Blocks_con');
-save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey, '_Structure_Respiration_PerSessionPerBlock_Inactivation_' , targetBrainArea],'S_Blocks_ina');
-save(['Y:\Projects\PhysiologicalRecording\Data\' ,monkey , '\AllSessions\',monkey, '_Structure_Respiration_PerSessionPerBlock_', targetBrainArea ],'S_Blocks2');
+save([path_SaveFig , monkey , '\Inactivation\CAP\AllSessions\',monkey ,'_Table_Respiration_PerSession_' , targetBrainArea ],'Table');
+writetable(Table, [path_SaveFig , monkey , '\Inactivation\CAP\AllSessions\', monkey, '_Table_Respiration_PerSession_', targetBrainArea], 'Delimiter', ' ')
+
+writetable(TableBlocks, [path_SaveFig , monkey , '\Inactivation\CAP\AllSessions\', monkey,'_Table_Respiration_PerSession_PerBlock_', targetBrainArea], 'Delimiter', ' ')
+save([path_SaveFig , monkey , '\Inactivation\CAP\AllSessions\', monkey, '_Table_Respiration_PerSession_PerBlocks_' , targetBrainArea],'TableBlocks');
+
+save([path_SaveFig , monkey , '\Inactivation\CAP\AllSessions\',monkey '_Respiration_MeanForBlock_Task_Control_', targetBrainArea ],'MeanForBlock_Task_Control');
+save([path_SaveFig ,monkey , '\Inactivation\CAP\AllSessions\',monkey ,'_Respiration_MeanForBlock_Task_Injection_' , targetBrainArea],'MeanForBlock_Task_Injection');
+
+save([path_SaveFig ,monkey , '\Inactivation\CAP\AllSessions\',monkey, '_MatStruc_Respiration_PerSession_Control_' , targetBrainArea],'S_con');
+save([path_SaveFig ,monkey , '\Inactivation\CAP\AllSessions\',monkey, '_MatStruc_Respiration_PerSession_Inactivation_' , targetBrainArea],'S_ina');
+save([path_SaveFig ,monkey , '\Inactivation\CAP\AllSessions\',monkey, '_MatStruc_Respiration_PerSessionPerBlock_Control_', targetBrainArea ],'S_Blocks_con');
+save([path_SaveFig ,monkey , '\Inactivation\CAP\AllSessions\',monkey, '_MatStruc_Respiration_PerSessionPerBlock_Inactivation_' , targetBrainArea],'S_Blocks_ina');
+save([path_SaveFig ,monkey , '\Inactivation\CAP\AllSessions\',monkey, '_MatStruc_Respiration_PerSessionPerBlock_', targetBrainArea ],'S_Blocks2');
 
 save([Path_addtoDropbox ,filesep, monkey, filesep ,monkey, '_Table_Respiration_PerSession_' , targetBrainArea ],'Table');
 writetable(Table, [Path_addtoDropbox ,filesep, monkey, filesep,monkey, '_Table_Respiration_PerSession_' , targetBrainArea ], 'Delimiter', ' ')
 
 
-
-
 %% save Table for further statistical analysis
-writetable(Table, ['C:\Users\kkaduk\Dropbox\PhD\Projects\body_signals_analysis\Data\', 'Table_Respiration_PerSession'], 'Delimiter', ' ')
-writetable(TableBlocks, ['C:\Users\kkaduk\Dropbox\PhD\Projects\body_signals_analysis\Data\', 'Table_Respiration_PerSessionPerBlock'], 'Delimiter', ' ')
+writetable(Table, ['C:\Users\kkaduk\Dropbox\PhD\Projects\Monkey_Ina_ECG_Respiration\body_signals_analysis\Data\', monkey, filesep,monkey, 'Table_Respiration_PerSession', targetBrainArea], 'Delimiter', ' ')
+writetable(TableBlocks, ['C:\Users\kkaduk\Dropbox\PhD\Projects\Monkey_Ina_ECG_Respiration\body_signals_analysis\Data\', monkey, filesep,monkey, 'Table_Respiration_PerSessionPerBlock', targetBrainArea], 'Delimiter', ' ')
+
 
 
 
