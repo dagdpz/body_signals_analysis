@@ -387,7 +387,7 @@ bsa_cap_summarize_many_sessions('Y:\Projects\Pulv_Inac_ECG_respiration\Results\'
 
 monkey = 'Cornelius';targetBrainArea = 'dPul';
 Stats_beforeComputedWithR = 1; 
-Text = 1; 
+Text = 0; 
 BaselineInjection = 0; 
 Experiment = 'Inactivation'; 
 path_SaveFig = ['Y:\Projects\Pulv_Inac_ECG_respiration\Results\',monkey,filesep, Experiment '\ECG\',targetBrainArea]; 

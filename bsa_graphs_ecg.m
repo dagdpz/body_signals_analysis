@@ -245,6 +245,15 @@ for ind_DV = 1: length(DVs)
         Y_C(3) = max_yValue *0.5;
         Y_C(4) = max_yValue *0.5;
         
+    elseif    strcmp(DVs{ind_DV} , 'rmssd_R2R_ms_Adj')
+        yaxis = 'RMSSD of R2R (ms)';
+        ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
+     
+        Y_C(1) = max_yValue *0.56;
+        Y_C(2) = max_yValue *0.53;
+        Y_C(3) = max_yValue *0.5;
+        Y_C(4) = max_yValue *0.5;
+        
     elseif    strcmp(DVs{ind_DV} , 'std_R2R_bpm') 
         yaxis = 'std of R2R (bpm)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
@@ -256,6 +265,19 @@ for ind_DV = 1: length(DVs)
         Y_C(2) = max_yValue *0.53;
         Y_C(3) = max_yValue *0.5;
         Y_C(4) = max_yValue *0.5;
+        
+      elseif    strcmp(DVs{ind_DV} , 'std_R2R_bpm_Adj') 
+        yaxis = 'std of R2R (bpm)';
+        ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
+        if  strcmp(monkey , 'Magnus')|| strcmp(monkey , 'Curius') && strcmp(Experiment , 'Inactivation')
+            max_yValue = 150;
+            min_yValue = 0;
+        end
+        Y_C(1) = max_yValue *0.56;
+        Y_C(2) = max_yValue *0.53;
+        Y_C(3) = max_yValue *0.5;
+        Y_C(4) = max_yValue *0.5;      
+        
     elseif    strcmp(DVs{ind_DV} , 'hfPower')&& ~strcmp(monkey , 'Curius')
         yaxis = 'high frequency power (0.15-0.5)';
         ylabel(yaxis,'fontsize',26,'fontweight','b' , 'Interpreter', 'none');
@@ -829,7 +851,7 @@ plot( 4, [S_con.pst_task], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSes
 
 
 ig_bar_mean_se(6,[S_ina.pre_rest],'sterr','FaceColor',ina_b_col,'EdgeColor',ina_b_col);
-plot( 6, [S_ina.pst_rest], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+plot( 6, [S_ina.pre_rest], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
 ig_bar_mean_se(7,[S_ina.pst_rest],'sterr','FaceColor',ina_d_col,'EdgeColor',ina_d_col);
 plot(  7, [S_ina.pst_rest], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;

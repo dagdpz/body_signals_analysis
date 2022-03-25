@@ -69,8 +69,8 @@ ina_d_col = abs([0          0    0.9] );
 
 %get the Variable names of all HRV measurements
 if Stats
-    HRV_DVs{2} = DVs{find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm')], 2) == 0)} ;
-    ix = find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm')], 2) == 0);
+    HRV_DVs{2} = DVs{find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm') , strcmp(DVs, 'rmssd_R2R_ms_Adj') , strcmp(DVs, 'std_R2R_bpm_Adj')], 2) == 0)} ;
+    ix = find(sum([strcmp(DVs, 'mean_R2R_bpm') , strcmp(DVs, 'median_R2R_bpm'), strcmp(DVs, 'rmssd_R2R_ms_Adj') , strcmp(DVs, 'std_R2R_bpm_Adj') ], 2) == 0);
     for ind = 1: length(ix)
         HRV_DVs{ind} = DVs{ix(ind)} ;
     end
@@ -96,14 +96,30 @@ for ind_DV =  st: length(HRV_DVs)
         
         set(gcf,'Name',HRV_DVs{ind_DV}); hold on;
         count_con= [0 0 0]; count_ina = [0 0 0];  count_c = 1; count_i = 1;
-        for I_Ses = 1: length(S_Blocks2)
-            [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, ...
-                [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
-                ln,correctionFactor);
+        if strcmp(HRV_DVs{ind_DV}, 'rmssd_R2R_ms')
+            for I_Ses = 1: length(S_Blocks2)
+                [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, ...
+                    [S_Blocks2(I_Ses).mean_R2R_ms],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
+                    ln,correctionFactor);
+            end
+                    xlabel('R-R interval (ms)','fontsize',20,'fontweight','b', 'Interpreter', 'none' );
+            max_xValue = 700; min_xValue = 250; set(gca,'xlim',[min_xValue max_xValue]);
+
+        elseif  strcmp(HRV_DVs{ind_DV}, 'std_R2R_bpm')
+            for I_Ses = 1: length(S_Blocks2)
+                [count_con, count_ina, count_c, count_i] = plot_oneVar_secondVar_pre_post_rest_task(S_Blocks2(I_Ses).Experiment, ...
+                    [S_Blocks2(I_Ses).mean_R2R_bpm],[S_Blocks2(I_Ses).(HRV_DVs{ind_DV})],count_con, count_ina , count_c, count_i ,DeleteOutlier,...
+                    ln,correctionFactor);
+            end
+                    xlabel('heart rate (bpm)','fontsize',20,'fontweight','b', 'Interpreter', 'none' );
+
         end
+         
         
         if strcmp(monkey, 'Cornelius') || strcmp(monkey, 'Magnus') && strcmp (Experiment, 'Inactivation') && strcmp(HRV_DVs{ind_DV}, 'rmssd_R2R_ms')
-        set(gca,'ylim',[0 25])
+            set(gca,'ylim',[0 25])
+        elseif strcmp(HRV_DVs{ind_DV}, 'std_R2R_bpm')
+            set(gca,'ylim',[0 25])
         end
 
         C1 = struct2cell([S_Blocks2(:).mean_R2R_bpm]);
@@ -114,7 +130,7 @@ for ind_DV =  st: length(HRV_DVs)
         C1 = struct2cell([S_Blocks2(indExp).mean_R2R_bpm]);
         
         if strcmp(monkey , 'Curius') && strcmp(Experiment , 'Inactivation')
-            max_xValue = 140; min_xValue = 85;            set(gca,'xlim',[min_xValue max_xValue]);
+            max_xValue =700; min_xValue = 250;            set(gca,'xlim',[min_xValue max_xValue]);
              if strcmp(HRV_DVs{ind_DV}, 'rmssd_R2R_ms')
             max_yValue = 110; min_yValue = 0; set(gca,'ylim',[min_yValue max_yValue]);
              end
@@ -176,7 +192,6 @@ for ind_DV =  st: length(HRV_DVs)
         
         
         ylabel(char(HRV_DVs{ind_DV}),'fontsize',20,'fontweight','b', 'Interpreter', 'none' );
-        xlabel('heart rate (bpm)','fontsize',20,'fontweight','b', 'Interpreter', 'none' );
         %% add the mean for over all sessions to the plot
         S_control = [S_con.(HRV_DVs{ind_DV})];
         S_inactivation = [S_ina.(HRV_DVs{ind_DV})];
@@ -313,11 +328,6 @@ for ind_DV =  st: length(HRV_DVs)
         S_control_HR = [S_con.mean_R2R_bpm];
         S_inactivation_HR = [S_ina.mean_R2R_bpm];
         
-        
-        
-        
-        
-        
         Y_pre_task_Contr = nanmean(bsa_correct_for_HR( [S_control_HR.pre_task],[S_control_HRV.pre_task], correctionFactor_Ctr,0));
         Y_pst_task_Contr = nanmean(bsa_correct_for_HR( [S_control_HR.pst_task],[S_control_HRV.pst_task], correctionFactor_Ctr,0));
         Y_pre_task_Inac = nanmean(bsa_correct_for_HR( [S_inactivation_HR.pre_task],[S_inactivation_HRV.pre_task], correctionFactor_Ina,0));
@@ -327,25 +337,25 @@ for ind_DV =  st: length(HRV_DVs)
         line([Xmin,Xmax],[Y_pst_task_Contr,Y_pst_task_Contr],'color',con_d_col,'LineWidth',1.5,'LineStyle','--')
         line([Xmin,Xmax],[Y_pre_task_Inac,Y_pre_task_Inac],'color',ina_b_col,'LineWidth',1.5,'LineStyle','--')
         line([Xmin,Xmax],[Y_pst_task_Inac,Y_pst_task_Inac],'color',ina_d_col,'LineWidth',1.5,'LineStyle','--')
-        
-        
+
         box on;
         
         
         %% plot the corrected HRV- data
-        
-        
-        
-        
-        
-        
-        
         ha(4) = subplot(2,2,4);
-        BarGraph_one_var_pre_post_rest_task([S_con.mean_R2R_bpm],[S_con.(HRV_DVs{ind_DV})], [S_ina.mean_R2R_bpm], [S_ina.(HRV_DVs{ind_DV})], correctionFactor_Ctr, correctionFactor_Ina);
-        % set(gca,'ylim',[0 800]);
-        ylabel(['corrected ', char(HRV_DVs{ind_DV})],'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
+        if strcmp(HRV_DVs{ind_DV}, 'rmssd_R2R_ms')
+            BarGraph_one_var_pre_post_rest_task([S_con.rmssd_R2R_ms_Adj], [S_ina.rmssd_R2R_ms_Adj]);    
+        elseif  strcmp(HRV_DVs{ind_DV}, 'std_R2R_bpm')
+            BarGraph_one_var_pre_post_rest_task([S_con.std_R2R_bpm], [S_ina.std_R2R_bpm]);
+        end
+        ylabel(['adjusted ', char(HRV_DVs{ind_DV})],'fontsize',14,'fontweight','b', 'Interpreter', 'none' );
         
-        
+        %         if  strcmp(HRV_DVs{ind_DV}, 'adjusted rmssd_R2R_ms')
+        %             set(gca,'ylim',[0 400])
+        %         elseif strcmp(HRV_DVs{ind_DV}, 'adjusted std_R2R_bpm')
+        %             set(gca,'ylim',[0 600])
+        %         end
+        %
         h = [];
         h(1) = figure(1);
         print(h,[path_SaveFig filesep 'HR_HRV' filesep 'png' filesep targetBrainArea '_', monkey, '_corrected',  HRV_DVs{ind_DV} '_heartrate' ], '-dpng')
@@ -355,26 +365,10 @@ for ind_DV =  st: length(HRV_DVs)
         print(h,'-depsc',compl_filename);
         close all;
         
-%         
-%         %% create a dataset to 
-%         S_control_HRV = [S_con.(HRV_DVs{ind_DV})];
-%         S_inactivation_HRV = [S_ina.(HRV_DVs{ind_DV})];
-%         S_control_HR = [S_con.mean_R2R_bpm];
-%         S_inactivation_HR = [S_ina.mean_R2R_bpm];
-%         
-%         S_con.(['corrected_',HRV_DVs{ind_DV}])      =   bsa_correct_for_HR( [S_control_HR.pre_task],[S_control_HRV.pre_task], correctionFactor_Ctr,0)
-%   
-%         Y_pre_task_Contr = nanmean(bsa_correct_for_HR( [S_control_HR.pre_task],[S_control_HRV.pre_task], correctionFactor_Ctr,0));
-%         Y_pst_task_Contr = nanmean(bsa_correct_for_HR( [S_control_HR.pst_task],[S_control_HRV.pst_task], correctionFactor_Ctr,0));
-%         Y_pre_task_Inac = nanmean(bsa_correct_for_HR( [S_inactivation_HR.pre_task],[S_inactivation_HRV.pre_task], correctionFactor_Ina,0));
-%         Y_pst_task_Inac = nanmean(bsa_correct_for_HR( [S_inactivation_HR.pst_task],[S_inactivation_HRV.pst_task], correctionFactor_Ina,0));
-%       
-%         
-        
     end
 end
 
-function BarGraph_one_var_pre_post_rest_task(S_con_HR, S_con,S_ina_HR,S_ina, CF_Ctr, CF_Ina)
+function BarGraph_one_var_pre_post_rest_task( S_con,S_ina)
 MarkerSize_EachSession = 15;
 
 con_b_col = [0.4667    0.6745    0.1882];
@@ -384,34 +378,33 @@ ina_d_col = [0          0    0.9];
 
 
 
-ig_bar_mean_se(1,[bsa_correct_for_HR( [S_con_HR.pre_rest],[S_con.pre_rest], CF_Ctr,0)],'sterr','FaceColor',con_b_col,'EdgeColor',con_b_col);
-plot(  1, [bsa_correct_for_HR( [S_con_HR.pre_rest],[S_con.pre_rest], CF_Ctr,0)], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+ig_bar_mean_se(1,[S_con.pre_rest],'sterr','FaceColor',con_b_col,'EdgeColor',con_b_col);
+plot(  1, [S_con.pre_rest], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
-ig_bar_mean_se(2,[bsa_correct_for_HR( [S_con_HR.pst_rest],[S_con.pst_rest], CF_Ctr,0)],'sterr','FaceColor',con_d_col,'EdgeColor',con_d_col);
-plot(  2, [bsa_correct_for_HR( [S_con_HR.pst_rest],[S_con.pst_rest], CF_Ctr,0)], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+ig_bar_mean_se(2,[S_con.pst_rest],'sterr','FaceColor',con_d_col,'EdgeColor',con_d_col);
+plot(  2, [S_con.pst_rest], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
-ig_bar_mean_se(3,[bsa_correct_for_HR( [S_con_HR.pre_task],[S_con.pre_task], CF_Ctr,0)],'sterr','FaceColor',con_b_col,'EdgeColor',con_b_col);
-plot(  3, [bsa_correct_for_HR( [S_con_HR.pre_task],[S_con.pre_task], CF_Ctr,0)], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+ig_bar_mean_se(3,[S_con.pre_task],'sterr','FaceColor',con_b_col,'EdgeColor',con_b_col);
+plot(  3, [S_con.pre_task], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
-ig_bar_mean_se(4,[bsa_correct_for_HR( [S_con_HR.pst_task],[S_con.pst_task], CF_Ctr,0)],'sterr','FaceColor',con_d_col,'EdgeColor',con_d_col);
-plot( 4, [bsa_correct_for_HR( [S_con_HR.pst_task],[S_con.pst_task], CF_Ctr,0)], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+ig_bar_mean_se(4,[S_con.pst_task],'sterr','FaceColor',con_d_col,'EdgeColor',con_d_col);
+plot( 4, [S_con.pst_task], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
 
-ig_bar_mean_se(6,[bsa_correct_for_HR( [S_ina_HR.pre_rest],[S_ina.pre_rest], CF_Ina,0)],'sterr','FaceColor',ina_b_col,'EdgeColor',ina_b_col);
-plot( 6, [bsa_correct_for_HR( [S_ina_HR.pre_rest],[S_ina.pre_rest], CF_Ina,0)], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+ig_bar_mean_se(6,[S_ina.pre_rest],'sterr','FaceColor',ina_b_col,'EdgeColor',ina_b_col);
+plot( 6, [S_ina.pre_rest], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
-ig_bar_mean_se(7,[bsa_correct_for_HR( [S_ina_HR.pst_rest],[S_ina.pst_rest], CF_Ina,0)],'sterr','FaceColor',ina_d_col,'EdgeColor',ina_d_col);
-plot(  7, [bsa_correct_for_HR( [S_ina_HR.pst_rest],[S_ina.pst_rest], CF_Ina,0)], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+ig_bar_mean_se(7,[S_ina.pst_rest],'sterr','FaceColor',ina_d_col,'EdgeColor',ina_d_col);
+plot(  7, [S_ina.pst_rest], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
-ig_bar_mean_se(8,[bsa_correct_for_HR( [S_ina_HR.pre_task],[S_ina.pre_task], CF_Ina,0)],'sterr','FaceColor',ina_b_col,'EdgeColor',ina_b_col);
-plot(  8, [bsa_correct_for_HR( [S_ina_HR.pre_task],[S_ina.pre_task], CF_Ina,0)], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+ig_bar_mean_se(8,[S_ina.pre_task],'sterr','FaceColor',ina_b_col,'EdgeColor',ina_b_col);
+plot(  8, [S_ina.pre_task], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
-ig_bar_mean_se(9,[bsa_correct_for_HR( [S_ina_HR.pst_task],[S_ina.pst_task], CF_Ina,0)],'sterr','FaceColor',ina_d_col,'EdgeColor',ina_d_col);
-plot(  9, [bsa_correct_for_HR( [S_ina_HR.pst_task],[S_ina.pst_task], CF_Ina,0)], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
+ig_bar_mean_se(9,[S_ina.pst_task],'sterr','FaceColor',ina_d_col,'EdgeColor',ina_d_col);
+plot(  9, [S_ina.pst_task], '.','color',[0 0 0 ] ,'MarkerSize',MarkerSize_EachSession) ; hold on;
 
 
 set(gca,'xlim',[0 10],'Xtick',[1:4 6:9],'XTickLabel',{'pre' 'post' 'pre' 'post' 'pre' 'post' 'pre' 'post'}, 'FontSize', 15);
-
 function [count_con, count_ina, count_c, count_i] =  plot_oneVar_secondVar_pre_post_rest_task(Experiment, Block,Variable, count_con, count_ina, count_c, count_i,DeleteOutlier,  ln, CF)
 %[Graph, Ymin ,Ymax] =
 markerSize = 12; 

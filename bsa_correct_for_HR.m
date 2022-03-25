@@ -21,6 +21,9 @@ function [cHRV] = bsa_correct_for_HR(HR,HRV, CF, simulation)
 %
 CF = 58.8; 
 %cHRV(1) = HRV/exp((HR_ref - HR)/58.8);
+if sum(isnan(HRV))> 0 ; HRV(isnan(HRV)) = [];disp('NaN-value in HRV')   ; end
+if sum(isnan(HR))> 0  ; HR(isnan(HR)) = []   ;disp('NaN-value in HR')  ; end
+
 cHRV = HRV./exp(-(HR/CF));
 if simulation
 HR_ref  = 0; 
