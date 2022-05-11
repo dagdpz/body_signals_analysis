@@ -1,9 +1,9 @@
-function out = bsa_ecg_analyze_one_session(session_path,pathExcel,settings_filename,varargin)
+function out_cap = bsa_respiration_analyze_one_session(session_path,pathExcel,settings_filename,varargin)
 %bsa_ecg_analyze_one_session  - analyzing ECG in one session (in multiple runs/blocks)
 %
 % USAGE:
-%out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190625','Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx','bsa_settings_Curius2019.m','Y:\Projects\PhysiologicalRecording\Data\Curius\20190625');
-% out = bsa_ecg_analyze_one_session(session_path,'',false,'dataOrigin','TDT','sessionInfo',ses);
+%out = bsa_respiration_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\20190625','Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx','bsa_settings_Curius2019.m','Y:\Projects\PhysiologicalRecording\Data\Curius\20190625');
+% out = bsa_respiration_analyze_one_session(session_path,'',false,'dataOrigin','TDT','sessionInfo',ses);
 %
 % INPUTS:
 %		session_path		- Path to session data
@@ -18,7 +18,7 @@ function out = bsa_ecg_analyze_one_session(session_path,pathExcel,settings_filen
 %
 % See also BSA_ECG_ANALYZE_ONE_RUN, BSA_ECG_ANALYZE_MANY_SESSIONS
 %
-%
+%20211001
 % Author(s):	I.Kagan, DAG, DPZ
 % URL:		http://www.dpz.eu/dag
 %
@@ -81,6 +81,7 @@ end
 
 ses = par.sessionInfo;
 
+%% which run is task and which is rest? information stored in the excel-sheet or behavior file
 %% which run is task and which is rest? information stored in the excel-sheet (manual input) and behavior file
 % excel file will have a priority so that one can manually exclude some runs
 if ~isempty(pathExcel)
@@ -107,7 +108,7 @@ if ~isempty(pathExcel)
         ses.tasktype_str    =   table.task(table.date == str2num(session_name))';
         ses.tasktype        =   table.tasktype(table.date == str2num(session_name))';
         
-        % delete runs which 
+          % delete runs which 
         ses.injection(ses.nrblock_combinedFiles == 0) = num2cell(nan(1,sum(ses.nrblock_combinedFiles == 0)));
         ses.first_inj_block =  min(ses.nrblock_combinedFiles(strcmp(ses.injection , 'Post'))) ;
     else
@@ -116,16 +117,23 @@ if ~isempty(pathExcel)
 end
 
 %%
-if strcmp(par.dataOrigin, 'TDT'),
-    load([session_path filesep 'bodysignals_wo_behavior.mat']);
-    Fs        = dat.ECG_SR;
-    ECG       = dat.ECG;
-    n_blocks  = length(dat.ECG);
-else
-    combined_matfiles=dir([session_path filesep '*.mat']);
-    n_blocks = length(combined_matfiles);
-end
 
+  if strcmp(par.dataOrigin, 'TDT'),
+      load([session_path filesep 'bodysignals_wo_behavior.mat']);
+      Fs        = dat.ECG_SR;
+      ECG       = dat.ECG;
+      CAP       = dat.CAP;
+      POX       = dat.POX;
+
+      n_blocks  = length(dat.ECG);
+     
+       
+  else
+      combined_matfiles=dir([session_path filesep '*.mat']);
+      n_blocks = length(combined_matfiles);
+     
+               
+  end
 %% Is there a difference between excel-sheet information & saved data-files?
 disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
 if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
@@ -135,11 +143,11 @@ if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
         error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
     end
 end
-
+    
 %%
-for i_block = 1 : n_blocks, % for each run/block
-    NrBlock = []; 
-    % get the information about the task or rest
+for i_block = 1: n_blocks, % for each run/block
+    NrBlock = [];   
+   % get the information about the task or rest
     if ~strcmp(par.dataOrigin, 'TDT'),
         load([session_path filesep combined_matfiles(i_block).name])
         if task.type == Set.task.Type && numel(trial) > Set.task.mintrials % exclude short runs and calibration
@@ -161,11 +169,11 @@ for i_block = 1 : n_blocks, % for each run/block
                 disp(['Block ' num2str(NrBlock) ' is excluded because of a -2 in the Excel-sheet'])
                 ses.type(i_block) = -2;   
             elseif ses.type(i_block) == -2  && task.type ~= Set.task.Type &&  ses.tasktype(ses.nrblock_combinedFiles == i_block) ~= -2 && numel(trial) > Set.task.mintrials
-                disp(['Condition does not match!! Excel-sheet colum tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(NrBlock)])
+                disp(['Condition does not match!! Excel-sheet colum tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(i_block)])
                 ses.type(i_block) =  ses.tasktype(ses.nrblock_combinedFiles == i_block);
                 disp('overwrote the information from behavior file with excel-sheet')
             else
-                disp(['Condition does not match!! Excel-sheet colum tasktype' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) 'is not identical with the information from behavior file'  num2str(ses.type(i_block) ) 'in Block' num2str(NrBlock)])
+                disp(['Condition does not match!! Excel-sheet colum tasktype' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) 'is not identical with the information from behavior file'  num2str(ses.type(i_block) ) 'in Block' num2str(i_block)])
             end
         end
         
@@ -175,7 +183,6 @@ for i_block = 1 : n_blocks, % for each run/block
             ses.type  =  ses.type(~ses.nrblock_combinedFiles == 0);
         end
     end
-    
     
    
     
@@ -191,25 +198,39 @@ for i_block = 1 : n_blocks, % for each run/block
     
     if strcmp(par.dataOrigin, 'TDT'),
         ecgSignal   = double(ECG{i_block});
+        capSignal   = double(CAP{i_block});
+        poxSignal   = double(POX{i_block});
+        
     else
-        ecg = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(i_block).name], 1); % get ecg only
-        ecgSignal   = ecg.ECG1;
-        Fs          = ecg.Fs;
+        OUT = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(i_block).name]);
+        ecgSignal   = OUT.ECG1;
+        capSignal   = OUT.CAP1;
+        poxSignal   = OUT.POX1;
+        
+        Fs          = OUT.Fs;
     end
-    plot(ecgSignal)
-    [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,i_block,NrBlock);
-    print(out(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],i_block),'-dpng','-r0');
+    
+    % respiration
+    [ out_cap(i_block), Tab_outlier_cap(i_block) ]= bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,1,i_block,NrBlock);
+    print(out_cap(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep 'cap_'],i_block),'-dpng','-r0');
     if ~par.keepRunFigs
-        close(out(i_block).hf);
+        close(out_cap(i_block).hf);
     end
-
+%     %ECG
+%     [ out(i_block), Tab_outlier_ecg(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,i_block,NrBlock);
+%     print(out(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep 'ecg_'],i_block),'-dpng','-r0');
+%     if ~par.keepRunFigs
+%         close(out(i_block).hf);
+%     end
+    
+    
 
 end
 
+%save([par.saveResults filesep session_name '.mat'],'out','out_cap','Tab_outlier_ecg','Tab_outlier_cap','par','ses','session_name','session_path');
+save([par.saveResults filesep session_name '_cap.mat'],'out_cap','Tab_outlier_cap','par','ses','session_name','session_path');
 
-save([par.saveResults filesep session_name '_ecg.mat'],'out','Tab_outlier','par','ses','session_name','session_path');
-
-
+% 
 blks = 1:n_blocks;
 taskMFC = [0.3922    0.4745    0.6353];
 restMFC = [1 1 1];
@@ -223,38 +244,81 @@ else
     restMFC = [0.8 0.8 0.8];
 end
 
-%return; %
+% 
+% ig_figure('Name',[session_path '->' par.saveResults],'Position',[200 200 900 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
+% ha(1) = subplot(4,1,1);
+% plot(blks(rest_idx),[out(rest_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC); hold on;
+% plot(blks(task_idx),[out(task_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
+% plot(blks(rest_idx),[out(rest_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC);
+% plot(blks(task_idx),[out(task_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
+% ylabel('Mean (o) & med (s) of R2R (bpm)');
+% 
+% ha(2) = subplot(4,1,2);
+% plot(blks(rest_idx),[out(rest_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',restMFC); hold on;
+% plot(blks(task_idx),[out(task_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',taskMFC);
+% ylabel('RMSSD of R2R interval (ms)');
+% 
+% ha(3) = subplot(4,1,3);
+% plot(blks(rest_idx),[out(rest_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',restMFC);  hold on;
+% plot(blks(task_idx),[out(task_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',taskMFC);
+% ylabel('SD of R2R interval (bpm)');
+% 
+% ha(4) = subplot(4,1,4);
+% plot(blks(rest_idx),[out(rest_idx).lfPower],'ro','MarkerFaceColor',restMFC); hold on;
+% plot(blks(task_idx),[out(task_idx).lfPower],'ro','MarkerFaceColor',taskMFC); 
+% plot(blks(rest_idx),[out(rest_idx).hfPower],'go','MarkerFaceColor',restMFC);
+% plot(blks(task_idx),[out(task_idx).hfPower],'go','MarkerFaceColor',taskMFC);
+% legend({'lf rest','lf task','hf rest','hf task'},'location','Best');
+% xlabel('blocks');
+% ylabel('LF and HF power (ms^2)');
+% 
+% 
+% if ~isempty(ses),
+%    
+%     for ax = 1:length(ha),
+%         axes(ha(ax));
+%         ig_add_vertical_line(ses.first_inj_block -0.5);
+%         
+%     end
+%     
+% end
+% 
+% 
+% print(gcf,[par.saveResults filesep session_name '_R2R_TC.pdf'],'-dpdf','-r0');
+
+
+%respiration
 
 ig_figure('Name',[session_path '->' par.saveResults],'Position',[200 200 900 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
 ha(1) = subplot(4,1,1);
-plot(blks(rest_idx),[out(rest_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC); hold on;
-plot(blks(task_idx),[out(task_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
-plot(blks(rest_idx),[out(rest_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC);
-plot(blks(task_idx),[out(task_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
-ylabel('Mean (o) & med (s) of R2R (bpm)');
+plot(blks(rest_idx),[out_cap(rest_idx).mean_B2B_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC); hold on;
+plot(blks(task_idx),[out_cap(task_idx).mean_B2B_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
+plot(blks(rest_idx),[out_cap(rest_idx).median_B2B_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC);
+plot(blks(task_idx),[out_cap(task_idx).median_B2B_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
+ylabel('Mean (o) & med (s) of B2B (bpm)');
 
 ha(2) = subplot(4,1,2);
-plot(blks(rest_idx),[out(rest_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',restMFC); hold on;
-plot(blks(task_idx),[out(task_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',taskMFC);
-ylabel('RMSSD of R2R interval (ms)');
+plot(blks(rest_idx),[out_cap(rest_idx).rmssd_B2B_valid_ms],'bo','MarkerFaceColor',restMFC); hold on;
+plot(blks(task_idx),[out_cap(task_idx).rmssd_B2B_valid_ms],'bo','MarkerFaceColor',taskMFC);
+ylabel('RMSSD of B2B interval (ms)');
 
 ha(3) = subplot(4,1,3);
-plot(blks(rest_idx),[out(rest_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',restMFC);  hold on;
-plot(blks(task_idx),[out(task_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',taskMFC);
-ylabel('SD of R2R interval (bpm)');
+plot(blks(rest_idx),[out_cap(rest_idx).std_B2B_valid_bpm],'bo','MarkerFaceColor',restMFC);  hold on;
+plot(blks(task_idx),[out_cap(task_idx).std_B2B_valid_bpm],'bo','MarkerFaceColor',taskMFC);
+ylabel('SD of B2B interval (bpm)');
 
 ha(4) = subplot(4,1,4);
-plot(blks(rest_idx),[out(rest_idx).lfPower],'ro','MarkerFaceColor',restMFC); hold on;
-plot(blks(task_idx),[out(task_idx).lfPower],'ro','MarkerFaceColor',taskMFC);
-plot(blks(rest_idx),[out(rest_idx).hfPower],'go','MarkerFaceColor',restMFC);
-plot(blks(task_idx),[out(task_idx).hfPower],'go','MarkerFaceColor',taskMFC);
+plot(blks(rest_idx),[out_cap(rest_idx).lfPower],'ro','MarkerFaceColor',restMFC); hold on;
+plot(blks(task_idx),[out_cap(task_idx).lfPower],'ro','MarkerFaceColor',taskMFC); 
+plot(blks(rest_idx),[out_cap(rest_idx).hfPower],'go','MarkerFaceColor',restMFC);
+plot(blks(task_idx),[out_cap(task_idx).hfPower],'go','MarkerFaceColor',taskMFC);
 legend({'lf rest','lf task','hf rest','hf task'},'location','Best');
 xlabel('blocks');
 ylabel('LF and HF power (ms^2)');
 
 
-if ~isempty(ses.first_inj_block),
-    
+if ~isempty(ses) && ~(strcmp(ses.experiment(1) , 'ephys')),
+   
     for ax = 1:length(ha),
         axes(ha(ax));
         ig_add_vertical_line(ses.first_inj_block -0.5);
@@ -264,7 +328,6 @@ if ~isempty(ses.first_inj_block),
 end
 
 
-print(gcf,[par.saveResults filesep session_name '_R2R_TC.pdf'],'-dpdf','-r0');
-
+print(gcf,[par.saveResults filesep session_name '_B2B_TC.pdf'],'-dpdf','-r0');
 warning on;
 
