@@ -53,15 +53,27 @@ fprintf('->Loaded\n');
 
 Fs = trial(1).TDT_ECG1_samplingrate;
 
+if isempty(fieldnames(First_trial_INI))  
+   % choose  between [trial.TDT_ECG4]) or TDT_ECG1
+    out.ECG1 = double([ trial.TDT_ECG1]);
+    out.ECG4 = double([ trial.TDT_ECG1]);
+
+else
 out.ECG1 = double([First_trial_INI.ECG1 trial.TDT_ECG1]);
+end
 out.t    = double(0:1/Fs:1/Fs*(length(out.ECG1)-1));
 out.Fs   = double(Fs);
     
 
-if ~returnECGonly
-    out.POX1 = double([First_trial_INI.POX1 trial.TDT_POX1]);
-    out.CAP1 = double([First_trial_INI.CAP1 trial.TDT_CAP1]);
-end
+ if ~returnECGonly
+    if  isempty(fieldnames(First_trial_INI))
+    out.POX1 = double([ trial.TDT_POX1]);
+    out.CAP1 = double([ trial.TDT_CAP1]);
+    else
+     out.POX1 = double([First_trial_INI.POX1 trial.TDT_POX1]);
+     out.CAP1 = double([First_trial_INI.CAP1 trial.TDT_CAP1]);
+    end
+ end
 
 
 if TOPLOT,
@@ -70,6 +82,8 @@ if TOPLOT,
    ha(1) = subplot(3,1,1);
    plot(out.t,out.ECG1);
    title('ECG1');
+  
+   
    ha(2) = subplot(3,1,2);
    plot(out.t,out.POX1);
    title('POX1');

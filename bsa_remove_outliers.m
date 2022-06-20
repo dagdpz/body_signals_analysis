@@ -8,7 +8,7 @@ function [data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue]
 %
 % INPUTS:
 %		data                - data with outliers
-%		sensitivityFactor   - 
+%		sensitivityFactor   - larger value -> less sensitive (i.e. less outliers)
 %
 % OUTPUTS:
 %		data_wo_outliers		- data without outliers (outliers are replaced by NaNs)
@@ -45,7 +45,13 @@ MAD = median(absoluteDeviation);
 
 % Find outliers: absolute difference is more than some factor times the mad value.
 thresholdValue = sensitivityFactor * c * sensitivityFactor * MAD;
-idx_outliers = find(abs(absoluteDeviation) > thresholdValue);
+% if strcmp( criterium, 'BigDifference')
+% idx_outliers = find(abs(absoluteDeviation) > thresholdValue);
+% elseif strcmp( criterium, 'SmallDifference')
+% idx_outliers = find(abs(absoluteDeviation) < thresholdValue);
+% end
+
+ idx_outliers = find(abs(absoluteDeviation) > thresholdValue);
 
 idx_wo_outliers = setdiff(1:length(data),idx_outliers);
 outliers = data;
