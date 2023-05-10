@@ -305,11 +305,11 @@ Tab_outlier.R2R_consec = numel(idx_valid_R2R_consec);
 
 % RMSSD ("root mean square of successive differences")
 % the square root of the mean of the squares of the successive differences between ***adjacent*** intervals
-R2R_diff        = diff(R2R_valid);
+R2R_s_diff        = diff(R2R_valid_s);
 R2R_bpm_diff    = diff(R2R_valid_bpm);
 
 rmssd_R2R_valid_bpm     = sqrt(mean(R2R_bpm_diff(idx_valid_R2R_consec-1).^2));
-rmssd_R2R_valid_ms      = sqrt(mean((R2R_ms_diff(idx_valid_R2R_consec-1)).^2));
+rmssd_R2R_valid_s      = sqrt(mean((R2R_s_diff(idx_valid_R2R_consec-1)).^2));
 
 
 R2R_valid_spectrum = false;
@@ -320,7 +320,7 @@ if length(R2R_valid_locs)>1,
     resampling_rate = 5; % Hz
     t_interp = t(R2R_valid_locs(1)):1/resampling_rate:t(R2R_valid_locs(end));
 
-    BPS = interp1(t(R2R_valid_locs),R2R_valid,t_interp,'linear');
+    BPS = interp1(t(R2R_valid_locs),R2R_valid_s,t_interp,'linear');
 
     % compute the PSD, units of Pxx are squared seconds/Hz.
     % [Pxx,freq] = periodogram(BPS-mean(BPS),[],numel(BPS),resampling_rate);
@@ -349,12 +349,12 @@ end
 
 
 
-if length(R2R_valid) < Set.R2R_minValidData,
+if length(R2R_valid_s) < Set.R2R_minValidData,
     out.Rpeak_t                 = [];
     out.Rpeak_sample            = [];
     out.R2R_t                   = [];
     out.R2R_sample              = [];   
-    out.R2R_valid               = [];
+    out.R2R_valid_s               = [];
     out.R2R_valid_bpm           = [];
     out.idx_valid_R2R_consec    = [];
     out.mean_R2R_valid_bpm      = [];
@@ -376,14 +376,14 @@ else
     out.Rpeak_sample            = R_valid_locs;
     out.R2R_t                   = t(R2R_valid_locs);
     out.R2R_sample              = R2R_valid_locs;
-    out.R2R_valid               = R2R_valid;
+    out.R2R_valid_s               = R2R_valid_s;
     out.R2R_valid_bpm           = R2R_valid_bpm;
-    out.idx_valid_R2R_consec    = idx_valid_R2R_consec; % index into R2R_valid vector!
+    out.idx_valid_R2R_consec    = idx_valid_R2R_consec; % index into R2R_valid_s vector!
     out.mean_R2R_valid_bpm      = mean_R2R_valid_bpm;
     out.median_R2R_valid_bpm    = median_R2R_valid_bpm;
     out.std_R2R_valid_bpm       = std_R2R_valid_bpm;
     out.std_R2R_valid_ms       = std_R2R_valid_ms; 
-    out.rmssd_R2R_valid_ms      = rmssd_R2R_valid_ms;
+    out.rmssd_R2R_valid_ms      = rmssd_R2R_valid_s;
     out.rmssd_R2R_valid_bpm     = rmssd_R2R_valid_bpm;
     out.Pxx                     = Pxx;
     out.freq                    = freq;
@@ -464,7 +464,7 @@ if TOPLOT
     
     set(gca,'Xlim',[0 max(t)]);
     title(sprintf('R2R (s): %d valid, %d consecutive, %d outliers, RMSSD %.3f bpm | %.1f ms',...
-        length(R2R_valid_locs),length(idx_valid_R2R_consec),length(unique([idx_outliers_hampel' idx_to_delete_after_outliers])), rmssd_R2R_valid_bpm, rmssd_R2R_valid_ms));
+        length(R2R_valid_locs),length(idx_valid_R2R_consec),length(unique([idx_outliers_hampel' idx_to_delete_after_outliers])), rmssd_R2R_valid_bpm, rmssd_R2R_valid_s));
     ylabel('R2R (s)');
     legend({'valid','consecutive','after outliers','hampel outliers'},'location','Best');
     
