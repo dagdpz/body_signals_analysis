@@ -69,8 +69,65 @@ out = bsa_ecg_analyze_one_session('Y:\Projects\Pulv_Inac_ECG_respiration\Data\Co
 
 
 %% MAGNUS
-pathExcel = 'Y:\Logs\Inactivation\Magnus\Magnus_bodySignals_inactivation_log.xlsx';
+pathExcel = 'Y:\Logs\Phys\Magnus\Magnus_bodySignals_ephys_log.xlsx';
 settings_filename = 'bsa_settings_Magnus2019.m';
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220819',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20220819');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220901',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20220901');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220914',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20220914');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220915',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20220915');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220915',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20220915');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220916',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20220916');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220916',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20220916');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220919',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20220919');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220919',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20220919');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220920',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20220920');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220920',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20220920');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220921',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20220921');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220921',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20220921');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221115',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221115');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221115',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221115');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221118',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221118');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221118',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221118');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221122',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221122');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221122',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221122');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221125',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221125');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221125',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221125');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221206',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221206');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221206',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221206');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221222',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221222');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221222',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221222');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221229',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221229');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221229',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221229');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230104',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230104');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230104',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230104');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230106',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230106');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230106',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230106');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230112',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230112');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230112',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230112');
+
+out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230126',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230126');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230126',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230126');
+
+
+
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131',pathExcel,settings_filename,'Y:\Projects\Pulv_Inac_ECG_respiration\Data\Magnus\20190131');
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190213',pathExcel,settings_filename,'Y:\Projects\Pulv_Inac_ECG_respiration\Data\Magnus\20190213');
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190404',pathExcel,settings_filename,'Y:\Projects\Pulv_Inac_ECG_respiration\Data\Magnus\20190404');
