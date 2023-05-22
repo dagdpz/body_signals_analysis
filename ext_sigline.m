@@ -40,6 +40,7 @@ function ext_sigline(xs,lbl,h,yv)
 %   TODO: To avoid messing up legend, we should redo this function using
 %   drawing rather than plots? A work aroound for now is to plot legends b4
 %   calling this function.
+% 	FROM: https://www.mathworks.com/matlabcentral/fileexchange/68314-statistical-significance-line
 if nargin==1
     y=gety(gca);
     lbl=[];
