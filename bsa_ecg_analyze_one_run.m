@@ -305,7 +305,7 @@ Tab_outlier.R2R_consec = numel(idx_valid_R2R_consec);
 
 % RMSSD ("root mean square of successive differences")
 % the square root of the mean of the squares of the successive differences between ***adjacent*** intervals
-R2R_diff        = diff(R2R_valid);
+R2R_ms_diff        = diff(R2R_valid);
 R2R_bpm_diff    = diff(R2R_valid_bpm);
 
 rmssd_R2R_valid_bpm     = sqrt(mean(R2R_bpm_diff(idx_valid_R2R_consec-1).^2));
