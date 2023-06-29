@@ -4,7 +4,7 @@ Analysis of body signals: ECG, breathing (CAP), PPG
 
 How the different function are related to each other: 
 
-1. extract the ECG, CAP, POX-data from each TDT-Block & save the structure as mat-file
+1. extract the ECG, CAP, POX-data from each TDT block & save the structure as mat-file
 bsa_batch_processing.m calls  bsa_read_and_save_TDT_data_without_behavior.m
 
 2. Preprocessing
