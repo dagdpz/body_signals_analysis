@@ -214,8 +214,12 @@ mode_R2R        = mode(R2R);
 [hist_R2R,bins] = hist(R2R,[Set.min_R2R:0.01:1]);
 
 % invalidate all R2R less than minFactor_R2RMode (e.g. 0.66) of mode and more than maxFactor_R2RMode (e.g. 1.5) of mode
-idx_valid_R2R         = find((R2R> Set.minFactor_R2RMode*mode_R2R | R2R <  Set.maxFactor_R2RMode *mode_R2R));
+idx_valid_R2R         = find((R2R> Set.minFactor_R2RMode*mode_R2R & R2R <  Set.maxFactor_R2RMode *mode_R2R));
 idx_Invalid_R2R       = find((R2R< Set.minFactor_R2RMode*mode_R2R | R2R >  Set.maxFactor_R2RMode *mode_R2R));
+
+if Set.min_R2R  >  min(R2R(idx_valid_R2R)); disp(['evaluate again minR2R!  in SETTINGS:  ', num2str(Set.min_R2R),' data:  ' num2str(min(R2R(idx_valid_R2R))) ]);  end
+if Set.max_R2R  <  max(R2R(idx_valid_R2R)); disp(['evaluate again maxR2R!  in SETTINGS:  ', num2str(Set.max_R2R),' data:  ' num2str(max(R2R(idx_valid_R2R))) ]);  end
+
 
 detectedOutliers_mode = (length(idx_Invalid_R2R)/length(R2R))*100; 
 if Set.OutlierModus == 1; 
@@ -287,10 +291,12 @@ mode_R2R_valid          = mode(R2R_valid);
 [hist_R2R_valid,bins]   = hist(R2R_valid,bins);
 
 R2R_valid_bpm           = 60./R2R_valid;
+R2R_valid_ms            = 1000.*R2R_valid;% sec -> ms
+
 mean_R2R_valid_bpm      = mean(R2R_valid_bpm);
 median_R2R_valid_bpm    = median(R2R_valid_bpm);
 std_R2R_valid_bpm       = std(R2R_valid_bpm);
-
+std_R2R_valid_ms        = std(R2R_valid_ms);
 
 % find consecutive R2Rs
 idx_valid_R2R_consec = find([NaN diff(t(R2R_valid_locs))]< Set.maxFactor_R2RMode * mode_R2R_valid);
@@ -299,11 +305,12 @@ Tab_outlier.R2R_consec = numel(idx_valid_R2R_consec);
 
 % RMSSD ("root mean square of successive differences")
 % the square root of the mean of the squares of the successive differences between ***adjacent*** intervals
-R2R_diff = diff(R2R_valid);
-R2R_bpm_diff = diff(R2R_valid_bpm);
+R2R_ms_diff        = diff(R2R_valid);
+R2R_bpm_diff    = diff(R2R_valid_bpm);
 
 rmssd_R2R_valid_bpm     = sqrt(mean(R2R_bpm_diff(idx_valid_R2R_consec-1).^2));
-rmssd_R2R_valid_ms      = sqrt(mean((1000*R2R_diff(idx_valid_R2R_consec-1)).^2));
+rmssd_R2R_valid_ms      = sqrt(mean((R2R_ms_diff(idx_valid_R2R_consec-1)).^2));
+
 
 R2R_valid_spectrum = false;
 if length(R2R_valid_locs)>1,
@@ -350,9 +357,10 @@ if length(R2R_valid) < Set.R2R_minValidData,
     out.R2R_valid               = [];
     out.R2R_valid_bpm           = [];
     out.idx_valid_R2R_consec    = [];
-    out.mean_R2R_valid_bpm      = nan;
+    out.mean_R2R_valid_bpm      = [];
     out.median_R2R_valid_bpm    = [];
     out.std_R2R_valid_bpm       = [];
+    out.std_R2R_valid_ms        = [];    
     out.rmssd_R2R_valid_ms      = [];
     out.rmssd_R2R_valid_bpm     = [];
     out.Pxx                     = [];
@@ -374,6 +382,7 @@ else
     out.mean_R2R_valid_bpm      = mean_R2R_valid_bpm;
     out.median_R2R_valid_bpm    = median_R2R_valid_bpm;
     out.std_R2R_valid_bpm       = std_R2R_valid_bpm;
+    out.std_R2R_valid_ms       = std_R2R_valid_ms; 
     out.rmssd_R2R_valid_ms      = rmssd_R2R_valid_ms;
     out.rmssd_R2R_valid_bpm     = rmssd_R2R_valid_bpm;
     out.Pxx                     = Pxx;

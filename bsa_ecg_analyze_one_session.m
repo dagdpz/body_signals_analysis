@@ -122,8 +122,10 @@ if strcmp(par.dataOrigin, 'TDT'),
     ECG       = dat.ECG;
     n_blocks  = length(dat.ECG);
 else
-    combined_matfiles=dir([session_path filesep '*.mat']);
-    n_blocks = length(combined_matfiles);
+    combined_matfiles = dir([session_path filesep '*.mat']);
+    combined_matfiles_names = {combined_matfiles.name};
+    unqBlocks = unique(cellfun(@ (x) x(end-11:end-4), combined_matfiles_names, 'UniformOutput', 0)); % find the number of unique blocks in the combined files
+    n_blocks = length(unqBlocks);
 end
 
 %% Is there a difference between excel-sheet information & saved data-files?
