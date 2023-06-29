@@ -10,7 +10,6 @@ bsa_batch_processing.m calls  bsa_read_and_save_TDT_data_without_behavior.m
 
 2. Preprocessing
 
-
 bsa_ecg_analyze_one_session.m calls 
         - bsa_concatenate_trials_body_signals.m
         - bsa_ecg_analyze_one_run.m
