@@ -71,27 +71,7 @@ else
     capSignal = (-1)*capSignal;
 end
 
-% Step1: detrending
-capSignal = detrend(capSignal);
-
 capFiltered = smooth(capSignal)'; 
-
-% Step2: create a butterworth filter order selection (low pass filter)
-% Fn  = Fs/2;                                                 % Nyquist Frequency (Hz)
-% Wp  = 40/Fn;                                                % Passband Frequency (Normalised)
-% Ws  = 100/Fn;                                               % Stopband Frequency (Normalised)
-% Rp  = 1;                                                    % Passband Ripple (dB)
-% Rs  = 150;                                                  % Stopband Ripple (dB)
-% [n,Wn]  = buttord(Wp,Ws,Rp,Rs);                             % Filter Order
-% [z,p,k] = butter(n,Wn);
-% [sos,g] = zp2sos(z,p,k);
-% 
-% 
-% % Filter raw ECG using filtfilt from Matlab
-% capFiltered = filtfilt(sos, g, capSignal); 
-
-
-
 
 if 0 % Debug
     figure ('Name','Single-sided amplitude spectrum');
@@ -352,13 +332,12 @@ if TOPLOT
     plot(t,capFiltered,'b'); 
     plot(t(locs_min),capFiltered(locs_min),'bo','MarkerSize',6);
 
-    plot(t(locs_peak(idx_wo_outliers)),capFiltered(locs_peak(idx_wo_outliers)),'ko','MarkerSize',6);
-    plot(t(maybe_valid_pos_ecg_locs),capFiltered(maybe_valid_pos_ecg_locs),'kv','MarkerSize',6,'MarkerEdgeColor',[0.5 0.5 0.5]);
+    plot(t(locs_peak(idx_wo_outliers)),capSignal(locs_peak(idx_wo_outliers)),'ko','MarkerSize',6);
      % valid R peaks
-    plot(t(R_valid_locs),capFiltered(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
+    plot(t(R_valid_locs),capSignal(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
     %valid B2B intervals -> filled TRIANGLE
-    plot(t(B2B_valid_locs),capFiltered(B2B_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
-    plot(t(locs_peak(idx_outliers)),capFiltered(locs_peak(idx_outliers)),'bx');
+    plot(t(B2B_valid_locs),capSignal(B2B_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
+    plot(t(locs_peak(idx_outliers)),capSignal(locs_peak(idx_outliers)),'bx');
    
     %line for 
     plot([t(B2B_valid_locs(idx_valid_B2B_consec)) - B2B_valid(idx_valid_B2B_consec); t(B2B_valid_locs(idx_valid_B2B_consec))], ...
