@@ -98,7 +98,10 @@ MinPeakProminence = median (capFiltered_rectified)* Set.cap.MinPeakProminenceCoe
 % 1) amplitude of the previous & next minimum
 % 2) Distance between two peaks
 % 3) Min Peak height
-[pks,locs_peak]=findpeaks(capFiltered,'threshold',eps,'MinPeakProminence',MinPeakProminence,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
+[pks,locs_peak]=findpeaks(capFiltered, ...
+    'MinPeakProminence',MinPeakProminence, ...
+    'minpeakdistance',fix(Set.cap.min_P2P*Fs), ...
+    'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
 % find peaks which are next to each other without a minimum
 % locs = [locs_min, locs_peak]; 
 % locs = sort(locs); 
