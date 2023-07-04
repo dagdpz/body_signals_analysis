@@ -62,10 +62,10 @@ run(settings_path)
 n_samples       = length(capSignal);
 t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sample is time 0! (not 1/Fs)
 
-% Step0: flip cap signal if it's positive, leave the same if below zero
-% This will keep the signal the same even after swapping electrodes - plan
-% to reprogram vice versa to put positive signal into the cap analysis
-if median(capSignal) < 0
+% Step 1: flip cap signal if it's negative, leave the same if it's above zero
+% This will keep the signal the same after swapping connectors between TDT
+% and capnographic monitor (done by Luba in June 2023)
+if median(capSignal) > 0
     % do nothing to the signal
 else
     capSignal = (-1)*capSignal;
