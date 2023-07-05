@@ -19,3 +19,4 @@ bsa_ecg_analyze_one_session.m save as mat-file for each session with the followi
 
 See also: 
 https://github.com/neuromethods/neural-firing-and-cardiac-cycle-duration
+https://github.com/DamianoAzzalini/HER-preferences
