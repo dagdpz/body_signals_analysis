@@ -22,3 +22,5 @@ See also:
 https://github.com/neuromethods/neural-firing-and-cardiac-cycle-duration
 
 https://github.com/DamianoAzzalini/HER-preferences
+
+http://marianux.github.io/ecg-kit/
