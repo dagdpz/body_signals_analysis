@@ -24,3 +24,7 @@ https://github.com/neuromethods/neural-firing-and-cardiac-cycle-duration
 https://github.com/DamianoAzzalini/HER-preferences
 
 http://marianux.github.io/ecg-kit/
+
+https://python-heart-rate-analysis-toolkit.readthedocs.io/en/latest/index.html
+
+https://sites.google.com/view/tallon-baudry-lab/resources?authuser=0
