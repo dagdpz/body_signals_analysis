@@ -122,21 +122,21 @@ diff_peaks = [0 abs(diff(pks))];
 Tab_outlier.outlier = length(idx_outliers);
 Tab_outlier.NrRpeaks_orig       = length(pks); 
 
-appr_ecg_peak2peak_n_samples = mode(abs(diff(locs_peak(idx_wo_outliers)))); % rough number of samples between ecg R peaks
+appr_cap_peak2peak_n_samples = mode(abs(diff(locs_peak(idx_wo_outliers)))); % rough number of samples between ecg R peaks
 
 % half-way rectify - leave only positive values
 capFiltered_pos             = max(capFiltered,0);
 median(capFiltered_pos)
-[pos_ecg_pks,pos_ecg_locs]  = findpeaks(capFiltered_pos,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs));
+[~,pos_cap_locs]  = findpeaks(capFiltered_pos,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs));
 
 % find ecg peaks closest (in time) to valid energyProfile_tc peaks, within search_segment_n_samples
-search_segment_n_samples    = fix(appr_ecg_peak2peak_n_samples* Set.cap.fraction_B2B_look4peak);
-maybe_valid_pos_ecg_locs    = [];
+search_segment_n_samples    = fix(appr_cap_peak2peak_n_samples* Set.cap.fraction_B2B_look4peak);
+maybe_valid_pos_cap_locs    = [];
 for p = 1:length(idx_wo_outliers)
-    idx_overlap = intersect( pos_ecg_locs, locs_peak(idx_wo_outliers(p))-search_segment_n_samples : locs_peak(idx_wo_outliers(p))+search_segment_n_samples );
+    idx_overlap = intersect( pos_cap_locs, locs_peak(idx_wo_outliers(p))-search_segment_n_samples : locs_peak(idx_wo_outliers(p))+search_segment_n_samples );
     
     if ~isempty(idx_overlap)
-        maybe_valid_pos_ecg_locs = [maybe_valid_pos_ecg_locs idx_overlap(end)];
+        maybe_valid_pos_cap_locs = [maybe_valid_pos_cap_locs idx_overlap(end)];
     end
     
 end
@@ -144,7 +144,7 @@ end
 
 
 %% Breathing to breathing intervals
-B2B             = [NaN diff(t(maybe_valid_pos_ecg_locs))]; % 
+B2B             = [NaN diff(t(maybe_valid_pos_cap_locs))]; % 
 median_B2B      = median(B2B);
 mode_B2B        = mode(B2B);
 [hist_B2B,bins] = hist(B2B,[Set.cap.min_P2P:0.01:1]);
@@ -158,7 +158,7 @@ disp(['Fraction of B2B outliers detected using deviations from B2B mode: ', num2
 Tab_outlier.outlier_Mode_abs = length(idx_Invalid_B2B);
 Tab_outlier.outlier_Mode_pct = round((length(idx_Invalid_B2B)/length(B2B))*100 ,4); 
 
-t_valid_B2B                         = t(maybe_valid_pos_ecg_locs(idx_valid_B2B));
+t_valid_B2B                         = t(maybe_valid_pos_cap_locs(idx_valid_B2B));
 B2B_valid_before_hampel             = B2B(idx_valid_B2B);
 Tab_outlier.NrB2B_beforehampel      = length(B2B_valid_before_hampel); 
 %% remove outliers from B2B using hampel
@@ -197,9 +197,9 @@ Tab_outlier.outliers_hampel_pct = 100- (((length(idx_valid_B2B)+Tab_outlier.outl
 
 %R-peaks
 idx_valid_R     = unique([idx_valid_B2B idx_valid_B2B-1]); % add start of each valid B2B interval to valid R peaks
-R_valid_locs    = maybe_valid_pos_ecg_locs(idx_valid_R);
+R_valid_locs    = maybe_valid_pos_cap_locs(idx_valid_R);
 %B2Binterval
-B2B_valid_locs  = maybe_valid_pos_ecg_locs(idx_valid_B2B);
+B2B_valid_locs  = maybe_valid_pos_cap_locs(idx_valid_B2B);
 B2B_valid       = B2B(idx_valid_B2B);
 
 Tab_outlier.NrRpeaks_valid      = length(R_valid_locs); 
