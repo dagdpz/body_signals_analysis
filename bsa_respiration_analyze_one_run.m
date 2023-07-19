@@ -71,7 +71,7 @@ else
     capSignal = (-1)*capSignal;
 end
 
-capFiltered = smooth(capSignal)'; 
+capFiltered = smooth(capSignal, round(Set.cap.smoothing_window*Fs))'; % increase smoothing window to .25s; doesn't affect peak detection but is needed for further inspiration / expiration classification
 
 if 0 % Debug
     figure ('Name','Single-sided amplitude spectrum');

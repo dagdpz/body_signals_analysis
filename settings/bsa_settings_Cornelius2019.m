@@ -39,6 +39,7 @@ Set.R2R_minValidData = 100;
 % Set.hampel_T                        = 4; % threshold for hamplel outlier detection
 % Set.hampel_DX                       = 10; % (# R peaks) half width of hampel window for outlier detection
 
+Set.cap.smoothing_window                = 0.25; % s
 % properties for the respiration peak detection
 Set.cap.min_P2P                         = 1; % s
 Set.cap.eP_tc_minpeakheight_med_prop    = 1; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)

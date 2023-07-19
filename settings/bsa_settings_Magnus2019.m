@@ -30,6 +30,7 @@ Set.hampel_DX                       = 10; % (# R peaks) half width of hampel win
 
 Set.R2R_minValidData = 100; 
 
+Set.cap.smoothing_window                = 0.25; % s
 % properties for the respiration peak detection
 Set.cap.min_P2P                         = 1.7; % s
 Set.cap.eP_tc_minpeakheight_med_prop    = 0.3; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
