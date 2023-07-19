@@ -131,7 +131,7 @@ end
 %% Is there a difference between excel-sheet information & saved data-files?
 disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
 if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
-    BlockExcel = sum(~ses.nrblock_combinedFiles == 0 ); 
+    BlockExcel = length(unique(ses.nrblock_combinedFiles)); % count unique blocks
     disp(['Found ' num2str(BlockExcel ) ' blocks in the excel sheet']);
     if  ~(BlockExcel  ==  n_blocks) %~(sum(~or(ses.nrblock_combinedFiles == 0 ,ses.tasktype == -2))  ==  n_blocks)
         error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
