@@ -28,7 +28,8 @@ function out = bsa_concatenate_trials_body_signals(combined_matfile_path, return
 
 % ADDITIONAL INFO:
 % What is the function doing?
-% 1. combines the data from all trials & the data which were recorded before starting the task 
+% 1. combines data from initiation period of the 1st trial and data from 
+%   all trials, the beginning of the recording file is discarded
 % 2. plot all the data
 % 3. save the concatenated trials as .txt-file
 %%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
