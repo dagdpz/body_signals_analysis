@@ -7,6 +7,9 @@ Set.task.mintrials2 = 10; % task which are different from the main task
 Set.rest.Type       = 1; 
 Set.rest.reward     = [0 0]; 
 
+Set.path.ecg_save = 'Y:\Data\BodySignals\ECG\Bacchus\';
+Set.path.cap_save = 'Y:\Data\BodySignals\CAP\Bacchus\';
+Set.path.ecg_cap_save = 'Y:\Data\BodySignals\ECG_CAP\Bacchus\';
 
 Set.OutlierModus = 0; 
 

@@ -72,6 +72,15 @@ out = bsa_ecg_analyze_one_session('Y:\Projects\Pulv_Inac_ECG_respiration\Data\Co
 pathExcel = 'Y:\Logs\Phys\Magnus\Magnus_bodySignals_ephys_log.xlsx';
 settings_filename = 'bsa_settings_Magnus2019.m';
 
+sessionList = [20220921, 20230106, 20230518];
+
+for sessNum = 1:length(sessionList)
+    currSession = num2str(sessionList(sessNum));
+    [out_ecg, out_cap] = ...
+        bsa_ecg_cap_together_analyze_one_session(['Y:\Data\Magnus_phys_combined_monkeypsych_TDT\' currSession], pathExcel, settings_filename);
+end
+
+
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220921',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20220921');
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221115',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221115');
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221118',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221118');
