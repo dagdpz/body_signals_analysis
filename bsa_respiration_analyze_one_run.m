@@ -93,6 +93,23 @@ end
 %% full  rectification
 % part of the quarter
 capFiltered_rectified = ig_fullrectify(capFiltered); 
+
+% find remainders of inspiration (according to Singh, Howe, Malarvili,
+% 2018, J.Breath Res. S-T interval) - they're supposed to be negative 
+% deflections with plateaux
+cap_mode = mode(capFiltered_rectified); % find cap data mode - flat remaiders of inspiration are supposed to lay there
+fractionBelowMode = sum(capFiltered_rectified < cap_mode) / length(capFiltered_rectified);
+if fractionBelowMode > 0.5 % for meaningful data this parameter will be below 0.5
+    fraction_of_inspiration = sum(capFiltered_rectified < cap_mode) / length(capFiltered_rectified);
+else
+    fraction_of_inspiration = 2 * sum(capFiltered_rectified < cap_mode) / length(capFiltered_rectified); % find data points below the mode, they are supposed to be inspiration for sure, double them
+end
+inspiration_threshold = prctile(capFiltered_rectified, 100*fraction_of_inspiration); % below this value are inspiration points
+insp_idx = find(capFiltered_rectified < inspiration_threshold);
+insp_end_idx = find(diff(insp_idx)>500);
+insp_end_t = t(insp_idx(insp_end_idx)); % times of inspiration ends (the same as expiration starts)
+insp_end_sample = capFiltered_rectified(insp_idx(insp_end_idx)); % sample of inspiration ends (the same as expiration starts)
+
 MinPeakProminence = median (capFiltered_rectified)* Set.cap.MinPeakProminenceCoef; 
 % find peaks according to three critera:
 % 1) amplitude of the previous & next minimum
@@ -161,6 +178,33 @@ Tab_outlier.outlier_Mode_pct = round((length(idx_Invalid_B2B)/length(B2B))*100 ,
 t_valid_B2B                         = t(maybe_valid_pos_cap_locs(idx_valid_B2B));
 B2B_valid_before_hampel             = B2B(idx_valid_B2B);
 Tab_outlier.NrB2B_beforehampel      = length(B2B_valid_before_hampel); 
+
+%% match P2P intervals and expiration / inspiration
+maybe_valid_pos_cap_times = t(maybe_valid_pos_cap_locs);
+
+t_valid_inspStart = nan(length(maybe_valid_pos_cap_times), 1);
+t_valid_inspEnd = nan(length(maybe_valid_pos_cap_times), 1);
+t_valid_expStart = nan(length(maybe_valid_pos_cap_times), 1);
+t_valid_expEnd = nan(length(maybe_valid_pos_cap_times), 1);
+
+for ii = 1:length(maybe_valid_pos_cap_times) % loop through peaks
+    
+    currPeakTime = maybe_valid_pos_cap_times(ii);
+    nextInspEndId = find(insp_end_t > currPeakTime, 1, 'first');
+    
+    if ~isempty(insp_end_t(nextInspEndId))
+        if insp_end_t(nextInspEndId) - currPeakTime > Set.cap.min_P2P / 2 && ...% at least half of a minimal cycle duration
+            insp_end_t(nextInspEndId) - currPeakTime < 2
+            t_valid_inspStart(ii) = currPeakTime;
+            t_valid_inspEnd(ii) = insp_end_t(nextInspEndId);
+            t_valid_expStart(ii) = insp_end_t(nextInspEndId); % inspiration end is expiration start
+            t_valid_expEnd(ii) = maybe_valid_pos_cap_times(ii+1); % expiration end is next R-peak start
+        end
+    end
+    
+end
+
+
 %% remove outliers from B2B using hampel
 [YY,idx_outliers_hampel] = hampel(t_valid_B2B,B2B_valid_before_hampel, Set.cap.hampel_DX, Set.cap.hampel_T);
 
@@ -283,6 +327,10 @@ if length(B2B_valid) < Set.B2B_minValidData,
     out.B2B_sample              = [];   
     out.B2B_valid               = [];
     out.B2B_valid_bpm           = [];
+    out.inspStart_t             = [];
+    out.inspEnd_t               = [];
+    out.expStart_t              = [];
+    out.expEnd_t                = [];
     out.idx_valid_B2B_consec    = [];
     out.mean_B2B_valid_bpm      = nan;
     out.median_B2B_valid_bpm    = [];
@@ -302,6 +350,10 @@ else
     out.B2B_sample              = B2B_valid_locs;
     out.B2B_valid               = B2B_valid;
     out.B2B_valid_bpm           = B2B_valid_bpm;
+    out.inspStart_t             = t_valid_inspStart; % times of inspiration starts
+    out.inspEnd_t               = t_valid_inspEnd; % times of inspiration ends
+    out.expStart_t              = t_valid_expStart; % times of expiration starts
+    out.expEnd_t                = t_valid_expEnd; % times of expiration ends
     out.idx_valid_B2B_consec    = idx_valid_B2B_consec; % index into B2B_valid vector!
     out.mean_B2B_valid_bpm      = mean_B2B_valid_bpm;
     out.median_B2B_valid_bpm    = median_B2B_valid_bpm;
@@ -331,7 +383,7 @@ if TOPLOT
 %     set(gca,'xlim',[172 173]);    
 %     
     ha1 = subplot(4,4,[1:4]); 
-    plot(t,capSignal,'g'); hold on;
+    capPlot1 = plot(t,capSignal,'g'); hold on;
     plot(t,capFiltered,'b'); 
     plot(t(locs_min),capFiltered(locs_min),'bo','MarkerSize',6);
 
@@ -345,7 +397,7 @@ if TOPLOT
     %line for 
     plot([t(B2B_valid_locs(idx_valid_B2B_consec)) - B2B_valid(idx_valid_B2B_consec); t(B2B_valid_locs(idx_valid_B2B_consec))], ...
          [capFiltered(B2B_valid_locs(idx_valid_B2B_consec)); capFiltered(B2B_valid_locs(idx_valid_B2B_consec))],'k');
- 
+    plot([t_valid_inspStart t_valid_inspEnd], [0 0], 'b', [t_valid_expStart t_valid_expEnd], [.1 .1], 'r', 'LineWidth', 3)
  
      
     set(gca,'Xlim',[0 max(t)]);
