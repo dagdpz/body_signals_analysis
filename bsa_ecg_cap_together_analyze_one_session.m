@@ -61,16 +61,16 @@ for blockNum = 1:length(out)
             out(blockNum).R2R_t > out_cap(blockNum).expStart_t(currBreath) & ...
             out(blockNum).R2R_t < out_cap(blockNum).expEnd_t(currBreath);
         
-        is_RR_interval_insp(currInspRpeakIds) = true;
-        is_RR_interval_exp(currExpRpeakIds) = true;
+        is_RR_insp(currInspRRids) = true;
+        is_RR_exp(currExpRRids) = true;
         
     end
     
     if ~isempty(out(blockNum))
-        out(blockNum).is_R_peak_insp          = is_R_peak_insp;
-        out(blockNum).is_R_peak_exp           = is_R_peak_exp;
-        out(blockNum).is_RR_interval_insp     = is_RR_interval_insp;
-        out(blockNum).is_RR_interval_exp      = is_RR_interval_exp;
+        out(blockNum).is_R_peak_insp          = logical(is_R_peak_insp);
+        out(blockNum).is_R_peak_exp           = logical(is_R_peak_exp);
+        out(blockNum).is_RR_insp              = logical(is_RR_insp);
+        out(blockNum).is_RR_exp               = logical(is_RR_exp);
     else
         out(blockNum).is_R_peak_insp          = [];
         out(blockNum).is_R_peak_exp           = [];
