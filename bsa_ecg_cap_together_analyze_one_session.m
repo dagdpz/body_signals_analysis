@@ -52,14 +52,30 @@ for blockNum = 1:length(out)
         is_R_peak_insp(currInspRpeakIds) = true;
         is_R_peak_exp(currExpRpeakIds) = true;
         
+        % check if starts of RR-intervals belong to a given inspiration /
+        % expiration phase
+        currInspRRids = ...
+            out(blockNum).R2R_t > out_cap(blockNum).inspStart_t(currBreath) & ...
+            out(blockNum).R2R_t < out_cap(blockNum).inspEnd_t(currBreath);
+        currExpRRids = ...
+            out(blockNum).R2R_t > out_cap(blockNum).expStart_t(currBreath) & ...
+            out(blockNum).R2R_t < out_cap(blockNum).expEnd_t(currBreath);
+        
+        is_RR_interval_insp(currInspRpeakIds) = true;
+        is_RR_interval_exp(currExpRpeakIds) = true;
+        
     end
     
     if ~isempty(out(blockNum))
         out(blockNum).is_R_peak_insp          = is_R_peak_insp;
         out(blockNum).is_R_peak_exp           = is_R_peak_exp;
+        out(blockNum).is_RR_interval_insp     = is_RR_interval_insp;
+        out(blockNum).is_RR_interval_exp      = is_RR_interval_exp;
     else
         out(blockNum).is_R_peak_insp          = [];
         out(blockNum).is_R_peak_exp           = [];
+        out(blockNum).is_RR_interval_insp     = [];
+        out(blockNum).is_RR_interval_exp      = [];
     end
     
     save([Set.path.ecg_cap_save currDate '_ecg_cap.mat'], 'out', 'out_cap')
