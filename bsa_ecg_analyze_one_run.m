@@ -350,9 +350,9 @@ end
 
 
 if length(R2R_valid) < Set.R2R_minValidData,
-    out.Rpeak_t                 = [];
+    out.Rpeak_t                 = NaN;
     out.Rpeak_sample            = [];
-    out.R2R_t                   = [];
+    out.R2R_t                   = NaN;
     out.R2R_sample              = [];   
     out.R2R_valid               = [];
     out.R2R_valid_bpm           = [];
@@ -370,7 +370,7 @@ if length(R2R_valid) < Set.R2R_minValidData,
     out.hfPower                 = [];
     out.totPower                = [];
     out.nrblock                 = []; 
-    out.nrblock_combinedFiles   = [];
+    out.nrblock_combinedFiles   = NaN;
 else
     out.Rpeak_t                 = t(R_valid_locs);
     out.Rpeak_sample            = R_valid_locs;
