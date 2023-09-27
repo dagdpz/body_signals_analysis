@@ -1,4 +1,4 @@
-function [out,Tab_outlier] = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,TOPLOT,i_block,NrBlock)
+function [out,Tab_outlier] = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,TOPLOT,i_block,NrBlock,FigInfo)
 %bsa_ecg_analyze_one_run  - analyses ECG in one run/block
 %
 % USAGE:
@@ -36,7 +36,7 @@ function [out,Tab_outlier] = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,
 
 % filtering according to https://de.mathworks.com/matlabcentral/answers/270238-how-can-i-filter-ecg-signals-with-high-motion-artifact
 % (or see also https://de.mathworks.com/matlabcentral/answers/364788-ecg-signal-artifact-removing)
-%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %{
@@ -47,12 +47,19 @@ ecgSignal = double(dat.ECG{5});
 %}
 
 
-if nargin < 3,
+if nargin < 4
     TOPLOT = true;
 end
 
+if nargin < 5
+    i_block = 1;
+end
 
-if nargin < 4,
+if nargin < 6
+    NrBlock = 1;
+end 
+
+if nargin < 7
     FigInfo = '';
 end
 
@@ -88,21 +95,21 @@ ecgFiltered = filtfilt(sos, g, ecgSignal);
 % [n,Wn]  = buttord(Wp,Ws,Rp,Rs);                               % Filter Order
 % [z,p,k] = butter(n,Wn);
 % [sos,g] = zp2sos(z,p,k);
-% 
+%
 % freqz(sos,512,Fs);
 % title(sprintf('n = %d Butterworth Filter',n))
-% 
-% ecgFiltered_artifact = filtfilt(sos, g, ecgSignal); 
+%
+% ecgFiltered_artifact = filtfilt(sos, g, ecgSignal);
 
 
 if 0 % Debug
-    figure ('Name','Single-sided amplitude spectrum');
+    figure('Name','Single-sided amplitude spectrum');
     ft_original = fft(ecgSignal)/n_samples;         % Fourier Transform
     Fv = linspace(0, 1, fix(n_samples/2)+1)*Fn;     % Frequency Vector
     Fv = Fv(Fv<60); % limit to 60 Hz
     
-    ft_filtered = fft(ecgFiltered)/n_samples;  
-
+    ft_filtered = fft(ecgFiltered)/n_samples;
+    
     plot(Fv, abs(ft_original(1:length(Fv)))*2,'b'); hold on
     plot(Fv, abs(ft_filtered(1:length(Fv)))*2,'g');
     
@@ -122,7 +129,7 @@ sca = wavelet_init_scales(minFreq/2, 2*maxFreq, Set.wv_scalesPerDecade);
 
 if ~Set.segment_length || t(end) < Set.segment_length, % process entire block at once - can be very slow for large blocks
     sig = struct('val',ecgFiltered, 'period', 1/Fs);
-       
+    
     energyProfile_tc = get_energy_profile(sig,waveName,sca);
     n_segments = 0;
     
@@ -139,25 +146,25 @@ else % chop to segments
         ind = ind(ind>0); % only important for the last segment
         sig = struct('val',ecgFiltered(ind), 'period', 1/Fs);
         energyProfile_tc_segm = get_energy_profile(sig,waveName,sca);
-        if s == 1, % first segment
+        if s == 1 % first segment
             energyProfile_tc = energyProfile_tc_segm(1:end - n_overlap/2);
-        elseif s<n_segments,
+        elseif s<n_segments
             energyProfile_tc = [energyProfile_tc energyProfile_tc_segm(n_overlap/2+1:end - n_overlap/2)];
         else % last segment
             energyProfile_tc = [energyProfile_tc energyProfile_tc_segm(n_overlap/2+1:end)];
         end
         
-%         if s == size(seg_ind,2)-1, % one before last segment
-%             ind_last = seg_ind(:,s+1);
-%             ind_last = ind_last(ind_last>0);
-%             if numel(ind_last) < fix(Set.segment_length*Fs)/3, % last segment is shorter than 1/3 of desired segment length
-%                 ind = [ind; ind_last]; % add last short segment to the previous segment
-%             end
-%         end
+        %         if s == size(seg_ind,2)-1, % one before last segment
+        %             ind_last = seg_ind(:,s+1);
+        %             ind_last = ind_last(ind_last>0);
+        %             if numel(ind_last) < fix(Set.segment_length*Fs)/3, % last segment is shorter than 1/3 of desired segment length
+        %                 ind = [ind; ind_last]; % add last short segment to the previous segment
+        %             end
+        %         end
         
     end
 end
-    
+
 % Find spectrum of energyProfile
 % ft_energyProfile_tc = fft(energyProfile_tc - mean(energyProfile_tc))/n_samples;         % Fourier Transform
 % Fv = linspace(0, 1, fix(n_samples/2)+1)*Fn;     % Frequency Vector
@@ -168,7 +175,7 @@ end
 % [z p k] = butter(4, [2 10]/(Fs/2), 'stop');
 % [sos,g]=zp2sos(z,p,k); % Convert to 2nd order sections form
 % freqz(sos,512,Fs); % check filter
-% energyProfile_tc_filt = filtfilt(sos, g, energyProfile_tc); 
+% energyProfile_tc_filt = filtfilt(sos, g, energyProfile_tc);
 
 % all kinds of smoothing attempts
 % energyProfile_tc_smoothed = smooth(energyProfile_tc,fix(Fs))';
@@ -179,7 +186,7 @@ end
 
 range_energyProfile_tc = max(energyProfile_tc) - min(energyProfile_tc);
 [pks,locs]=findpeaks(energyProfile_tc,'threshold',eps,'minpeakdistance',fix(Set.min_R2R*Fs),'minpeakheight',Set.eP_tc_minpeakheight_med_prop*median(energyProfile_tc));
-Tab_outlier.NrRpeaks_orig    = length(pks); 
+Tab_outlier.NrRpeaks_orig    = length(pks);
 
 
 diff_peaks = [0 abs(diff(pks))];
@@ -208,42 +215,43 @@ for p = 1:length(idx_wo_outliers)
 end
 
 %% R2R intervals
-R2R             = [NaN diff(t(maybe_valid_pos_ecg_locs))]; % 
+R2R             = [NaN diff(t(maybe_valid_pos_ecg_locs))]; %
 median_R2R      = median(R2R);
 mode_R2R        = mode(R2R);
 [hist_R2R,bins] = hist(R2R,[Set.min_R2R:0.01:1]);
 
 % invalidate all R2R less than minFactor_R2RMode (e.g. 0.66) of mode and more than maxFactor_R2RMode (e.g. 1.5) of mode
 idx_valid_R2R         = find((R2R> Set.minFactor_R2RMode*mode_R2R & R2R <  Set.maxFactor_R2RMode *mode_R2R));
-idx_Invalid_R2R       = find((R2R< Set.minFactor_R2RMode*mode_R2R | R2R >  Set.maxFactor_R2RMode *mode_R2R));
+idx_invalid_R2R       = find((R2R< Set.minFactor_R2RMode*mode_R2R | R2R >  Set.maxFactor_R2RMode *mode_R2R));
 
 if Set.min_R2R  >  min(R2R(idx_valid_R2R)); disp(['evaluate again minR2R!  in SETTINGS:  ', num2str(Set.min_R2R),' data:  ' num2str(min(R2R(idx_valid_R2R))) ]);  end
 if Set.max_R2R  <  max(R2R(idx_valid_R2R)); disp(['evaluate again maxR2R!  in SETTINGS:  ', num2str(Set.max_R2R),' data:  ' num2str(max(R2R(idx_valid_R2R))) ]);  end
 
 
-detectedOutliers_mode = (length(idx_Invalid_R2R)/length(R2R))*100; 
-if Set.OutlierModus == 1; 
-disp(['Fraction of R2R outliers detected using deviations from R2R mode: ', num2str(detectedOutliers_mode) ])
+detectedOutliers_mode = (length(idx_invalid_R2R)/length(R2R))*100;
+if Set.OutlierModus == 1
+    disp(['Fraction of R2R outliers detected using deviations from R2R mode: ', num2str(detectedOutliers_mode) ])
 end
-Tab_outlier.outlier_Mode_abs = length(idx_Invalid_R2R);
-Tab_outlier.outlier_Mode_pct = round((length(idx_Invalid_R2R)/length(R2R))*100 ,4); 
+Tab_outlier.outlier_Mode_abs = length(idx_invalid_R2R);
+Tab_outlier.outlier_Mode_pct = round((length(idx_invalid_R2R)/length(R2R))*100 ,4);
 
 t_valid_R2R                         = t(maybe_valid_pos_ecg_locs(idx_valid_R2R));
 R2R_valid_before_hampel             = R2R(idx_valid_R2R);
-Tab_outlier.NrR2R_beforehampel      = length(R2R_valid_before_hampel); 
+Tab_outlier.NrR2R_beforehampel      = length(R2R_valid_before_hampel);
+
 %% remove outliers from R2R using hampel
 [YY,idx_outliers_hampel] = hampel(t_valid_R2R,R2R_valid_before_hampel, Set.hampel_DX, Set.hampel_T);
 idx_to_delete = [];
 idx_to_delete_after_outliers = [];
 Tab_outlier.outliers_hampel_abs = sum(idx_outliers_hampel);
 
-if sum(idx_outliers_hampel), % there are outliers
+if sum(idx_outliers_hampel) % there are outliers
     idx_outliers_hampel = find(idx_outliers_hampel); % convert to numbers
-
-    for k = 1:length(idx_outliers_hampel),
+    
+    for k = 1:length(idx_outliers_hampel)
         idx_to_delete = [idx_to_delete idx_outliers_hampel(k)];
         
-        if idx_outliers_hampel(k)+1 <= length(idx_valid_R2R), % outlier not last R2R
+        if idx_outliers_hampel(k)+1 <= length(idx_valid_R2R) % outlier not last R2R
             if t_valid_R2R(idx_outliers_hampel(k)+1) - t_valid_R2R(idx_outliers_hampel(k)) < 1.5*mode_R2R,
                 idx_to_delete = [idx_to_delete idx_outliers_hampel(k)+1];
                 idx_to_delete_after_outliers = [idx_to_delete_after_outliers idx_outliers_hampel(k)+1];
@@ -256,10 +264,10 @@ if sum(idx_outliers_hampel), % there are outliers
     idx_valid_R2R(idx_to_delete) = []; % delete outliers, and also next R2R after each outlier, if it is consecutive
     
 end
-detectedOutlier2                = 100-((length(idx_valid_R2R)/length(R2R))*100); 
+detectedOutlier2                = 100-((length(idx_valid_R2R)/length(R2R))*100);
 
-if Set.OutlierModus == 1; 
-disp(['Fraction of R2R outliers detected using deviations from R2R mode and Hampel: ', num2str(detectedOutlier2) ])
+if Set.OutlierModus == 1
+    disp(['Fraction of R2R outliers detected using deviations from R2R mode and Hampel: ', num2str(detectedOutlier2) ])
 end
 
 Tab_outlier.outliers_delete_abs = length(idx_to_delete);
@@ -273,13 +281,14 @@ R_valid_locs    = maybe_valid_pos_ecg_locs(idx_valid_R);
 R2R_valid_locs  = maybe_valid_pos_ecg_locs(idx_valid_R2R);
 R2R_valid       = R2R(idx_valid_R2R);
 
-Tab_outlier.NrRpeaks_valid    = length(R_valid_locs); 
-Tab_outlier.NrR2R_valid       = length(R2R_valid); 
+Tab_outlier.NrRpeaks_valid    = length(R_valid_locs);
+Tab_outlier.NrR2R_valid       = length(R2R_valid);
 Tab_outlier.outliers_all_abs    = Tab_outlier.outliers_delete_abs  +   Tab_outlier.outlier_Mode_abs    + Tab_outlier.outlier;
 Tab_outlier.outliers_all_pct    = (Tab_outlier.outliers_all_abs/Tab_outlier.NrRpeaks_orig)*100;
-if Set.OutlierModus == 1; 
-disp(['Nr of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outliers_all_abs) ])
-disp(['Fraction of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outliers_all_pct) ])
+
+if Set.OutlierModus == 1
+    disp(['Nr of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outliers_all_abs) ])
+    disp(['Fraction of deleted R peaks & R2R outliers: ', num2str(Tab_outlier.outliers_all_pct) ])
 end
 
 
@@ -313,15 +322,15 @@ rmssd_R2R_valid_ms      = sqrt(mean((R2R_ms_diff(idx_valid_R2R_consec-1)).^2));
 
 
 R2R_valid_spectrum = false;
-if length(R2R_valid_locs)>1,
+if length(R2R_valid_locs)>1
     R2R_valid_spectrum = true;
     % BPS spectrum
     % https://de.mathworks.com/matlabcentral/answers/143654-need-an-example-for-calculating-power-spectrum-density
     resampling_rate = 5; % Hz
     t_interp = t(R2R_valid_locs(1)):1/resampling_rate:t(R2R_valid_locs(end));
-
+    
     BPS = interp1(t(R2R_valid_locs),R2R_valid,t_interp,'linear');
-
+    
     % compute the PSD, units of Pxx are squared seconds/Hz.
     % [Pxx,freq] = periodogram(BPS-mean(BPS),[],numel(BPS),resampling_rate);
     [Pxx,freq] = periodogram(BPS-mean(BPS),hamming(length(BPS)),512,resampling_rate);
@@ -335,32 +344,32 @@ if length(R2R_valid_locs)>1,
     lfPower     = bandpower(Pxx,freq,[0.04 0.15],'psd'); % units of sec^2
     hfPower     = bandpower(Pxx,freq,[0.15 0.5],'psd'); % units of sec^2
     totPower    = bandpower(Pxx,freq,'psd'); % units of sec^2
-    % you can then take the ratio of lf, hf, etc. to totPower * 100 to get the percentages etc.    
+    % you can then take the ratio of lf, hf, etc. to totPower * 100 to get the percentages etc.
 end
 
 %% How "much time of the run" was deleted related to the detection of outlier?
 Tab_outlier.durationRun_s                   = max(t);
 Tab_outlier.duration_NotValidSegments_s     = max(t)-sum(R2R(idx_valid_R2R));
-Tab_outlier.nrblock                         = i_block; 
+Tab_outlier.nrblock                         = i_block;
 Tab_outlier.nrblock_combinedFiles           = NrBlock;
-if Set.OutlierModus == 1; 
-display(Tab_outlier)
+if Set.OutlierModus == 1
+    display(Tab_outlier);
 end
 
 
 
-if length(R2R_valid) < Set.R2R_minValidData,
+if length(R2R_valid) < Set.R2R_minValidData
     out.Rpeak_t                 = [];
     out.Rpeak_sample            = [];
     out.R2R_t                   = [];
-    out.R2R_sample              = [];   
+    out.R2R_sample              = [];
     out.R2R_valid               = [];
     out.R2R_valid_bpm           = [];
     out.idx_valid_R2R_consec    = [];
     out.mean_R2R_valid_bpm      = [];
     out.median_R2R_valid_bpm    = [];
     out.std_R2R_valid_bpm       = [];
-    out.std_R2R_valid_ms        = [];    
+    out.std_R2R_valid_ms        = [];
     out.rmssd_R2R_valid_ms      = [];
     out.rmssd_R2R_valid_bpm     = [];
     out.Pxx                     = [];
@@ -369,20 +378,20 @@ if length(R2R_valid) < Set.R2R_minValidData,
     out.lfPower                 = [];
     out.hfPower                 = [];
     out.totPower                = [];
-    out.nrblock                 = []; 
+    out.nrblock                 = [];
     out.nrblock_combinedFiles   = [];
 else
     out.Rpeak_t                 = t(R_valid_locs);
     out.Rpeak_sample            = R_valid_locs;
-    out.R2R_t                   = t(R2R_valid_locs);
+    out.R2R_t                   = t(R2R_valid_locs); % time of R2R refers to the end of the interval, i.e. 2nd R-peak in a pair
     out.R2R_sample              = R2R_valid_locs;
     out.R2R_valid               = R2R_valid;
     out.R2R_valid_bpm           = R2R_valid_bpm;
-    out.idx_valid_R2R_consec    = idx_valid_R2R_consec; % index into R2R_valid vector!
+    out.idx_valid_R2R_consec    = idx_valid_R2R_consec; % index into R2R_valid vector! consec means it is preceeded by a valid R2R interval
     out.mean_R2R_valid_bpm      = mean_R2R_valid_bpm;
     out.median_R2R_valid_bpm    = median_R2R_valid_bpm;
     out.std_R2R_valid_bpm       = std_R2R_valid_bpm;
-    out.std_R2R_valid_ms       = std_R2R_valid_ms; 
+    out.std_R2R_valid_ms       = std_R2R_valid_ms;
     out.rmssd_R2R_valid_ms      = rmssd_R2R_valid_ms;
     out.rmssd_R2R_valid_bpm     = rmssd_R2R_valid_bpm;
     out.Pxx                     = Pxx;
@@ -391,8 +400,8 @@ else
     out.lfPower                 = lfPower;
     out.hfPower                 = hfPower;
     out.totPower                = totPower;
-    out.nrblock                   = i_block ; 
-    out.nrblock_combinedFiles     = NrBlock ; 
+    out.nrblock                   = i_block ;
+    out.nrblock_combinedFiles     = NrBlock ;
 end
 
 
@@ -402,41 +411,41 @@ end
 out.hf = [];
 
 if TOPLOT
-    hf = figure('Name',sprintf('block%02d',i_block),'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
+    hf = figure('Name',[FigInfo sprintf('block%02d',i_block)],'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
     
     %% single HR-peak
-%     t = t*1000; 
-%     plot(t,ecgSignal,'b'); hold on;
-%     set(gca,'xlim',[172 173]);    
-%     
-    ha1 = subplot(4,4,[1:4]); 
+    %     t = t*1000;
+    %     plot(t,ecgSignal,'b'); hold on;
+    %     set(gca,'xlim',[172 173]);
+    %
+    ha1 = subplot(4,4,[1:4]);
     plot(t,ecgSignal,'b'); hold on;
-    plot(t,ecgFiltered,'g');    
+    plot(t,ecgFiltered,'g');
     plot(t(locs(idx_wo_outliers)),ecgFiltered(locs(idx_wo_outliers)),'ko','MarkerSize',6);
     plot(t(maybe_valid_pos_ecg_locs),ecgFiltered(maybe_valid_pos_ecg_locs),'kv','MarkerSize',6,'MarkerEdgeColor',[0.5 0.5 0.5]);
-     % valid R peaks
+    % valid R peaks
     plot(t(R_valid_locs),ecgFiltered(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
     %valid R2R intervals -> filled TRIANGLE
     plot(t(R2R_valid_locs),ecgFiltered(R2R_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
     plot(t(locs(idx_outliers)),ecgFiltered(locs(idx_outliers)),'bx');
-   
-    %line for 
+    
+    %line for
     plot([t(R2R_valid_locs(idx_valid_R2R_consec)) - R2R_valid(idx_valid_R2R_consec); t(R2R_valid_locs(idx_valid_R2R_consec))], ...
-         [ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec)); ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec))],'k');
- 
-    if n_segments, % mark segment borders
+        [ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec)); ecgFiltered(R2R_valid_locs(idx_valid_R2R_consec))],'k');
+    
+    if n_segments % mark segment borders
         ig_add_multiple_vertical_lines(t(seg_ind(1,2:end)),'Color',[0.9294    0.6941    0.1255]);
     end
-     
+    
     set(gca,'Xlim',[0 max(t)]);
     xlabel('Time (s)');
     title(sprintf('ECG: %d valid peaks, %d valid R2R intervals',length(R_valid_locs),length(R2R_valid_locs)));
     if isempty(idx_outliers)
-    legend({'ecgSignal','ecgFiltered','allPeaks','only posPeaks','valid Peaks','valid R2Rinterval'},'location','Best');
+        legend({'ecgSignal','ecgFiltered','allPeaks','only posPeaks','valid Peaks','valid R2Rinterval'},'location','Best');
     else
-    legend({'ecgSignal','ecgFiltered','allPeaks','posPeaks','valid Rpeaks','valid R2Rinterval','outlier.diff Peaks'},'location','Best');
+        legend({'ecgSignal','ecgFiltered','allPeaks','posPeaks','valid Rpeaks','valid R2Rinterval','outlier.diff Peaks'},'location','Best');
     end
- 
+    
     
     ha2 = subplot(4,4,[5:8]);
     plot(t,energyProfile_tc,'g'); hold on
@@ -458,7 +467,7 @@ if TOPLOT
     plot(t_valid_R2R(idx_to_delete_after_outliers),R2R_valid_before_hampel(idx_to_delete_after_outliers),'cx'); hold on
     plot(t_valid_R2R(idx_outliers_hampel),R2R_valid_before_hampel(idx_outliers_hampel),'rx'); hold on
     
-    if R2R_valid_spectrum,
+    if R2R_valid_spectrum
         % plot(t_interp,BPS,'y','Color',[0.4706    0.3059    0.4471]);
     end
     
@@ -494,14 +503,14 @@ if TOPLOT
     ig_set_xy_axes_equal;
     ig_add_equality_line;
     
-    if R2R_valid_spectrum,
+    if R2R_valid_spectrum
         subplot(4,4,16);
         % plot(freq,Pxx,'k'); hold on;
         % plot(freq_w,Pxx_w,'m'); hold on;
         % plot(freq(freq>0 & freq<0.04),Pxx(freq>0 & freq<0.04),'b');
         plot(freq(freq>=0.04 & freq<=0.15),Pxx(freq>=0.04 & freq<=0.15),'r'); hold on
-        plot(freq(freq>=0.15 & freq<=0.5),Pxx(freq>=0.15 & freq<=0.5),'g'); 
-        plot(freq(freq>0.5 & freq<=1),Pxx(freq>0.5 & freq<=1),'k'); 
+        plot(freq(freq>=0.15 & freq<=0.5),Pxx(freq>=0.15 & freq<=0.5),'g');
+        plot(freq(freq>0.5 & freq<=1),Pxx(freq>0.5 & freq<=1),'k');
         set(gca,'Xlim',[0 1]);
         xlabel('Hz');
         ylabel('ms^2 / Hz');
