@@ -17,7 +17,7 @@ bsa_ecg_analyze_one_session.m loads the created mat-file from bsa_read_and_save_
 bsa_ecg_analyze_one_session.m savse mat-file for each session
 
 
-See also also related packages: 
+## See also also related packages: 
 
 https://github.com/neuromethods/neural-firing-and-cardiac-cycle-duration
 
