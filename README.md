@@ -18,7 +18,7 @@ bsa_ecg_analyze_one_session.m saves mat-file for each session
 
 ## out structure conventions
 ```
-load('Y:\Projects\Pulv_bodysignal\Magnus_SDT\20230511_ecg.mat'); % example file
+load('Y:\Data\BodySignals\ECG\Magnus\20230531\20230531_ecg.mat'); % example file
 ig_add_multiple_vertical_lines(out(1).Rpeak_t,'Color','r'); % all valid R-peaks
 ig_add_multiple_vertical_lines(out(1).R2R_t,'Color','b','LineStyle',':'); % all valid R2R intervals (time corresponds to 2nd R-peak in a pair)
 hold on; plot(out(1).R2R_t(out(1).idx_valid_R2R_consec),0.5,'go'); % consequtive R2R intervals (i.e. preceeded by a valid interval) 
