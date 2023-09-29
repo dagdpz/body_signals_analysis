@@ -41,3 +41,6 @@ http://marianux.github.io/ecg-kit/
 https://python-heart-rate-analysis-toolkit.readthedocs.io/en/latest/index.html
 
 https://sites.google.com/view/tallon-baudry-lab/resources?authuser=0
+
+https://github.com/hooman650/BioSigKit - detection of T- and P-waves in human ECG; the paper: https://joss.theoj.org/papers/10.21105/joss.00671
+
