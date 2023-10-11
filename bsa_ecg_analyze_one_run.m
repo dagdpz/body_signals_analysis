@@ -360,7 +360,21 @@ if Set.OutlierModus == 1
     display(Tab_outlier);
 end
 
-
+% put data segments around R-peaks together
+idx_valid_R2R_consec_2 = idx_valid_R2R_consec;
+while t(end) < t(R2R_valid_locs(idx_valid_R2R_consec_2(end)))+0.5
+    idx_valid_R2R_consec_2 = idx_valid_R2R_consec_2(1:end-1);
+end
+while t(1) > t(R2R_valid_locs(idx_valid_R2R_consec_2(1)))-0.5
+    idx_valid_R2R_consec_2 = idx_valid_R2R_consec_2(2:end);
+end
+ecg_data = nan(length(idx_valid_R2R_consec_2), round(Fs));
+for RpeakNum = 1:length(idx_valid_R2R_consec_2)
+    curr_t_idx = t > t(R2R_valid_locs(idx_valid_R2R_consec_2(RpeakNum)))-0.5 & ...
+        t < t(R2R_valid_locs(idx_valid_R2R_consec_2(RpeakNum)))+0.5;
+    ecg_data(RpeakNum,:) = ecgFiltered(curr_t_idx);
+end
+ecg_data = single(ecg_data);
 
 if length(R2R_valid) < Set.R2R_minValidData
     out.Rpeak_t                 = [];
@@ -384,6 +398,7 @@ if length(R2R_valid) < Set.R2R_minValidData
     out.totPower                = [];
     out.nrblock                 = [];
     out.nrblock_combinedFiles   = [];
+    out.ECG_Rpeaks_valid        = [];
 else
     out.Rpeak_t                 = t(R_valid_locs);
     out.Rpeak_sample            = R_valid_locs;
@@ -406,6 +421,7 @@ else
     out.totPower                = totPower;
     out.nrblock                   = i_block ;
     out.nrblock_combinedFiles     = NrBlock ;
+    out.ECG_Rpeaks_valid        = ecg_data; % +/- 500 ms data segments for consecutive R-peaks
 end
 
 
