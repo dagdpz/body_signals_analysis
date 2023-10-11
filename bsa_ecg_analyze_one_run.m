@@ -224,8 +224,12 @@ mode_R2R        = mode(R2R);
 idx_valid_R2R         = find((R2R> Set.minFactor_R2RMode*mode_R2R & R2R <  Set.maxFactor_R2RMode *mode_R2R));
 idx_invalid_R2R       = find((R2R< Set.minFactor_R2RMode*mode_R2R | R2R >  Set.maxFactor_R2RMode *mode_R2R));
 
-if Set.min_R2R  >  min(R2R(idx_valid_R2R)); disp(['evaluate again minR2R!  in SETTINGS:  ', num2str(Set.min_R2R),' data:  ' num2str(min(R2R(idx_valid_R2R))) ]);  end
-if Set.max_R2R  <  max(R2R(idx_valid_R2R)); disp(['evaluate again maxR2R!  in SETTINGS:  ', num2str(Set.max_R2R),' data:  ' num2str(max(R2R(idx_valid_R2R))) ]);  end
+if Set.min_R2R  >  min(R2R(idx_valid_R2R)); 
+    disp(['evaluate again minR2R!  in SETTINGS:  ', num2str(Set.min_R2R),' data:  ' num2str(min(R2R(idx_valid_R2R))) ]);  
+end
+if Set.max_R2R  <  max(R2R(idx_valid_R2R)); 
+    disp(['evaluate again maxR2R!  in SETTINGS:  ', num2str(Set.max_R2R),' data:  ' num2str(max(R2R(idx_valid_R2R))) ]);  
+end
 
 
 detectedOutliers_mode = (length(idx_invalid_R2R)/length(R2R))*100;
