@@ -107,7 +107,7 @@ if ~isempty(pathExcel)
         ses.tasktype_str    =   table.task(table.date == str2num(session_name))';
         ses.tasktype        =   table.tasktype(table.date == str2num(session_name))';
         
-        % delete runs which 
+        % delete runs which
         ses.injection(ses.nrblock_combinedFiles == 0) = num2cell(nan(1,sum(ses.nrblock_combinedFiles == 0)));
         ses.first_inj_block =  min(ses.nrblock_combinedFiles(strcmp(ses.injection , 'Post'))) ;
     else
@@ -140,20 +140,20 @@ end
 
 %%
 for i_block = 1 : n_blocks, % for each run/block
-    NrBlock = []; 
+    NrBlock = [];
     % get the information about the task or rest
     if ~strcmp(par.dataOrigin, 'TDT'),
         load([session_path filesep combined_matfiles(i_block).name])
         if task.type == Set.task.Type && numel(trial) > Set.task.mintrials % exclude short runs and calibration
             ses.type(i_block)   =    1; % task
-        elseif task.type == Set.rest.Type && all(trial(1).task.reward.time_neutral == Set.rest.reward) ;
-            ses.type(i_block)   =    0; % rest  
+        elseif task.type == Set.rest.Type && all(trial(1).task.reward.time_neutral == Set.rest.reward)
+            ses.type(i_block)   =    0; % rest
         else
-            ses.type(i_block)   =    -2;
+            ses.type(i_block)   =   -2;
         end
         
-     NrBlock = combined_matfiles(i_block).name(end-5: end-4);
-     NrBlock = str2num(NrBlock);
+        NrBlock = combined_matfiles(i_block).name(end-5: end-4);
+        NrBlock = str2num(NrBlock);
         % check if the information contained in the behavior-file is the same as in the Excel-sheet input
         if  ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0 %&&  ~(ses.type(i_block) == -2)
             
@@ -161,13 +161,14 @@ for i_block = 1 : n_blocks, % for each run/block
                 
             elseif  ses.tasktype(ses.nrblock_combinedFiles == NrBlock) == -2
                 disp(['Block ' num2str(NrBlock) ' is excluded because of a -2 in the Excel-sheet'])
-                ses.type(i_block) = -2;   
+                ses.type(i_block) = -2;
             elseif ses.type(i_block) == -2  && task.type ~= Set.task.Type &&  ses.tasktype(ses.nrblock_combinedFiles == i_block) ~= -2 && numel(trial) > Set.task.mintrials
-                disp(['Condition does not match!! Excel-sheet colum tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(NrBlock)])
+                disp(['Conditions do not match Excel-sheet column tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(NrBlock)]);
                 ses.type(i_block) =  ses.tasktype(ses.nrblock_combinedFiles == i_block);
-                disp('overwrote the information from behavior file with excel-sheet')
+                disp('Overwrote the information from behavior file with Excel-sheet');
             else
-                disp(['Condition does not match!! Excel-sheet colum tasktype' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) 'is not identical with the information from behavior file'  num2str(ses.type(i_block) ) 'in Block' num2str(NrBlock)])
+                error(['Conditions do not match!!! Excel-sheet colum tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file'  num2str(ses.type(i_block) ) ' in Block' num2str(NrBlock)]);
+         
             end
         end
         
@@ -179,11 +180,11 @@ for i_block = 1 : n_blocks, % for each run/block
     end
     
     
-   
+    
     
     %% first check if to skip the block
-    if ~isempty(ses),
-        if ses.type(i_block) == -2 || isnan(ses.type(i_block)) ,
+    if ~isempty(ses)
+        if ses.type(i_block) == -2 || isnan(ses.type(i_block))
             disp(sprintf('Skipping block %d',i_block));
             continue
         end
@@ -204,8 +205,8 @@ for i_block = 1 : n_blocks, % for each run/block
     if ~par.keepRunFigs
         close(out(i_block).hf);
     end
-
-
+    
+    
 end
 
 
