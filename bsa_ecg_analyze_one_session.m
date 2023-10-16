@@ -268,6 +268,6 @@ end
 
 
 print(gcf,[par.saveResults filesep session_name '_R2R_TC.pdf'],'-dpdf','-r0');
-
+close(gcf)
 warning on;
 

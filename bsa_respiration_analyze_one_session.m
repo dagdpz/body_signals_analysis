@@ -329,5 +329,6 @@ end
 
 
 print(gcf,[par.saveResults filesep session_name '_B2B_TC.pdf'],'-dpdf','-r0');
+close(gcf)
 warning on;
 
