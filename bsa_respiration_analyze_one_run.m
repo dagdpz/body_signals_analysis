@@ -187,7 +187,7 @@ t_valid_inspEnd = nan(length(maybe_valid_pos_cap_times), 1);
 t_valid_expStart = nan(length(maybe_valid_pos_cap_times), 1);
 t_valid_expEnd = nan(length(maybe_valid_pos_cap_times), 1);
 
-for ii = 1:length(maybe_valid_pos_cap_times) % loop through peaks
+for ii = 1:length(maybe_valid_pos_cap_times)-1 % loop through peaks
     
     currPeakTime = maybe_valid_pos_cap_times(ii);
     nextInspEndId = find(insp_end_t > currPeakTime, 1, 'first');
@@ -333,16 +333,16 @@ if length(B2B_valid) < Set.B2B_minValidData,
     out.expEnd_t                = [];
     out.idx_valid_B2B_consec    = [];
     out.mean_B2B_valid_bpm      = nan;
-    out.median_B2B_valid_bpm    = [];
-    out.std_B2B_valid_bpm       = [];
-    out.rmssd_B2B_valid_ms      = [];
-    out.rmssd_B2B_valid_bpm     = [];
+    out.median_B2B_valid_bpm    = nan;
+    out.std_B2B_valid_bpm       = nan;
+    out.rmssd_B2B_valid_ms      = nan;
+    out.rmssd_B2B_valid_bpm     = nan;
     out.Pxx                     = [];
     out.freq                    = [];
-    out.vlfPower                = [];
-    out.lfPower                 = [];
-    out.hfPower                 = [];
-    out.totPower                = [];
+    out.vlfPower                = nan;
+    out.lfPower                 = nan;
+    out.hfPower                 = nan;
+    out.totPower                = nan;
 else
     out.Rpeak_t                 = t(R_valid_locs);
     out.Rpeak_sample            = R_valid_locs;
