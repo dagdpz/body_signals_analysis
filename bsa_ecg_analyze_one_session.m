@@ -157,11 +157,22 @@ for i_block = 1 : n_blocks, % for each run/block
         % check if the information contained in the behavior-file is the same as in the Excel-sheet input
         if  ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0 %&&  ~(ses.type(i_block) == -2)
             
-            if ses.type(i_block) == ses.tasktype(ses.nrblock_combinedFiles == NrBlock)
-                
-            elseif  ses.tasktype(ses.nrblock_combinedFiles == NrBlock) == -2
+            if ses.type(i_block) == ses.tasktype(i_block) && (ses.type(i_block) == 1 || ses.type(i_block) == 0)
+                % conditions in the Excel bodysignals table and behavioral 
+                % file match and are either task or rest - don't need to do 
+                % anything, proceed with subsequent analysis as it is
+            elseif  ses.tasktype(i_block) == -2
+                % this block is marked as -2 (to skip) in the Excel 
+                % bodysignals table - in this case the table has a priority
+                % and the current block is skipped
                 disp(['Block ' num2str(NrBlock) ' is excluded because of a -2 in the Excel-sheet'])
                 ses.type(i_block) = -2;
+            elseif ses.type(i_block) == -2
+                % This block is assigned with -2 and is either a short task
+                % block, calibration, or a rest with reward (which
+                % shouldn't happen) and is going to be excluded
+                disp(['Conditions do not match Excel-sheet column tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(NrBlock)]);
+                ses.tasktype(i_block) = -2;
             elseif ses.type(i_block) == -2  && task.type ~= Set.task.Type &&  ses.tasktype(ses.nrblock_combinedFiles == i_block) ~= -2 && numel(trial) > Set.task.mintrials
                 disp(['Conditions do not match Excel-sheet column tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(NrBlock)]);
                 ses.type(i_block) =  ses.tasktype(ses.nrblock_combinedFiles == i_block);
@@ -185,12 +196,12 @@ for i_block = 1 : n_blocks, % for each run/block
     %% first check if to skip the block
     if ~isempty(ses)
         if ses.type(i_block) == -2 || isnan(ses.type(i_block))
-            disp(sprintf('Skipping block %d',i_block));
+            fprintf('Skipping block %d\n',i_block);
             continue
         end
     end
     
-    disp(sprintf('Processing block %d',i_block));
+    fprintf('Processing block %d\n',i_block);
     
     if strcmp(par.dataOrigin, 'TDT'),
         ecgSignal   = double(ECG{i_block});
