@@ -72,7 +72,12 @@ out = bsa_ecg_analyze_one_session('Y:\Projects\Pulv_Inac_ECG_respiration\Data\Co
 pathExcel = 'Y:\Logs\Phys\Magnus\Magnus_bodySignals_ephys_log.xlsx';
 settings_filename = 'bsa_settings_Magnus2019.m';
 
-sessionList = [20220921, 20230106, 20230518];
+sessionList = ...
+    [20220921, 20221115 20221118 20221122 20221125 20221206 20221222 ...
+    20221229 20230104 20230106 20230112 20230126 20230511 20230518 ...
+    20230519 20230524 20230525 20230526 20230531 20230601 20230602 ...
+    20230607 20230608 20230609 20230614 20230615 20230616 20230621 ...
+    20230622 20230623]; % completed 
 
 for sessNum = 1:length(sessionList)
     currSession = num2str(sessionList(sessNum));
@@ -179,6 +184,58 @@ settings_filename = 'bsa_settings_Bacchus2019.m';
 out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20191112',pathExcel,settings_filename,'Y:\Projects\Pulv_Inac_ECG_respiration\Data\Bacchus\20191112');
 out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20191113',pathExcel,settings_filename,'Y:\Projects\Pulv_Inac_ECG_respiration\Data\Bacchus\20191113');
 
+%% process ECG in a loop
+pathExcel = 'Y:\Logs\Phys\Bacchus\Bacchus_bodySignals_ephys_log.xlsx';
+settings_filename = 'bsa_settings_Bacchus2019.m';
+
+% out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211027\', pathExcel,settings_filename, 'Y:\Data\BodySignals\ECG\Bacchus\20211027');
+
+% sessionDates = ...
+%     [20210715, 20210716, 20210720, 20210723, 20210729, 20210730, 20210803, 20210805, ...
+% 	20210806, 20210826, 20210827, 20210903, 20210906, 20210905, 20210930, 20211001, ...
+% 	20211005, 20211007, 20211013, 20211014, 20211019, 20211027, 20211028, 20211102, ...
+% 	20211103, 20211116, 20211117, 20211207, 20211208, 20211214, 20211222, ...
+% 	20220105, 20220106, 20220125, 20220126, 20220203, 20220211, 20220221, ...
+% 	20220222, 20220224, 20220225, 20220309, 20220310, 20220315, 20220318, ...
+% 	20220322];
+
+sessionDates = [20210826];
+
+for currDate = sessionDates
+    out = bsa_ecg_analyze_one_session(['Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename,['Y:\Data\BodySignals\ECG\Bacchus\' num2str(currDate)]);
+end
+
+%% process CAP in a loop
+pathExcel = 'Y:\Logs\Phys\Bacchus\Bacchus_bodySignals_ephys_log.xlsx';
+settings_filename = 'bsa_settings_Bacchus2019.m';
+
+% out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210720', pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Bacchus\20210720');
+
+sessionDates = ...
+    [20210720, 20211001, 20211207, 20211208, 20211214, 20211222, 20220105, 20220106]; % skipped  % finished 
+
+for currDate = sessionDates
+    out_cap = bsa_respiration_analyze_one_session(['Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename,['Y:\Data\BodySignals\CAP\Bacchus\' num2str(currDate)]);
+end
+
+%% process ECG & CAP in a loop
+pathExcel = 'Y:\Logs\Phys\Bacchus\Bacchus_bodySignals_ephys_log.xlsx';
+settings_filename = 'bsa_settings_Bacchus2019.m';
+
+sessionDates = [20210715, 20210716, 20210720, 20210723, 20210729, 20210730, 20210803, 20210805, ...
+	20210806, 20210826, 20210827, 20210903, 20210906, 20210905, 20210930, 20211001, ...
+	20211005, 20211007, 20211013, 20211014, 20211019, 20211027, 20211028, 20211102, ...
+	20211103, 20211116, 20211117, 20211207, 20211208, 20211214, 20211222, ...
+	20220105, 20220106, 20220125, 20220126, 20220203, 20220211, 20220221, ...
+	20220222, 20220224, 20220225, 20220309, 20220310, 20220315, 20220318, ...
+	20220322]; %... skipped 20210829 (no ECG), 20211025 (no ECG), 20211108 (no ECG)
+%     [20210720, 20210722, 20211001, 20211208, 20211214, 20211222, 20220105, 20220106]; % skipped  20211207, % finished 
+
+for currDate = sessionDates
+    [out_ecg, out_cap] = ...
+        bsa_ecg_cap_together_analyze_one_session(['Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename);
+end
+
 %% Ephys - ECG-channel 1 
 out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210720',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210720');
 out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210720',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20210720');
@@ -229,12 +286,10 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT
 %% Probl
 out = bsa_ecg_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210829',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\ECG\20210829');
 
-
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211028',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20211028');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210826',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20210826');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210720',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20210720');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211001',pathExcel,settings_filename,'Y:\Projects\Pulv_distractor_spatial_choice\Data\Bacchus\CAP\20211001');
-
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211028',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Bacchus\20211028');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210826',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Bacchus\20210826');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210720',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Bacchus\20210720');
+out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20211001',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Bacchus\20211001');
 
 %% CURIUS
 pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905.xlsx';
