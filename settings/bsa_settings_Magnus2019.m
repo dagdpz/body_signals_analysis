@@ -1,3 +1,6 @@
+Set.Plot       = 1; 
+
+
 % settings for BSA analysis, Cornelius dPul/vPul inactivation - ECG, 2019
 Set.task.Type       = 2; 
 Set.task.reward     = 2; 
@@ -22,7 +25,7 @@ Set.wv_scalesPerDecade              = 32;
 
 % properties for the ECG R peak detection
 Set.min_R2R                         = 0.25; % s
-Set.max_R2R                         = 0.6; % s
+Set.max_R2R                         = 0.7; % s
 Set.eP_tc_minpeakheight_med_prop    = 0.33; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
 Set.MAD_sensitivity_p2p_diff        = 3; % sensitivity factor for threshold caluclation -  larger value -> less sensitive (i.e. less outliers)
 Set.minFactor_R2RMode               = 0.6; % exclude R2R intervals shorter than this

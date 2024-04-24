@@ -107,89 +107,161 @@ if ~isempty(pathExcel)
         ses.tasktype_str    =   table.task(table.date == str2num(session_name))';
         ses.tasktype        =   table.tasktype(table.date == str2num(session_name))';
         
-        % delete runs which
-        ses.injection(ses.nrblock_combinedFiles == 0) = num2cell(nan(1,sum(ses.nrblock_combinedFiles == 0)));
         ses.first_inj_block =  min(ses.nrblock_combinedFiles(strcmp(ses.injection , 'Post'))) ;
+        ses.nrblock_combinedFiles(ses.nrblock_combinedFiles == 0) = [];
+        
     else
         disp([pathExcel ,'   Excel-File does not include this date  ' , num2str(session_name)])
     end
 end
 
-%%
-if strcmp(par.dataOrigin, 'TDT'),
+%% What happens when no Block is recorded for a run - remove this rows from the Excel
+% Blocks with entry 0 in the Excel are invalid, & No-Entry?
+idx = ses.nrblock_combinedFiles ~=0 & ~isnan(ses.nrblock_combinedFiles);
+[valid_blocks, valid_idx] = unique(ses.nrblock_combinedFiles(idx));
+
+% all valid entries of the excel sheet %ses = ses(valid_idx);
+filtered_ses = ses;
+
+% Get the names of all fields in the structure
+fieldNames = fieldnames(ses);
+
+% Iterate through each field
+for i = 1:length(fieldNames)
+    currentField = fieldNames{i};
+    % Check if the current field is an array (numeric or cell) and has the same number of elements as 'nrblock_combinedFiles'
+    if isnumeric(ses.(currentField)) || iscell(ses.(currentField))
+        if length(ses.(currentField)) == length(ses.nrblock_combinedFiles)
+            % Apply the unique indices to filter the field
+            filtered_ses.(currentField) = ses.(currentField)(idx);
+        end
+    end
+end
+
+ses = filtered_ses;
+%% no matter if we are loading TDT or combined files, have one parameter (f.e. files_to_load) contating all files in that folder
+if ~strcmp(par.dataOrigin, 'TDT'),
+    files_to_load = dir([session_path filesep '*.mat']);
+    n_blocks = numel(files_to_load);
+    
+else
     load([session_path filesep 'bodysignals_wo_behavior.mat']);
+    
     Fs        = dat.ECG_SR;
     ECG       = dat.ECG;
-    n_blocks  = length(dat.ECG);
-else
-    combined_matfiles = dir([session_path filesep '*.mat']);
-    combined_matfiles_names = {combined_matfiles.name};
-    unqBlocks = unique(cellfun(@ (x) x(end-11:end-4), combined_matfiles_names, 'UniformOutput', 0)); % find the number of unique blocks in the combined files
-    n_blocks = length(unqBlocks);
+    n_blocks  = numel(dat.ECG);
+    disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
 end
+i_block=0;
 
-%% Is there a difference between excel-sheet information & saved data-files?
-disp(['Found ' num2str(n_blocks) ' blocks in ' par.dataOrigin]);
-if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
-    BlockExcel = length(unique(ses.nrblock_combinedFiles)); % count unique blocks
-    disp(['Found ' num2str(BlockExcel ) ' blocks in the excel sheet']);
-    if  ~(BlockExcel  ==  n_blocks) %~(sum(~or(ses.nrblock_combinedFiles == 0 ,ses.tasktype == -2))  ==  n_blocks)
-        error('Error. Number of blocks to be analyzed from excel-sheet does not match the number of blocks from the TDT-datasets.')
-    end
-end
+disp(['Found ' num2str(n_blocks) ' blocks as file' ]);
 
-%%
-for i_block = 1 : n_blocks, % for each run/block
-    NrBlock = [];
-    % get the information about the task or rest
+for f=1:n_blocks
     if ~strcmp(par.dataOrigin, 'TDT'),
-        load([session_path filesep combined_matfiles(i_block).name])
-        if task.type == Set.task.Type && numel(trial) > Set.task.mintrials % exclude short runs and calibration
-            ses.type(i_block)   =    1; % task
-        elseif task.type == Set.rest.Type && all(trial(1).task.reward.time_neutral == Set.rest.reward)
-            ses.type(i_block)   =    0; % rest
-        else
-            ses.type(i_block)   =   -2;
-        end
-        
-        NrBlock = combined_matfiles(i_block).name(end-5: end-4);
+        NrBlock = files_to_load(f).name(end-5: end-4);
         NrBlock = str2num(NrBlock);
-        % check if the information contained in the behavior-file is the same as in the Excel-sheet input
-        if  ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0 %&&  ~(ses.type(i_block) == -2)
-            
-            if ses.type(i_block) == ses.tasktype(i_block) && (ses.type(i_block) == 1 || ses.type(i_block) == 0)
-                % conditions in the Excel bodysignals table and behavioral 
-                % file match and are either task or rest - don't need to do 
-                % anything, proceed with subsequent analysis as it is
-            elseif  ses.tasktype(i_block) == -2
-                % this block is marked as -2 (to skip) in the Excel 
-                % bodysignals table - in this case the table has a priority
-                % and the current block is skipped
-                disp(['Block ' num2str(NrBlock) ' is excluded because of a -2 in the Excel-sheet'])
-                ses.type(i_block) = -2;
-            elseif ses.type(i_block) == -2
-                % This block is assigned with -2 and is either a short task
-                % block, calibration, or a rest with reward (which
-                % shouldn't happen) and is going to be excluded
-                disp(['Conditions do not match Excel-sheet column tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(NrBlock)]);
-                ses.tasktype(i_block) = -2;
-            elseif ses.type(i_block) == -2  && task.type ~= Set.task.Type &&  ses.tasktype(ses.nrblock_combinedFiles == i_block) ~= -2 && numel(trial) > Set.task.mintrials
-                disp(['Conditions do not match Excel-sheet column tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.type(i_block) ) ' in Block ' num2str(NrBlock)]);
-                ses.type(i_block) =  ses.tasktype(ses.nrblock_combinedFiles == i_block);
-                disp('Overwrote the information from behavior file with Excel-sheet');
-            else
-                error(['Conditions do not match!!! Excel-sheet colum tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file'  num2str(ses.type(i_block) ) ' in Block' num2str(NrBlock)]);
-         
-            end
-        end
-        
     else
-        if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
-            ses.type  =  table.tasktype(table.date == str2num(session_name))';
-            ses.type  =  ses.type(~ses.nrblock_combinedFiles == 0);
-        end
+       NrBlock = dat.blockname(f);
+    end
+    BlockExcel_uniqu = length(unique(ses.nrblock_combinedFiles)); % count unique blocks
+    BlockExcel = length(unique(ses.nrblock_combinedFiles)); % count unique blocks
+    disp(['Found ' num2str(BlockExcel) '  blocks as Excel-file' ]);
+    disp(['Found ' num2str(BlockExcel_uniqu) ' unique blocks as Excel-file' ]);
+
+    
+    if ~ismember(NrBlock,valid_blocks)
+        continue; % skip this block
+        %Make a Note into the LogFile
+            info.folderPath = ['Y:\Data\BodySignals\ECG\' ses.monkey{1}];
+            info.monkey = ses.monkey{1};
+            info.session = num2str(ses.date(1));
+            info.Nrblock =num2str(NrBlock);
+            info.i_block =num2str(i_block);
+            info.taskType_Excel = '-2';
+            info.taskType_Behavior = '-2';
+            info.errorMessage = 'File/NrBlock is not listed in Excel-File';
+            writeLogEntry(info)            
     end
     
+    i_ses = find(ses.nrblock_combinedFiles == NrBlock);% index for session excel table entries; 
+
+
+    %% what happens if there are 2 files with the same block?? Error! because i_sess has two entries
+
+    if isempty(i_ses)
+        disp('Block from File not included in the Excel-File')
+    elseif numel(i_ses) > 1
+        Nr_SameBlock = numel(i_ses); 
+    else
+        Nr_SameBlock = 1; 
+    end
+    
+    for i = 1:Nr_SameBlock
+  %%
+    i_block=i_block+1; % for data storage;
+    
+    
+    if ~strcmp(par.dataOrigin, 'TDT'),
+        load([session_path filesep files_to_load(f).name])
+        
+        % get the tasktype (rest/task) from behavioral file
+        if task.type == Set.task.Type && numel(trial) > Set.task.mintrials % exclude short runs and calibration
+            ses.tasktype_beh(i_block)   =    1; % task
+        elseif task.type == Set.rest.Type && all(trial(1).task.reward.time_neutral == Set.rest.reward)
+            ses.tasktype_beh(i_block)   =    0; % rest
+        else
+            ses.tasktype_beh(i_block)   =   -2;
+        end
+        
+        
+    else % No information about the behavior file
+        if ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0
+            ses.tasktype_beh(i_block)  =  ses.tasktype(ses.nrblock_combinedFiles == NrBlock) ; %ses.type(~ses.nrblock_combinedFiles == 0);
+        end
+    end
+    ses.type(i_block) = ses.tasktype_beh(i_block);
+    %  Check entry between behavioral file and excel
+    if  ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0 %&&  ~(ses.type(i_block) == -2)
+        
+        if ses.tasktype_beh(i_block) == ses.tasktype(i_ses(i)) && (ses.tasktype_beh(i_block) == 1 || ses.tasktype_beh(i_block) == 0)
+            % conditions in the Excel bodysignals table and behavioral
+            % file match and are either task or rest - don't need to do
+            % anything, proceed with subsequent analysis as it is
+        elseif  ses.tasktype(i_ses(i)) == -2
+            % this block is marked as -2 (to skip) in the Excel
+            % bodysignals table - in this case the table has a priority
+            % and the current block is skipped
+            disp(['Block ' num2str(NrBlock) ' is excluded because of a -2 in the Excel-sheet'])
+            ses.type(i_block) = -2;
+        elseif ses.tasktype_beh(i_block) == -2
+            % This block is assigned with -2 and is either a short task
+            % block, calibration, or a rest with reward (which
+            % shouldn't happen) and is going to be excluded
+            disp(['Conditions do not match Excel-sheet column tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.tasktype_beh(i_block) ) ' in Block ' num2str(NrBlock)]);
+            ses.tasktype(i_block) = -2;
+        elseif ses.tasktype_beh(i_block) == -2  && task.type ~= Set.task.Type &&  ses.tasktype(ses.nrblock_combinedFiles == i_block) ~= -2 && numel(trial) > Set.task.mintrials
+            disp(['Conditions do not match Excel-sheet column tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file '  num2str(ses.tasktype_beh(i_block) ) ' in Block ' num2str(NrBlock)]);
+            ses.type(i_block) =  ses.tasktype(ses.nrblock_combinedFiles == i_block);
+            disp('Overwrote the information from behavior file with Excel-sheet');
+        else
+            
+            info.folderPath = ['Y:\Data\BodySignals\ECG\' ses.monkey{1}];
+            info.monkey = ses.monkey{1};
+            info.session = num2str(ses.date(1));
+            info.Nrblock =num2str(NrBlock);
+            info.i_block =num2str(i_block);
+            info.taskType_Excel = num2str(ses.tasktype(i_ses(i)));
+            info.taskType_Behavior = num2str(ses.tasktype_beh(i_block));
+            info.errorMessage = 'TaskType do not match - behav vs. excel!';
+            
+            writeLogEntry(info)
+            
+            disp(['Conditions do not match!!! Excel-sheet colum tasktype ' num2str(ses.tasktype(ses.nrblock_combinedFiles == NrBlock)  ) ' is not identical with the information from behavior file'  num2str(ses.tasktype_beh(i_block) ) ' in Block' num2str(NrBlock)]);
+            
+        end
+    end %close if for check
+    
+   
     
     
     
@@ -206,19 +278,20 @@ for i_block = 1 : n_blocks, % for each run/block
     if strcmp(par.dataOrigin, 'TDT'),
         ecgSignal   = double(ECG{i_block});
     else
-        ecg = bsa_concatenate_trials_body_signals([session_path filesep combined_matfiles(i_block).name], 1); % get ecg only
+        ecg = bsa_concatenate_trials_body_signals([session_path filesep files_to_load(f).name], 1); % get ecg only
         ecgSignal   = ecg.ECG1;
         Fs          = ecg.Fs;
     end
-    plot(ecgSignal)
-    [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,1,i_block,NrBlock);
-    print(out(i_block).hf,sprintf('%sblock%02d.png',[par.saveResults filesep],i_block),'-dpng','-r0');
-    if ~par.keepRunFigs
+    
+    [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,Set.Plot,i_block,NrBlock, ses.monkey{1});
+    print(out(i_block).hf, sprintf('%sblock%02d_NrBlock%02d.png', [par.saveResults filesep], i_block, NrBlock), '-dpng', '-r0');    if ~par.keepRunFigs
         close(out(i_block).hf);
     end
+    end %More than one of the same Block Number, but different runs 
     
     
-end
+    
+end % numel files
 
 
 save([par.saveResults filesep session_name '_ecg.mat'],'out','Tab_outlier','par','ses','session_name','session_path');
@@ -238,47 +311,48 @@ else
 end
 
 %return; %
-
-ig_figure('Name',[session_path '->' par.saveResults],'Position',[200 200 900 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
-ha(1) = subplot(4,1,1);
-plot(blks(rest_idx),[out(rest_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC); hold on;
-plot(blks(task_idx),[out(task_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
-plot(blks(rest_idx),[out(rest_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC);
-plot(blks(task_idx),[out(task_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
-ylabel('Mean (o) & med (s) of R2R (bpm)');
-
-ha(2) = subplot(4,1,2);
-plot(blks(rest_idx),[out(rest_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',restMFC); hold on;
-plot(blks(task_idx),[out(task_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',taskMFC);
-ylabel('RMSSD of R2R interval (ms)');
-
-ha(3) = subplot(4,1,3);
-plot(blks(rest_idx),[out(rest_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',restMFC);  hold on;
-plot(blks(task_idx),[out(task_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',taskMFC);
-ylabel('SD of R2R interval (bpm)');
-
-ha(4) = subplot(4,1,4);
-plot(blks(rest_idx),[out(rest_idx).lfPower],'ro','MarkerFaceColor',restMFC); hold on;
-plot(blks(task_idx),[out(task_idx).lfPower],'ro','MarkerFaceColor',taskMFC);
-plot(blks(rest_idx),[out(rest_idx).hfPower],'go','MarkerFaceColor',restMFC);
-plot(blks(task_idx),[out(task_idx).hfPower],'go','MarkerFaceColor',taskMFC);
-legend({'lf rest','lf task','hf rest','hf task'},'location','Best');
-xlabel('blocks');
-ylabel('LF and HF power (ms^2)');
-
-
-if ~isempty(ses.first_inj_block),
+if Set.Plot
+    ig_figure('Name',[session_path '->' par.saveResults],'Position',[200 200 900 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
+    ha(1) = subplot(4,1,1);
+    plot(blks(rest_idx),[out(rest_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC); hold on;
+    plot(blks(task_idx),[out(task_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
+    plot(blks(rest_idx),[out(rest_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC);
+    plot(blks(task_idx),[out(task_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
+    ylabel('Mean (o) & med (s) of R2R (bpm)');
     
-    for ax = 1:length(ha),
-        axes(ha(ax));
-        ig_add_vertical_line(ses.first_inj_block -0.5);
+    ha(2) = subplot(4,1,2);
+    plot(blks(rest_idx),[out(rest_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',restMFC); hold on;
+    plot(blks(task_idx),[out(task_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',taskMFC);
+    ylabel('RMSSD of R2R interval (ms)');
+    
+    ha(3) = subplot(4,1,3);
+    plot(blks(rest_idx),[out(rest_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',restMFC);  hold on;
+    plot(blks(task_idx),[out(task_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',taskMFC);
+    ylabel('SD of R2R interval (bpm)');
+    
+    ha(4) = subplot(4,1,4);
+    plot(blks(rest_idx),[out(rest_idx).lfPower],'ro','MarkerFaceColor',restMFC); hold on;
+    plot(blks(task_idx),[out(task_idx).lfPower],'ro','MarkerFaceColor',taskMFC);
+    plot(blks(rest_idx),[out(rest_idx).hfPower],'go','MarkerFaceColor',restMFC);
+    plot(blks(task_idx),[out(task_idx).hfPower],'go','MarkerFaceColor',taskMFC);
+    legend({'lf rest','lf task','hf rest','hf task'},'location','Best');
+    xlabel('blocks');
+    ylabel('LF and HF power (ms^2)');
+    
+    
+    if ~isempty(ses.first_inj_block),
+        
+        for ax = 1:length(ha),
+            axes(ha(ax));
+            ig_add_vertical_line(ses.first_inj_block -0.5);
+            
+        end
         
     end
     
+    
+    print(gcf,[par.saveResults filesep session_name '_R2R_TC.pdf'],'-dpdf','-r0');
+    close(gcf)
 end
-
-
-print(gcf,[par.saveResults filesep session_name '_R2R_TC.pdf'],'-dpdf','-r0');
-close(gcf)
 warning on;
 

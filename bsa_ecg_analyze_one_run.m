@@ -218,7 +218,7 @@ end
 R2R             = [NaN diff(t(maybe_valid_pos_ecg_locs))]; %
 median_R2R      = median(R2R);
 mode_R2R        = mode(R2R);
-[hist_R2R,bins] = hist(R2R,[Set.min_R2R:0.01:1]);
+[hist_R2R,bins] = hist(R2R,[Set.min_R2R:0.01:  max(R2R)]); %KK Dez2023
 
 % invalidate all R2R less than minFactor_R2RMode (e.g. 0.66) of mode and more than maxFactor_R2RMode (e.g. 1.5) of mode
 idx_valid_R2R         = find((R2R> Set.minFactor_R2RMode*mode_R2R & R2R <  Set.maxFactor_R2RMode *mode_R2R));
@@ -431,7 +431,7 @@ end
 out.hf = [];
 
 if TOPLOT
-    hf = figure('Name',[FigInfo sprintf('block%02d',i_block)],'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
+    hf = figure('Name',[FigInfo sprintf('i_block%02d',i_block),'_', sprintf( 'Nrblock%02d',NrBlock)],'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
     
     %% single HR-peak
     %     t = t*1000;
@@ -459,7 +459,7 @@ if TOPLOT
     
     set(gca,'Xlim',[0 max(t)]);
     xlabel('Time (s)');
-    title(sprintf('ECG: %d valid peaks, %d valid R2R intervals',length(R_valid_locs),length(R2R_valid_locs)));
+    title(sprintf('NrBlock  %d ECG: %d valid peaks, %d valid R2R intervals',NrBlock, length(R_valid_locs),length(R2R_valid_locs)));
     if isempty(idx_outliers)
         legend({'ecgSignal','ecgFiltered','allPeaks','only posPeaks','valid Peaks','valid R2Rinterval'},'location','Best');
     else

@@ -1,3 +1,4 @@
+Set.Plot       = 1; 
 % settings for BSA analysis, Curius dPul/vPul inactivation - ECG, 2019
 %Define different characteristics to identify different conditions
 Set.task.Type       = 2; 
@@ -18,6 +19,7 @@ Set.segment_overlap                 = 50;  % s
 Set.wv_rangeOfInterest              = [1 12]; % Hz
 Set.wv_scalesPerDecade              = 32;
 % properties for the ECG R peak detection
+Set.max_R2R                         = 1; % s %Not excluded if the R2R is longer
 Set.min_R2R                         = 0.25; % s
 Set.eP_tc_minpeakheight_med_prop    = 0.5; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
 Set.MAD_sensitivity_p2p_diff        = 3; % sensitivity factor for threshold caluclation -  larger value  more permissive (i.e. less outliers)

@@ -1,4 +1,4 @@
-function [out,Tab_outlier] = bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,TOPLOT,i_block,NrBlock)
+function [out,Tab_outlier] = bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,TOPLOT,i_block,NrBlock,FigInfo)
 %bsa_respiration_analyze_one_run  - analyses ECG in one run/block
 %
 % USAGE:
@@ -167,7 +167,7 @@ mode_B2B        = mode(B2B);
 [hist_B2B,bins] = hist(B2B,[Set.cap.min_P2P:0.01:1]);
 
 % invalidate all B2B less than minFactor_B2BMode (e.g. 0.66) of mode and more than maxFactor_B2BMode (e.g. 1.5) of mode
-idx_valid_B2B         = find((B2B> Set.cap.minFactor_B2BMode*mode_B2B | B2B <  Set.cap.maxFactor_B2BMode *mode_B2B));
+idx_valid_B2B         = find((B2B> Set.cap.minFactor_B2BMode*mode_B2B & B2B <  Set.cap.maxFactor_B2BMode *mode_B2B));
 idx_Invalid_B2B       = find((B2B< Set.cap.minFactor_B2BMode*mode_B2B | B2B >  Set.cap.maxFactor_B2BMode *mode_B2B));
 
 detectedOutliers_mode = (length(idx_Invalid_B2B)/length(B2B))*100; 
@@ -265,9 +265,11 @@ mode_B2B_valid          = mode(B2B_valid);
 [hist_B2B_valid,bins]   = hist(B2B_valid,[Set.cap.min_P2P:0.01:5]);
 
 B2B_valid_bpm           = 60./B2B_valid;
+B2B_valid_ms            = 1000.*B2B_valid;% sec -> ms
 mean_B2B_valid_bpm      = mean(B2B_valid_bpm);
 median_B2B_valid_bpm    = median(B2B_valid_bpm);
 std_B2B_valid_bpm       = std(B2B_valid_bpm);
+std_B2B_valid_ms        = std(B2B_valid_ms);
 
 
 % find consecutive B2Bs
@@ -327,6 +329,7 @@ if length(B2B_valid) < Set.B2B_minValidData,
     out.B2B_sample              = [];   
     out.B2B_valid               = [];
     out.B2B_valid_bpm           = [];
+    out.B2B_valid_ms            = [];
     out.inspStart_t             = [];
     out.inspEnd_t               = [];
     out.expStart_t              = [];
@@ -335,6 +338,7 @@ if length(B2B_valid) < Set.B2B_minValidData,
     out.mean_B2B_valid_bpm      = nan;
     out.median_B2B_valid_bpm    = nan;
     out.std_B2B_valid_bpm       = nan;
+    out.std_B2B_valid_ms        = nan;
     out.rmssd_B2B_valid_ms      = nan;
     out.rmssd_B2B_valid_bpm     = nan;
     out.Pxx                     = [];
@@ -350,6 +354,7 @@ else
     out.B2B_sample              = B2B_valid_locs;
     out.B2B_valid               = B2B_valid;
     out.B2B_valid_bpm           = B2B_valid_bpm;
+    out.B2B_valid_ms            = B2B_valid_ms;
     out.inspStart_t             = t_valid_inspStart; % times of inspiration starts
     out.inspEnd_t               = t_valid_inspEnd; % times of inspiration ends
     out.expStart_t              = t_valid_expStart; % times of expiration starts
@@ -358,6 +363,7 @@ else
     out.mean_B2B_valid_bpm      = mean_B2B_valid_bpm;
     out.median_B2B_valid_bpm    = median_B2B_valid_bpm;
     out.std_B2B_valid_bpm       = std_B2B_valid_bpm;
+    out.std_B2B_valid_ms        = std_B2B_valid_ms;
     out.rmssd_B2B_valid_ms      = rmssd_B2B_valid_ms;
     out.rmssd_B2B_valid_bpm     = rmssd_B2B_valid_bpm;
     out.Pxx                     = Pxx;
@@ -375,7 +381,7 @@ end
 out.hf = [];
 
 if TOPLOT
-    hf = figure('Name',sprintf('block%02d',i_block),'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
+    hf = figure('Name',[FigInfo sprintf('block%02d',i_block),'_', sprintf( 'Nrblock%02d',NrBlock)],'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
     
     %% single HR-peak
 %     t = t*1000; 
@@ -402,7 +408,7 @@ if TOPLOT
      
     set(gca,'Xlim',[0 max(t)]);
     xlabel('Time (s)');
-    title(sprintf('CAP: %d valid peaks, %d valid P2P intervals',length(R_valid_locs),length(B2B_valid_locs)));
+    title(sprintf('NrBlock  %d CAP: %d valid peaks, %d valid P2P intervals',NrBlock, length(R_valid_locs),length(B2B_valid_locs)));
     if isempty(idx_outliers)
     legend({'capSignal','capFiltered','allPeaks','only posPeaks','valid Peaks','valid P2Pinterval'},'location','Best');
     else
