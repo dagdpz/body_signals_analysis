@@ -58,3 +58,6 @@ Set.cap.hampel_nb_of_std                = 10;
 Set.cap.hampel_adjacentSampleToComputeMean = 3; 
 Set.B2B_minValidData                    = 50; 
 
+Set.path.ecg_save = 'Y:\Data\BodySignals\ECG\Cornelius\';
+Set.path.cap_save = 'Y:\Data\BodySignals\CAP\Cornelius\';
+Set.path.ecg_cap_save = 'Y:\Data\BodySignals\ECG_CAP\Cornelius\';

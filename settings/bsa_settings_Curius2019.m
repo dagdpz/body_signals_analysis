@@ -47,3 +47,6 @@ Set.cap.hampel_nb_of_std                = 10;
 Set.cap.hampel_adjacentSampleToComputeMean = 3; 
 Set.B2B_minValidData                    = 30; 
 
+Set.path.ecg_save = 'Y:\Data\BodySignals\ECG\Curius\';
+Set.path.cap_save = 'Y:\Data\BodySignals\CAP\Curius\';
+Set.path.ecg_cap_save = 'Y:\Data\BodySignals\ECG_CAP\Curius\';
