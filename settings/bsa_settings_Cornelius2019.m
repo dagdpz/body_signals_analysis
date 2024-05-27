@@ -29,8 +29,8 @@ Set.fraction_R2R_look4peak          = 0.05; % fraction of R2R interval to look f
 Set.hampel_T                        = 4; % threshold for hamplel outlier detection
 Set.hampel_DX                       = 10; % (# R peaks) half width of hampel window for outlier detection
 
-Set.R2R_minValidData = 100; 
-
+Set.R2R_minValidData = 600; 
+Set.R2R_minValidData_min = 5; 
 %%For Session 20190214
 % Set.min_R2R                         = 0.25; % s
 % Set.eP_tc_minpeakheight_med_prop    = 0.5; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
@@ -43,7 +43,7 @@ Set.R2R_minValidData = 100;
 
 Set.cap.smoothing_window                = 0.25; % s
 % properties for the respiration peak detection
-Set.cap.min_P2P                         = 1; % s
+Set.cap.min_P2P                         = 1.7; % s
 Set.cap.eP_tc_minpeakheight_med_prop    = 1; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
 Set.cap.MAD_sensitivity_p2p_diff        = 8; % sensitivity factor for threshold calculation -  larger value -> less sensitive (i.e. less outliers)
 Set.cap.MAD_sensitivity_p2m_diff        = 0; % sensitivity factor for threshold calculation -  smaller value -> smaller threshold -> less sensitive (i.e. less outliers)

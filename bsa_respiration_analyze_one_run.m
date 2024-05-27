@@ -322,6 +322,24 @@ display(Tab_outlier)
 end
 
 
+% put data segments around R-peaks together
+%idx_valid_B2B_consec_2 = idx_valid_B2B_consec;
+% while t(end) < t(B2B_valid_locs(idx_valid_B2B_consec_2(end)))+0.5
+%     idx_valid_B2B_consec_2 = idx_valid_B2B_consec_2(1:end-1);
+% end
+% while t(1) > t(B2B_valid_locs(idx_valid_B2B_consec_2(1)))-0.5
+%     idx_valid_B2B_consec_2 = idx_valid_B2B_consec_2(2:end);
+% end
+% cap_data = nan(length(idx_valid_B2B_consec_2), round(Fs));
+% for RpeakNum = 1:length(idx_valid_B2B_consec_2)
+%     curr_t_idx = t > t(B2B_valid_locs(idx_valid_B2B_consec_2(RpeakNum)))-0.5 & ...
+%         t < t(B2B_valid_locs(idx_valid_B2B_consec_2(RpeakNum)))+0.5;
+%     cap_data(RpeakNum,:) = capFiltered(curr_t_idx);
+% end
+% cap_data = single(cap_data);
+
+
+
 if length(B2B_valid) < Set.B2B_minValidData,
     out.Rpeak_t                 = [];
     out.Rpeak_sample            = [];
@@ -347,6 +365,9 @@ if length(B2B_valid) < Set.B2B_minValidData,
     out.lfPower                 = nan;
     out.hfPower                 = nan;
     out.totPower                = nan;
+    out.nrblock                 = [];
+    out.nrblock_combinedFiles   = [];
+   % out.ECG_Rpeaks_valid        = [];
 else
     out.Rpeak_t                 = t(R_valid_locs);
     out.Rpeak_sample            = R_valid_locs;
@@ -372,6 +393,9 @@ else
     out.lfPower                 = lfPower;
     out.hfPower                 = hfPower;
     out.totPower                = totPower;
+    out.nrblock                 = i_block ;
+    out.nrblock_combinedFiles   = NrBlock ;
+    %out.ECG_Rpeaks_valid        = cap_data; % +/- 500 ms data segments for consecutive R-peaks
 end
 
 
@@ -405,7 +429,6 @@ if TOPLOT
          [capFiltered(B2B_valid_locs(idx_valid_B2B_consec)); capFiltered(B2B_valid_locs(idx_valid_B2B_consec))],'k');
     plot([t_valid_inspStart t_valid_inspEnd], [0 0], 'b', [t_valid_expStart t_valid_expEnd], [.1 .1], 'r', 'LineWidth', 3)
  
-     
     set(gca,'Xlim',[0 max(t)]);
     xlabel('Time (s)');
     title(sprintf('NrBlock  %d CAP: %d valid peaks, %d valid P2P intervals',NrBlock, length(R_valid_locs),length(B2B_valid_locs)));

@@ -8,7 +8,8 @@ Set.task2.Type     = 1;
 Set.task.mintrials2 = 10; % task which are different from the main task
 Set.rest.Type       = 1; 
 Set.rest.reward     = [0 0]; 
-Set.R2R_minValidData = 100; 
+Set.R2R_minValidData = 600; 
+Set.R2R_minValidData_min = 5; 
 Set.OutlierModus = 0; 
 
 
