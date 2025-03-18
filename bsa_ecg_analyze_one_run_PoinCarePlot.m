@@ -359,8 +359,8 @@ if ~isempty(out_overTime)
         SD1_Chunk   = nanmedian(out_overTime.SD1); 
         SD2_Chunk   = nanmedian(out_overTime.SD2); 
         SD1SD2_Chunk   = nanmedian(out_overTime.SD1SD2); 
-        MeanHR_Chunk  = nanmean(60./(out_overTime.btsdet/HRVparams.windowlength));
-        MedianHR_Chunk  = nanmedian(60./(out_overTime.btsdet/HRVparams.windowlength));
+        MeanHR_Chunk   = nanmean(out_overTime.btsdet);
+        MedianHR_Chunk  = nanmedian(out_overTime.btsdet);
         Nr_Chunks_Chunk  = length(out_overTime.btsdet);
         NotAnalysdChunks_Chunk  = length(find(out_overTime.tdflag ~= 5));
     end
@@ -388,7 +388,8 @@ end
 out_overTime_5min = []; 
 Out_OverTime_HF_LF_5 = []; 
 if length(R2R_valid) > 400
-HRVparams.increment = 300;             % Default: 30, seconds increment
+HRVparams.windowlength = 300;           
+HRVparams.increment = 30;             % Default: 30, seconds increment
 
 [results, ResultsFileName, out_overTime_5min ] = Main_HRV_Analysis(R2R_valid, t(R2R_valid_locs),'RRIntervals', HRVparams,[FigInfo, '_', num2str(NrBlock) ] ); 
 Out_OverTime_HF_LF_5 = out_overTime_5min; 
@@ -413,8 +414,8 @@ if ~isempty(out_overTime_5min)
         SD1_Chunk_5     = nanmedian(out_overTime_5min.SD1); 
         SD2_Chunk_5     = nanmedian(out_overTime_5min.SD2); 
         SD1SD2_Chunk_5              = nanmedian(out_overTime_5min.SD1SD2); 
-        MeanHR_Chunk_5              = nanmean(60./(out_overTime_5min.btsdet/HRVparams.windowlength));
-        MedianHR_Chunk_5            = nanmedian(60./(out_overTime_5min.btsdet/HRVparams.windowlength));
+        MeanHR_Chunk_5              = nanmean(out_overTime_5min.btsdet/(HRVparams.windowlength/60));
+        MedianHR_Chunk_5            = nanmedian(out_overTime_5min.btsdet/(HRVparams.windowlength/60));
         Nr_Chunks_Chunk_5           = length(out_overTime_5min.btsdet);
         NotAnalysdChunks_Chunk_5    = length(find(out_overTime_5min.tdflag ~= 5));
     end

@@ -296,8 +296,23 @@ for f=1:n_blocks
         print(out_cap(i_block).hf, sprintf('%sblock%02d_NrBlock%02d.png', [par.saveResults filesep 'cap_'], i_block, NrBlock),'-dpng','-r0');
         if ~par.keepRunFigs
             close(out_cap(i_block).hf);
-        end
+        end 
         
+        
+        % Ensure save directory exists
+if ~exist(par.saveResults, 'dir')
+    mkdir(par.saveResults);
+end
+
+% Construct file name safely
+fileName = fullfile(par.saveResults, sprintf('cap_block%02d_NrBlock%02d.png', i_block, NrBlock));
+
+% Check if figure handle is valid before saving
+if isvalid(out_cap(i_block).hf)
+    print(out_cap(i_block).hf, fileName, '-dpng', '-r300');
+else
+    warning('Figure handle for block %d is invalid', i_block);
+end
     end %%More than one of the same Block Number, but different runs
     
 end % all files
