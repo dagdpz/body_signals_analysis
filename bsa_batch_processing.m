@@ -16,14 +16,45 @@ pathExcel = 'Y:\Logs\Inactivation\Cornelius\Cornelius_Inactivation_log_since2019
 settings_filename = 'bsa_settings_Cornelius2019.m';
 %Test for Pont Care
 %out = bsa_ecg_analyze_one_session_NEW_PoinCarePlot('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190214',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190214');
-sessionList = [20190129, 20190201, 20190207 ,20190213, 20190214,20190215, 20190216,20190227,  20190313,20190314, 20190403,20190828,20190904, 20190910,20190912,20190913, 20191007, 20191010, 20191011 , 20191014];
-sessionList = [20191017];%
-for sessNum = 1:length(sessionList)
-    currSession = num2str(sessionList(sessNum));
+sessionList = [20190124  ,  20190131  20190129, 20190201, 20190207 ,20190213, 20190214,20190215, 20190216,20190227,  20190313,20190314, 20190228 ,   20190304 , 20190403,20190828,20190904, 20190910,20190912,20190913, 20191007, 20191010, 20191011 , 20191014,20190404  ,  20190408  , ...
+    20190424 ,   20190429 ,   20190430  ,  20190508   , 20190509   , 20190813  ,  20191013 ,20191015  ,  20191017  ,  20191018  ,  20191020  ,  20191021];
+sessionList = [   20191013 ,20191015  ,  20191017  ,  20191018  ,  20191020  ,  20191021];%
+sessionList = [     20190214 ];
+%Take all sessions from the Excel/File marked as 1
+Excel = readtable(pathExcel);
+SessionsInExcel = unique(Excel.date);
+
+% Which Sessions are in the Excel-File?
+SessionsInExcelStrings = cellstr(num2str(SessionsInExcel));
+% Which Sessions should be analyzed from Excel-File?
+SessionsInExcel_ForAna = unique(Excel.date(Excel.InaDPul_ECG == 1)).';
+SessionsInExcel_ForAna_Str = cellstr(num2str(SessionsInExcel_ForAna));
+
+SessionsForAna = intersect(SessionsInExcel_ForAna, sessionList);
+
+NotInSessionList = setdiff(SessionsInExcel_ForAna, sessionList);
+NotInSessionList = [     20191021, 20191018, 20191020, ];
+sessionList = [     20190227];
+
+% Problem:    20190404 ,
+% Success:  20190304 , 20190408  ,
+% Problem witht he session Corcombined2019-01-31_11_block_10 - 20190131 ,
+% 20190228  ,b
+for currDate = sessionList
     [out] = ...
-        bsa_ecg_analyze_one_session_NEW_PoinCarePlot(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' currSession], pathExcel, settings_filename, ['Y:\Data\BodySignals\ECG\Cornelius\' currSession]);
+        bsa_respiration_analyze_one_session(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Cornelius\' num2str(currDate)]);
 end
 
+
+for currDate = NotInSessionList
+    [out] = ...
+        bsa_ecg_analyze_one_session_NEW_PoinCarePlot(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel, settings_filename, ['Y:\Data\BodySignals\ECG\Cornelius\' num2str(currDate)]);
+end
+
+for currDate = sessionList
+    [out_ecg, out_cap] = ...
+        bsa_ecg_cap_together_analyze_one_session(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename);
+end
 
 sessionList = [20190129, 20190201, 20190207 ,20190213, 20190214,20190216,20190227,  20190313,20190314, 20190403,20190828,20190910,20191007, 20191010, 20191011 , 20191014];
 % 20190912, 20190913- PBS
@@ -37,103 +68,26 @@ sessionList = [20190404, 20190408, 20190424, 20190429, 20190430, 20190508, 20190
 for sessNum = 1:length(sessionList)
     currSession = num2str(sessionList(sessNum));
     [out] = ...
-        bsa_ecg_analyze_one_session(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' currSession], pathExcel, settings_filename, ['Y:\Data\BodySignals\ECG\Cornelius\' currSession]);
+        bsa_ecg_analyze_one_session(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currSession)], pathExcel, settings_filename, ['Y:\Data\BodySignals\ECG\Cornelius\' currSession]);
 end
 
-for sessNum = 1:length(sessionList)
-    currSession = num2str(sessionList(sessNum));
-    %bsa_read_and_save_TDT_data_without_behavior(['Y:\Data\TDTtanks\Cornelius_phys\', currSession], ['Y:\Data\BodySignals\ECG\Cornelius\', currSession]);
+for currDate = NotInSessionList
+    %bsa_read_and_save_TDT_data_without_behavior(['Y:\Data\TDTtanks\Cornelius_phys\', currDate], ['Y:\Data\BodySignals\ECG\Cornelius\', currDate]);
 
     [out] = ...
-        bsa_ecg_analyze_one_session_NEW_PoinCarePlot(['Y:\Data\BodySignals\ECG\Cornelius\', currSession], pathExcel, settings_filename, ['Y:\Data\BodySignals\ECG\Cornelius\' currSession],'keepRunFigs',false,'dataOrigin','TDT');
+        bsa_ecg_analyze_one_session_NEW_PoinCarePlot(['Y:\Data\BodySignals\ECG\Cornelius\', num2str(currDate)], pathExcel, settings_filename, ['Y:\Data\BodySignals\ECG\Cornelius\' num2str(currDate)],'keepRunFigs',false,'dataOrigin','TDT');
 end
 
 
-for sessNum = 1:length(sessionList)
-    currSession = num2str(sessionList(sessNum));
-    [out] = ...
-        bsa_respiration_analyze_one_session(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' currSession], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Cornelius\' currSession]);
-end
-
-
-for sessNum = 1:length(sessionList)
-    currSession = num2str(sessionList(sessNum));
-    bsa_read_and_save_TDT_data_without_behavior(['Y:\Data\TDTtanks\Cornelius_phys\', currSession], ['Y:\Data\BodySignals\CAP\Cornelius\', currSession]);
+for  currDate = NotInSessionList
+    currDate
+   % bsa_read_and_save_TDT_data_without_behavior(['Y:\Data\TDTtanks\Cornelius_phys\', currSession], ['Y:\Data\BodySignals\CAP\Cornelius\', currSession]);
 
     [out] = ...
-        bsa_respiration_analyze_one_session(['Y:\Data\BodySignals\CAP\Cornelius\', currSession], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Cornelius\' currSession],'keepRunFigs',false,'dataOrigin','TDT');
+        bsa_respiration_analyze_one_session(['Y:\Data\BodySignals\CAP\Cornelius\', num2str(currDate)], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Cornelius\' num2str(currDate)],'keepRunFigs',false,'dataOrigin','TDT');
 end
 
-% Load and save TDT data without behavior
-bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190201', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190201\bodysignals_without_behavior');
-bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190207', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190207\bodysignals_without_behavior');
-out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190216\bodysignals_without_behavior',pathExcel,settings_filename,'','keepRunFigs',true,'dataOrigin','TDT');
-
-
-bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190121', 'Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190121\bodysignals_without_behavior');
-out = bsa_ecg_analyze_one_session('Y:\Projects\PhysiologicalRecording\Data\Cornelius\20190121\bodysignals_without_behavior',pathExcel,settings_filename,'',false,'dataOrigin','TDT');
-
-
-
-% DPUL - Inactivation & Baseline Sessions
-bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190124', 'Y:\Data\BodySignals\ECG\Cornelius\20190124\bodysignals_without_behavior');
-out = bsa_ecg_analyze_one_session('Y:\Data\BodySignals\ECG\Cornelius\20190124',pathExcel,settings_filename,'',false,'dataOrigin','TDT');
-
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190129',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190129');
-
-bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190131', 'Y:\Data\BodySignals\ECG\Cornelius\20190131\bodysignals_without_behavior');
-out = bsa_ecg_analyze_one_session('Y:\Data\BodySignals\ECG\Cornelius\20190131\bodysignals_without_behavior',pathExcel,settings_filename,'',false,'dataOrigin','TDT');
-
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190201',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190201');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190207',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190207');
-bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190216', 'Y:\Data\BodySignals\ECG\Cornelius\20190216\bodysignals_without_behavior');
-out = bsa_ecg_analyze_one_session('Y:\Data\BodySignals\ECG\Cornelius\20190216\bodysignals_without_behavior',pathExcel,settings_filename,'',false,'dataOrigin','TDT');
-
-
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190213',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190213');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190227',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190227');
-bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190228', 'Y:\Data\BodySignals\ECG\Cornelius\20190228\bodysignals_without_behavior');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190228',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190228');
-bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190304', 'Y:\Data\BodySignals\ECG\Cornelius\20190304\bodysignals_without_behavior');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190304',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190304');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190313',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190313');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190314',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190314');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190403',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190403');
-
-%Cornelius: vPul
-
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190404',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190404');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190408',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190408');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190424',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190424');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190429',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190429');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190430',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190430');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190508',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190508');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190509',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190509');
-
-% DPul Inactivation - Corny
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190828',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190828');
-%Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190828
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190910',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190910');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191007',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20191007');
-%Error using bsa_ecg_analyze_one_session (line 181)
-%Conditions do not match!!! Excel-sheet colum tasktype 0 is not identical with the information from behavior file1
-%in Block14
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191011',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20191011');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191010',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20191010');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191014',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20191014');
-
-% unclear
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190813',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190813');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190912',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190912');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190913',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190913');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190904',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190904');
-
-
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191015',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20191015');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191017',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20191017');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191020',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20191020');
-out = bsa_ecg_analyze_one_session('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20191021',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20191021');
-
+% Single Session example
 bsa_read_and_save_TDT_data_without_behavior('Y:\Data\TDTtanks\Cornelius_phys\20190808', 'Y:\Data\BodySignals\ECG\Cornelius\20190808\bodysignals_without_behavior');
 out = bsa_ecg_analyze_one_session('Y:\Data\BodySignals\ECG\Cornelius\20190808\bodysignals_without_behavior',pathExcel,settings_filename,'',false,'dataOrigin','TDT');
 
@@ -144,8 +98,33 @@ pathExcel = 'Y:\Logs\Inactivation\Magnus\Magnus_bodySignals_inactivation_log.xls
 settings_filename = 'bsa_settings_Magnus2019.m';
 % deteleted data in 20220921
 sessionList = [ 20191119,20191205, 20191210, 20191211, 20191212, 20191213,20191120,20191121,20191127, 20191128, 20191204];
-sessionList = [ 20191113];
+sessionList = [ 20191211];
 %20191119 - cmb files differ to excel
+Excel = readtable(pathExcel);
+SessionsInExcel = unique(Excel.date);
+
+% Which Sessions are in the Excel-File?
+%SessionsInExcelStrings = cellstr(num2str(SessionsInExcel));
+% Which Sessions should be analyzed from Excel-File?
+SessionsInExcel_ForAna = unique(Excel.date(Excel.InaDPul_ECG == 1)).';
+SessionsInExcel_ForAna_Str = cellstr(num2str(SessionsInExcel_ForAna));
+
+SessionsForAna = intersect(SessionsInExcel_ForAna, sessionList);
+sort(SessionsForAna)
+NotInSessionList = setdiff(SessionsInExcel_ForAna, sessionList);
+
+
+for currDate = sessionList
+    [out] = ...
+        bsa_respiration_analyze_one_session(['Y:\Data\Magnus_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Magnus\' num2str(currDate)]);
+end
+
+for currDate = NotInSessionList
+    [out_ecg, out_cap] = ...
+        bsa_ecg_cap_together_analyze_one_session(['Y:\Data\Magnus_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename);
+end
+
+
 for sessNum = 1:length(sessionList)
     currSession = num2str(sessionList(sessNum));
     [out] = ...
@@ -159,11 +138,8 @@ for sessNum = 1:length(sessionList)
         bsa_ecg_analyze_one_session(['Y:\Data\Magnus_phys_combined_monkeypsych_TDT\' currSession], pathExcel, settings_filename);
 end
 
-for sessNum = 1:length(sessionList)
-    currSession = num2str(sessionList(sessNum));
-    [out] = ...
-        bsa_respiration_analyze_one_session(['Y:\Data\Magnus_phys_combined_monkeypsych_TDT\' currSession], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Magnus\' currSession]);
-end
+ 
+
 
 
 for sessNum = 1:length(sessionList)
@@ -174,99 +150,9 @@ for sessNum = 1:length(sessionList)
         bsa_respiration_analyze_one_session(['Y:\Data\BodySignals\CAP\Magnus\', currSession], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Cornelius\' currSession],'keepRunFigs',false,'dataOrigin','TDT');
 end
 
-
-
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220921',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20220921');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221115',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221115');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221118',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221118');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221122',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221122');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221125',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221125');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221206',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221206');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221222',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221222');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221229',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20221229');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230104',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230104');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230106',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230106');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230112',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230112');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230126',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230126');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230511',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230511');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230518',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230518');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230519',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230519');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230524',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230524');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230525',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230525');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230526',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230526');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230531',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230531');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230601',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230601');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230602',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230602');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230607',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230607');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230608',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230608');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230609',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230609');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230614',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230614');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230615',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230615');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230616',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230616');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230621',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230621');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230622',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230622');
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230623',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230623');
 
 out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20220921',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20220921');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221115',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221115');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221118',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221118');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221122',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221122');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221125',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221125');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221206',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221206');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221222',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221222');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20221229',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20221229');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230104',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230104');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230106',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230106');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230112',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230112');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230126',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230126');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230511',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230511');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230518',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230518');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230519',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230519');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230524',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230524');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230525',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230525');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230526',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230526');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230531',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230531');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230601',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230601');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230602',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230602');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230607',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230607');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230608',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230608');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230609',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230609');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230614',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230614');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230615',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230615');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230616',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230616');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230621',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230621');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230622',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230622');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230623',pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Magnus\20230623');
-
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190131',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20190131');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190213',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20190213');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20190404',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20190404');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191108',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191108');
-%changed task type!!!
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191110',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191110');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191111',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191111');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191119',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191119');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191204',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191204');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191127',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191127');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191128',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191128');
-
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191113',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191113');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191120',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191120');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191121',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191121');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191205',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191205');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191210',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191210');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191211',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191211');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191212',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191212');
-out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191213',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20191213');
-
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191113',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\CAP\20191113');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191120',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\CAP\20191120');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191121',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\CAP\20191121');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191205',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\CAP\20191205');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191210',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\CAP\20191210');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191211',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\CAP\20191211');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191212',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\CAP\20191212');
-out_cap = bsa_respiration_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20191213',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\CAP\20191213');
 
 %% BACCHUS
 pathExcel = 'Y:\Logs\Phys\Bacchus\Bacchus_bodySignals_ephys_log.xlsx';
@@ -342,8 +228,24 @@ pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905_NoC
 settings_filename = 'bsa_settings_Curius2019.m'; % full path will be complemented in bsa_ecg_analyze_one_session
 
 sessionList = [20190717, 20190729,20190801,20190802,20190806,20190807, 20190808, 20190809, 20190813, 20190814,20190815, 20190820,20190822, 20190826,20190828,20190903, 20190905,20190910, 20190912,  20190913 ];
-%
-sessionList = [20190717];
+Excel = readtable(pathExcel);
+SessionsInExcel = unique(Excel.date);
+
+% Which Sessions are in the Excel-File?
+SessionsInExcelStrings = cellstr(num2str(SessionsInExcel));
+% Which Sessions should be analyzed from Excel-File?
+SessionsInExcel_ForAna = unique(Excel.date(Excel.InaDPul_ECG == 1)).';
+SessionsInExcel_ForAna_Str = cellstr(num2str(SessionsInExcel_ForAna));
+sort(SessionsInExcel_ForAna)
+
+SessionsForAna = intersect(SessionsInExcel_ForAna, sessionList);
+NotInSessionList = setdiff(SessionsInExcel_ForAna, sessionList);
+
+for currDate = SessionsForAna
+    [out_ecg, out_cap] = ...
+        bsa_ecg_cap_together_analyze_one_session(['Y:\Data\Curius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename);
+end
+
 for sessNum = 1:length(sessionList)
     currSession = num2str(sessionList(sessNum));
     [out] = ...

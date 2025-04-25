@@ -424,7 +424,8 @@ else
     out.ECG_Rpeaks_valid        = ecg_data; % +/- 500 ms data segments for consecutive R-peaks
 end
 
-
+out.settingsStruct = Set;            % entire parameter struct (or Set.cap)
+out.codeTimestamp  = datestr(now,30);% provenance: yyyymmddTHHMMSS
 
 
 

@@ -207,7 +207,7 @@ end
 
 %% process CAP in a loop
 pathExcel = 'Y:\Logs\Phys\Bacchus\Bacchus_bodySignals_ephys_log.xlsx';
-settings_filename = 'bsa_settings_Bacchus2019.m';
+settings_filename = 'C:\Users\kkaduk\Desktop\Kristin\GitHub\body_signals_analysis\settings\bsa_settings_Bacchus2019.m';
 
 % out_cap = bsa_respiration_analyze_one_session('Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\20210720', pathExcel,settings_filename,'Y:\Data\BodySignals\CAP\Bacchus\20210720');
 
@@ -219,9 +219,11 @@ for currDate = sessionDates
 end
 
 %% process ECG & CAP in a loop
-pathExcel = 'Y:\Logs\Phys\Bacchus\Bacchus_bodySignals_ephys_log.xlsx';
-settings_filename = 'bsa_settings_Bacchus2019.m';
 
+pathExcel = 'Y:\Logs\Phys\Bacchus\Bacchus_bodySignals_ephys_log.xlsx';
+settings_filename = '\bsa_settings_Bacchus2019.m';
+
+%Luba
 sessionDates = [20210715, 20210716, 20210720, 20210723, 20210729, 20210730, 20210803, 20210805, ...
 	20210806, 20210826, 20210827, 20210903, 20210906, 20210905, 20210930, 20211001, ...
 	20211005, 20211007, 20211013, 20211014, 20211019, 20211027, 20211028, 20211102, ...
@@ -230,8 +232,16 @@ sessionDates = [20210715, 20210716, 20210720, 20210723, 20210729, 20210730, 2021
 	20220222, 20220224, 20220225, 20220309, 20220310, 20220315, 20220318, ...
 	20220322]; %... skipped 20210829 (no ECG), 20211025 (no ECG), 20211108 (no ECG)
 %     [20210720, 20210722, 20211001, 20211208, 20211214, 20211222, 20220105, 20220106]; % skipped  20211207, % finished 
+%Shamim
+sessionDates = [20210715, 20210716,20210720, 20210722, 20210723, 20210729, ...
+     20210730, 20210805, 20210806, 20210826, 20210827, 20210903, 20210905, ...
+     20210906, 20210930, 20211007, 20211012, 20211013, ...
+     20211014, 20211019, 20211027, 20211028, 20211102, 20211103, 20211116, ...
+     20211117, 20211207, 20211214, 20220105, 20220106, 20220203, ...
+     20220211, 20220221, 20220222, 20220224, 20220225, 20220309, 20220310, ...
+     20211001, 20211005, 20211222, 20220315, 20220318, 20220322])); % skipped 20211001, 20211005, 20211222 --> they don't have the trial file 
 
-for currDate = sessionDates
+for currDate = sessionDates(1:5)
     [out_ecg, out_cap] = ...
         bsa_ecg_cap_together_analyze_one_session(['Y:\Data\Bacchus_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename);
 end

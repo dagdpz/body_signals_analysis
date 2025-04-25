@@ -36,7 +36,7 @@ function [out,Tab_outlier] = bsa_respiration_analyze_one_run(capSignal,settings_
 
 % filtering according to https://de.mathworks.com/matlabcentral/answers/270238-how-can-i-filter-ecg-signals-with-high-motion-artifact
 % (or see also https://de.mathworks.com/matlabcentral/answers/364788-ecg-signal-artifact-removing)
-%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %{
@@ -71,16 +71,46 @@ else
     capSignal = (-1)*capSignal;
 end
 
+%% Smoothing
+Set.cap.smoothing_window = 0.3;
 capFiltered = smooth(capSignal, round(Set.cap.smoothing_window*Fs))'; % increase smoothing window to .25s; doesn't affect peak detection but is needed for further inspiration / expiration classification
+capFilteredFilled = filloutliers(capFiltered, 'linear', 'movmedian', 1000);
+%windowDuration = 1000 / Fs;
+%capFiltered2 = smoothdata(capSignal, 'sgolay', 1000);
 
+% figure; hold on;
+% plot(t, capSignal, 'k', 'DisplayName', 'Original Signal');
+% plot(t, capFiltered, 'r', 'DisplayName', 'Smoothed Signal');
+% plot(t, capFilteredFilled, 'b', 'DisplayName', 'Smoothed sgolay');
+% legend;
+% xlabel('Time (s)');
+
+%% problem with saturation in the signal (e.g., signal stuck at 0 for a while)
+signalMin = min(capFilteredFilled);
+signalRange = range(capFilteredFilled);
+
+% Define threshold close to minimum but not exactly min
+flatThreshold = signalMin + 0.01 * signalRange;
+flatIdx = capFilteredFilled < flatThreshold;
+sum(flatIdx)
+capFilteredFilled(flatIdx) = NaN;
+%capFilteredFilled_interp = fillmissing(capFilteredFilled, 'linear');
+%capFilteredFilled_Smooth = smoothdata(capFilteredFilled_interp, 'sgolay', 1000);
+
+% figure; hold on;
+% plot(t, capSignal, 'k', 'DisplayName', 'Original Signal');
+% plot(t, capFiltered, 'r', 'DisplayName', 'Smoothed Signal');
+% plot(t, capFilteredFilled, 'b', 'DisplayName', 'Smoothed sgolay');
+% %plot(t, capFilteredFilled_Smooth, 'g', 'DisplayName', 'Interpolated');
+%%
 if 0 % Debug
     figure ('Name','Single-sided amplitude spectrum');
     ft_original = fft(capSignal)/n_samples;         % Fourier Transform
     Fv = linspace(0, 1, fix(n_samples/2)+1)*Fn;     % Frequency Vector
     Fv = Fv(Fv<60); % limit to 60 Hz
     
-    ft_filtered = fft(ecgFiltered)/n_samples;  
-
+    ft_filtered = fft(ecgFiltered)/n_samples;
+    
     plot(Fv, abs(ft_original(1:length(Fv)))*2,'b'); hold on
     plot(Fv, abs(ft_filtered(1:length(Fv)))*2,'g');
     
@@ -90,132 +120,201 @@ if 0 % Debug
     title('Single-sided amplitude spectrum');
 end
 
-%% full  rectification
-% part of the quarter
-capFiltered_rectified = ig_fullrectify(capFiltered); 
 
-% find remainders of inspiration (according to Singh, Howe, Malarvili,
-% 2018, J.Breath Res. S-T interval) - they're supposed to be negative 
-% deflections with plateaux
-cap_mode = mode(capFiltered_rectified); % find cap data mode - flat remaiders of inspiration are supposed to lay there
+%% full  rectification
+% %% Full Rectification of Capnogram Signal
+% The signal is fully rectified using the `ig_fullrectify` function.
+% This ensures all values are positive, making it easier to detect inspiratory phases.
+capFiltered_rectified = ig_fullrectify(capFilteredFilled);
+
+%% Detecting Remainders of Inspiration
+% According to Singh, Howe, and Malarvili (2018, J. Breath Res.), inspiration phases
+% are characterized by negative deflections with plateaus in the capnogram.
+
+% Find the mode (most frequently occurring value) of the rectified signal.
+% Flat portions of inspiration are expected to be near this mode.
+cap_mode = mode(capFiltered_rectified);
+%cap_mode = median(capFiltered_rectified);
+
+% Compute the fraction of data points below the mode.
 fractionBelowMode = sum(capFiltered_rectified < cap_mode) / length(capFiltered_rectified);
+
+% If more than 50% of the data points are below the mode, use this fraction directly.
+% Otherwise, double it to emphasize inspiration segments.
 if fractionBelowMode > 0.5 % for meaningful data this parameter will be below 0.5
     fraction_of_inspiration = sum(capFiltered_rectified < cap_mode) / length(capFiltered_rectified);
 else
     fraction_of_inspiration = 2 * sum(capFiltered_rectified < cap_mode) / length(capFiltered_rectified); % find data points below the mode, they are supposed to be inspiration for sure, double them
 end
-inspiration_threshold = prctile(capFiltered_rectified, 100*fraction_of_inspiration); % below this value are inspiration points
-insp_idx = find(capFiltered_rectified < inspiration_threshold);
+
+% Define an inspiration threshold based on the computed fraction.
+% This sets a cut-off below which points are considered part of inspiration.
+inspiration_threshold = prctile(capFiltered_rectified, 100*fraction_of_inspiration);
+%inspiration_threshold = prctile(capFiltered_rectified, 10); % 5th percentile
+
+insp_idx = find(capFiltered_rectified < inspiration_threshold); %% Identify indices of inspiration points (values below the threshold).
+
+%% PREVIOUS VERSION - too simplistic
+%Find the end points of inspiration phases by detecting large gaps (>500 samples).
 insp_end_idx = find(diff(insp_idx)>500);
-insp_end_t = t(insp_idx(insp_end_idx)); % times of inspiration ends (the same as expiration starts)
+% Extract the corresponding times of inspiration end points.
+% These indicate the start of expiration.
+insp_end_t = t(insp_idx(insp_end_idx));
+% Extract signal values at inspiration end points.
 insp_end_sample = capFiltered_rectified(insp_idx(insp_end_idx)); % sample of inspiration ends (the same as expiration starts)
 
-MinPeakProminence = median (capFiltered_rectified)* Set.cap.MinPeakProminenceCoef; 
-% find peaks according to three critera:
+
+
+
+%% PLot the detected inspiration
+% figure; hold on;
+% plot(t, capFiltered, 'b', 'DisplayName', 'Original Signal'); % Raw capnogram
+% plot(t, capFiltered_rectified, 'k', 'DisplayName', 'Rectified Signal'); % Rectified
+% yline(inspiration_threshold, 'r--', 'DisplayName', 'Inspiration Threshold'); % Threshold line
+% scatter(t(insp_idx), capFiltered_rectified(insp_idx), 'g', 'filled', 'DisplayName', 'Detected Inspiration'); % Inspiration points
+% scatter(insp_end_t, capFiltered_rectified(insp_idx(insp_end_idx)), 'bo', 'filled','DisplayName', 'Improved Inhalation End');
+%
+% legend;
+% xlabel('Time (s)');
+% ylabel('Capnogram Amplitude');
+
+%% Peak Detection for Expiratory Phases
+% Define the minimum peak prominence based on the median of the rectified signal.
+% This helps filter out small fluctuations and retain significant expiratory peaks.
+
+%zcapFilteredFilled = zscore(capFilteredFilled);
+
+
+MinPeakProminence = nanmedian(capFiltered_rectified)* Set.cap.MinPeakProminenceCoef;
+% % Find peaks in the capnogram using three criteria:
 % 1) amplitude of the previous & next minimum
-% 2) Distance between two peaks
+% 2) Distance between two peaks - required in samples
 % 3) Min Peak height
-[pks,locs_peak]=findpeaks(capFiltered, ...
+[pks,locs_peak]=findpeaks(capFiltered_rectified, ...
     'MinPeakProminence',MinPeakProminence, ...
     'minpeakdistance',fix(Set.cap.min_P2P*Fs), ...
-    'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
+    'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*nanmedian(capFiltered_rectified));
+
+if isempty(locs_peak) || numel(locs_peak) < 30
+ %Write in ERROR LOG!!
+  Set.cap.eP_tc_minpeakheight_med_prop = 1;
+
+[pks,locs_peak]=findpeaks(capFiltered_rectified, ...
+    'MinPeakProminence',MinPeakProminence, ...
+    'minpeakdistance',fix(Set.cap.min_P2P*Fs), ...
+    'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*nanmedian(capFiltered_rectified));
+end
 % find peaks which are next to each other without a minimum
-% locs = [locs_min, locs_peak]; 
-% locs = sort(locs); 
+% locs = [locs_min, locs_peak];
+% locs = sort(locs);
 % [C, il,ilp] = intersect(locs,locs_peak );
 % idx = locs(il(diff(il) == 1)); %shifted!!
 
+% --- Step 2: Estimate min_P2P from initial detections ---
+p2p_intervals_sec = diff(locs_peak) / Fs;
+min(p2p_intervals_sec)
+max(p2p_intervals_sec)
 
-%remove peaks which 
+min_peak_height = min(pks);
+max_peak_height = max(pks);
+mean_peak_height = mean(pks);
+%remove peaks which
 %criterium = 'SmallDifference';
 %[data_wo_outliers_p2m,idx_wo_outliers_p2m,outliers_p2m,idx_outliers,thresholdValue_p2m] = bsa_remove_outliers(height_peaks,Set.cap.MAD_sensitivity_p2m_diff,criterium);
 
-
+% Compute difference between consecutive peak amplitudes
+% Start with 0 so length matches pks
 diff_peaks = [0 abs(diff(pks))];
 
-% remove outliers based on the difference in height /between the amplitude of peaks
+% Remove outliers based on large amplitude jumps using MAD (Median Absolute Deviation)
 [data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,Set.cap.MAD_sensitivity_p2p_diff);
 
 Tab_outlier.outlier = length(idx_outliers);
-Tab_outlier.NrRpeaks_orig       = length(pks); 
+Tab_outlier.NrRpeaks_orig       = length(pks);
 
-appr_cap_peak2peak_n_samples = mode(abs(diff(locs_peak(idx_wo_outliers)))); % rough number of samples between ecg R peaks
 
-% half-way rectify - leave only positive values
-capFiltered_pos             = max(capFiltered,0);
-median(capFiltered_pos)
-[~,pos_cap_locs]  = findpeaks(capFiltered_pos,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs));
+% Estimate the typical (mode) peak-to-peak interval (in samples)
+% using peaks that passed the amplitude difference filter
+appr_cap_peak2peak_n_samples = mode(abs(diff(locs_peak(idx_wo_outliers)))); % rough number of samples between peaks
 
-% find ecg peaks closest (in time) to valid energyProfile_tc peaks, within search_segment_n_samples
+% Leave only positive values in capFiltered (e.g., ignore downward deflections)
+capFiltered_pos             = max(capFiltered_rectified,0);
+
+% 'threshold' minimum required height difference between a peak and its neighboring points — not the absolute height of the peak.
+% Only consider something a peak if it's at least eps higher than the adjacent samples.
+[~,pos_cap_locs]  = findpeaks(capFiltered_pos,...
+     'MinPeakProminence',MinPeakProminence, ...
+    'minpeakdistance',fix(Set.cap.min_P2P*Fs), ...
+    'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered_pos));
+
+% --- Visualization: Compare peak locations ---
+% figure;
+% plot(t, capFiltered); hold on;
+% plot(t, capFiltered_rectified); hold on;
+% plot(t(pos_cap_locs), capFiltered_pos(pos_cap_locs), 'm^', 'MarkerSize', 8);
+% plot(t(locs_peak), capFiltered_pos(locs_peak), 'b^', 'MarkerSize', 8);
+
+% Initialize containers for matched and unmatched cap peaks
 search_segment_n_samples    = fix(appr_cap_peak2peak_n_samples* Set.cap.fraction_B2B_look4peak);
 maybe_valid_pos_cap_locs    = [];
+maybe_Invalid_pos_cap_locs    = [];Invalid_peak= []; Minsearch_ranges= [];Maxsearch_ranges= [];
+
 for p = 1:length(idx_wo_outliers)
-    idx_overlap = intersect( pos_cap_locs, locs_peak(idx_wo_outliers(p))-search_segment_n_samples : locs_peak(idx_wo_outliers(p))+search_segment_n_samples );
+    
+    %computed on locs_peak (filtered with idx_wo_outliers) contains your candidate peaks, based on first peak detection.
+    peak_center = locs_peak(idx_wo_outliers(p));
+    search_range = peak_center - search_segment_n_samples : peak_center + search_segment_n_samples;
+    % Check if any cap peak was detected within the search window
+    idx_overlap = intersect(pos_cap_locs, search_range);
     
     if ~isempty(idx_overlap)
+        % If overlap exists, store the matching cap peak (last one found in range)
         maybe_valid_pos_cap_locs = [maybe_valid_pos_cap_locs idx_overlap(end)];
+    else
+        % If no cap peak found in range, log it as invalid
+        maybe_Invalid_pos_cap_locs = [maybe_Invalid_pos_cap_locs peak_center(end)];
+        Minsearch_ranges = [Minsearch_ranges min(search_range)];
+        Maxsearch_ranges = [Maxsearch_ranges max(search_range)];
+        
+        Invalid_peak = [Invalid_peak, p];
     end
     
 end
 
 
-
 %% Breathing to breathing intervals
-B2B             = [NaN diff(t(maybe_valid_pos_cap_locs))]; % 
+B2B             = [NaN diff(t(maybe_valid_pos_cap_locs))]; %NaN at the beginning → to keep the vector aligned with original indices
 median_B2B      = median(B2B);
 mode_B2B        = mode(B2B);
+min_B2B         = min(B2B);
 [hist_B2B,bins] = hist(B2B,[Set.cap.min_P2P:0.01:1]);
 
 % invalidate all B2B less than minFactor_B2BMode (e.g. 0.66) of mode and more than maxFactor_B2BMode (e.g. 1.5) of mode
 idx_valid_B2B         = find((B2B> Set.cap.minFactor_B2BMode*mode_B2B & B2B <  Set.cap.maxFactor_B2BMode *mode_B2B));
 idx_Invalid_B2B       = find((B2B< Set.cap.minFactor_B2BMode*mode_B2B | B2B >  Set.cap.maxFactor_B2BMode *mode_B2B));
 
-detectedOutliers_mode = (length(idx_Invalid_B2B)/length(B2B))*100; 
+
+detectedOutliers_mode = (length(idx_Invalid_B2B)/length(B2B))*100;
 disp(['Fraction of B2B outliers detected using deviations from B2B mode: ', num2str(detectedOutliers_mode) ])
 Tab_outlier.outlier_Mode_abs = length(idx_Invalid_B2B);
-Tab_outlier.outlier_Mode_pct = round((length(idx_Invalid_B2B)/length(B2B))*100 ,4); 
+Tab_outlier.outlier_Mode_pct = round((length(idx_Invalid_B2B)/length(B2B))*100 ,4);
 
 t_valid_B2B                         = t(maybe_valid_pos_cap_locs(idx_valid_B2B));
 B2B_valid_before_hampel             = B2B(idx_valid_B2B);
-Tab_outlier.NrB2B_beforehampel      = length(B2B_valid_before_hampel); 
-
-%% match P2P intervals and expiration / inspiration
-maybe_valid_pos_cap_times = t(maybe_valid_pos_cap_locs);
-
-t_valid_inspStart = nan(length(maybe_valid_pos_cap_times), 1);
-t_valid_inspEnd = nan(length(maybe_valid_pos_cap_times), 1);
-t_valid_expStart = nan(length(maybe_valid_pos_cap_times), 1);
-t_valid_expEnd = nan(length(maybe_valid_pos_cap_times), 1);
-
-for ii = 1:length(maybe_valid_pos_cap_times)-1 % loop through peaks
-    
-    currPeakTime = maybe_valid_pos_cap_times(ii);
-    nextInspEndId = find(insp_end_t > currPeakTime, 1, 'first');
-    
-    if ~isempty(insp_end_t(nextInspEndId))
-        if insp_end_t(nextInspEndId) - currPeakTime > Set.cap.min_P2P / 2 && ...% at least half of a minimal cycle duration
-            insp_end_t(nextInspEndId) - currPeakTime < 2
-            t_valid_inspStart(ii) = currPeakTime;
-            t_valid_inspEnd(ii) = insp_end_t(nextInspEndId);
-            t_valid_expStart(ii) = insp_end_t(nextInspEndId); % inspiration end is expiration start
-            t_valid_expEnd(ii) = maybe_valid_pos_cap_times(ii+1); % expiration end is next R-peak start
-        end
-    end
-    
-end
-
+Tab_outlier.NrB2B_beforehampel      = length(B2B_valid_before_hampel);
 
 %% remove outliers from B2B using hampel
+% DX	Window size — the number of neighbors on each side to consider
+%T	Threshold — how many scaled MADs (median absolute deviations) away from the local median a point must be to be considered an outlier
 [YY,idx_outliers_hampel] = hampel(t_valid_B2B,B2B_valid_before_hampel, Set.cap.hampel_DX, Set.cap.hampel_T);
 
-%[YY,idx_outliers_hampel, xmedian, xsigma] = hampel(B2B_valid_before_hampel, Set.cap.hampel_nb_of_std,  Set.cap.hampel_adjacentSampleToComputeMean); %B2B_valid_before_hampel, Set.cap.hampel_DX, Set.cap.hampel_T
 idx_to_delete = [];
 idx_to_delete_after_outliers = [];
 Tab_outlier.outliers_hampel_abs = sum(idx_outliers_hampel);
 
 if sum(idx_outliers_hampel), % there are outliers
     idx_outliers_hampel = find(idx_outliers_hampel); % convert to numbers
-
+    
     for k = 1:length(idx_outliers_hampel),
         idx_to_delete = [idx_to_delete idx_outliers_hampel(k)];
         
@@ -232,11 +331,12 @@ if sum(idx_outliers_hampel), % there are outliers
     idx_valid_B2B(idx_to_delete) = []; % delete outliers, and also next B2B after each outlier, if it is consecutive
     
 end
-detectedOutlier2                = 100-((length(idx_valid_B2B)/length(B2B))*100); 
+
+
+detectedOutlier2                = 100-((length(idx_valid_B2B)/length(B2B))*100);
 disp(['Fraction of B2B outliers detected using deviations from B2B mode and Hampel: ', num2str(detectedOutlier2) ])
 
 Tab_outlier.outliers_delete_abs = length(idx_to_delete);
-%
 Tab_outlier.outliers_hampel_pct = 100- (((length(idx_valid_B2B)+Tab_outlier.outlier_Mode_abs)/length(B2B))*100) ;
 
 %R-peaks
@@ -246,17 +346,264 @@ R_valid_locs    = maybe_valid_pos_cap_locs(idx_valid_R);
 B2B_valid_locs  = maybe_valid_pos_cap_locs(idx_valid_B2B);
 B2B_valid       = B2B(idx_valid_B2B);
 
-Tab_outlier.NrRpeaks_valid      = length(R_valid_locs); 
-Tab_outlier.NrB2B_valid         = length(B2B_valid); 
+Tab_outlier.NrPeaks_valid      = length(R_valid_locs);
+Tab_outlier.NrB2B_valid         = length(B2B_valid);
 Tab_outlier.outliers_all_abs    = Tab_outlier.outliers_delete_abs  +   Tab_outlier.outlier_Mode_abs    + Tab_outlier.outlier;
 Tab_outlier.outliers_all_pct    = (Tab_outlier.outliers_all_abs/Tab_outlier.NrRpeaks_orig)*100;
 disp(['Nr of deleted R peaks & B2B outliers: ', num2str(Tab_outlier.outliers_all_abs) ])
 disp(['Fraction of deleted R peaks & B2B outliers: ', num2str(Tab_outlier.outliers_all_pct) ])
 
+
+
+
+
+
+%% match P2P intervals and expiration / inspiration
+% Extract the time points of possible valid positive capnograph peaks
+validPeakTimes = t(R_valid_locs);
+
+
+t_valid_inspStart = nan(length(validPeakTimes), 1);
+t_valid_inspEnd = nan(length(validPeakTimes), 1);
+t_valid_expStart = nan(length(validPeakTimes), 1);
+t_valid_expEnd = nan(length(validPeakTimes), 1);
+duration_insp_valid = nan(length(validPeakTimes), 1);
+duration_exp_valid = nan(length(validPeakTimes), 1);
+
+% Initialize tracking for skipped inhalation segments
+skippedInspTimes = [];
+skippedInspDurations = [];
+noInspEndCount = 0;
+noInspEndTimes = [];
+% Loop through all possible valid peaks (except the last one)
+maxSegmentDuration = 1.5 * mode_B2B;
+
+
+% === Compute corrected inspiration end (trough) for each breath ===
+corrected_insp_end_t = nan(length(validPeakTimes) - 1, 1);
+corrected_insp_end_idx = nan(length(validPeakTimes) - 1, 1);
+
+for ii = 1:length(validPeakTimes)-1
+    currPeakTime = validPeakTimes(ii);
+    nextPeakTime = validPeakTimes(ii + 1);
+    
+    % Get signal region between the two peaks
+    segment_idx = find(t >= currPeakTime & t <= nextPeakTime);
+    
+    % Find the local minimum (trough)
+    [~, localMinIdx_rel] = min(capFiltered_rectified(segment_idx));
+    localMinIdx_abs = segment_idx(localMinIdx_rel);
+    estimatedInspEnd = t(localMinIdx_abs);
+    
+    % Store in new vectors
+    corrected_insp_end_t(ii) = estimatedInspEnd;
+    corrected_insp_end_idx(ii) = localMinIdx_abs;
+end
+for ii = 1:length(validPeakTimes)-1 % loop through peaks
+    
+    currPeakTime = validPeakTimes(ii);
+    nextPeakTime = validPeakTimes(ii+1);
+    
+    
+    %% adapt the insp_end_t that they are the minimum = independent of the threshold
+    
+    % Find the first inspiration end that occurs after the current peak
+    nextInspEndId = find(corrected_insp_end_t > currPeakTime & corrected_insp_end_t < nextPeakTime, 1, 'first');
+    % If a valid inspiration end is found
+    if ~isempty(nextInspEndId)
+        inspEndTime = corrected_insp_end_t(nextInspEndId);
+        durationExp  =  nextPeakTime - inspEndTime;
+        durationInsp  =  inspEndTime - currPeakTime ;
+        
+        % Sanity check: valid durations
+        if durationInsp > Set.cap.min_P2P / 3 && ...
+                durationExp > Set.cap.min_P2P / 3 && ...
+                durationInsp < 1.5 * mode_B2B && ...
+                durationExp < 2 * mode_B2B
+            
+            
+            %             t_valid_expStart(ii)  = currPeakTime;
+            %             t_valid_expEnd(ii)    = inspEndTime;
+            %             t_valid_inspStart(ii) = inspEndTime;  % inspiration starts here
+            %             t_valid_inspEnd(ii)   = nextPeakTime;
+            
+            t_valid_inspStart(ii)   = currPeakTime;
+            t_valid_inspEnd(ii)     = corrected_insp_end_t(nextInspEndId);
+            t_valid_expStart(ii)    = corrected_insp_end_t(nextInspEndId); %
+            t_valid_expEnd(ii)      = nextPeakTime; % expiration end is next R-peak start
+            
+            %             t_valid_expEnd(ii)    = inspEndTime;
+            
+            duration_insp_valid(ii) = durationInsp;
+            duration_exp_valid(ii) = durationExp;
+            
+        else
+            % Log skipped segment
+            skippedInspTimes(end+1) = currPeakTime;
+            skippedInspDurations(end+1) = durationInsp;
+        end
+    else
+        % No inspiration end found — log it
+        noInspEndCount = noInspEndCount + 1;
+        noInspEndTimes(end+1) = currPeakTime;
+    end
+    
+end
+
+% %%
+% figure; hold on;
+% plot(t, capFiltered, 'b', 'DisplayName', 'Original Signal'); % Raw capnogram
+% plot(t, capFiltered_rectified, 'k', 'DisplayName', 'Rectified Signal'); % Rectified
+% yline(inspiration_threshold, 'r--', 'DisplayName', 'Inspiration Threshold'); % Threshold line
+% scatter(t(insp_idx), capFiltered_rectified(insp_idx), 'g', 'filled', 'DisplayName', 'Detected Inspiration'); % Inspiration points
+% scatter(insp_end_t, capFiltered_rectified(insp_idx(insp_end_idx)), 'bo', 'filled','DisplayName', 'Improved Inhalation End');
+%     plot(t(locs_peak(idx_wo_outliers)),capSignal(locs_peak(idx_wo_outliers)),'ko','MarkerSize',6);
+% scatter(corrected_insp_end_t, capFiltered_rectified(corrected_insp_end_idx), 'ro', 'filled','DisplayName', 'Improved Inhalation End');
+%     plot(t(locs_peak(idx_wo_outliers)),capSignal(locs_peak(idx_wo_outliers)),'ko','MarkerSize',6);
+%
+%
+%     % valid R peaks
+%     plot(t(R_valid_locs),capSignal(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
+%     %valid B2B intervals -> filled TRIANGLE
+%     plot(t(B2B_valid_locs),capSignal(B2B_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
+%     plot(t(locs_peak(idx_outliers)),capSignal(locs_peak(idx_outliers)),'bx');
+%
+% % --- Inhalation Segment Points (blue circles) ---
+% for i = 1:length(t_valid_inspStart)
+%     segIdx = find(t >= t_valid_inspStart(i) & t <= t_valid_inspEnd(i));
+%
+%     t_seg = t(segIdx);
+%     y_seg = capFiltered_rectified(segIdx);
+%
+%     if ~isempty(t_seg) && ~isempty(y_seg)
+%         scatter(t_seg(:), y_seg(:), 10, 'b', 'filled'); % Ensure column vectors
+%     end
+% end
+%
+% % --- Inhalation Segment Points (blue circles) ---
+% for i = 1:length(t_valid_expStart)
+%     segIdx = find(t >= t_valid_expStart(i) & t <= t_valid_expEnd(i));
+%
+%     t_seg = t(segIdx);
+%     y_seg = capFiltered_rectified(segIdx);
+%
+%     if ~isempty(t_seg) && ~isempty(y_seg)
+%         scatter(t_seg(:), y_seg(:), 10, 'r', 'filled'); % Ensure column vectors
+%     end
+% end
+
+% After the loop:
+Tab_outlier.median_duration_insp = nanmedian(duration_insp_valid);
+Tab_outlier.median_duration_exp = nanmedian(duration_exp_valid);
+IE_ratio = Tab_outlier.median_duration_insp / Tab_outlier.median_duration_exp;
+fprintf('Mean I:E Ratio = %.2f\n', IE_ratio);
+
+% --- Post-processing unmatched peaks: estimate inspiration segments ---
+for jj = 1:length(noInspEndTimes)
+    missingTime = noInspEndTimes(jj); %currPeakTime
+    
+    % Find the index of the missing time in the validPeakTimes array
+    peakIdx = find(validPeakTimes == missingTime);
+    
+    % Estimate inspiration start as expiration end (same as currPeakTime)
+    t_valid_expStart(peakIdx) = missingTime;
+    
+    % Estimate inspiration end as halfway to the next peak (or some fallback)
+    if peakIdx < length(validPeakTimes)
+        nextTime = validPeakTimes(peakIdx + 1);
+        
+        % Get the index range in the time vector
+        rangeIdx = find(t >= missingTime & t <= nextTime);
+        
+        % Find index of minimum value in that segment
+        [~, localMinIdx_rel] = min(capFiltered_rectified(rangeIdx));
+        localMinIdx_abs = rangeIdx(localMinIdx_rel);  % Convert back to full signal index
+        
+        % Assign the trough as inspiration end
+        estimatedInspEnd = t(localMinIdx_abs);
+    else
+        % fallback if it's the last peak
+        estimatedInspEnd = missingTime + mode_B2B * 0.8;
+    end
+    
+    insp_end_t(end+1) = estimatedInspEnd;
+    if ~ismember(localMinIdx_abs, insp_idx)
+        insp_idx(end+1) = localMinIdx_abs;
+    end
+    
+    % Sort insp_idx so it remains ordered
+    [insp_idx, sort_order] = sort(insp_idx);
+    
+    % Update insp_end_idx based on new sorted insp_idx
+    % Find position of the new end index
+    new_end_pos = find(insp_idx == localMinIdx_abs);
+    
+    % Re-sort existing insp_end_idx to maintain alignment
+    insp_end_idx = sort([insp_end_idx, new_end_pos]);
+    
+    t_valid_expEnd(peakIdx)    = missingTime;         % end of expiration
+    t_valid_inspStart(peakIdx) = missingTime;         % inspiration starts at end of expiration
+    t_valid_inspEnd(peakIdx)   = estimatedInspEnd;    % estimated end
+    
+    % Correct durations based on real timestamps
+    duration_exp_valid(peakIdx)  = t_valid_expEnd(peakIdx)  - t_valid_expStart(peakIdx);
+    duration_insp_valid(peakIdx) = t_valid_inspEnd(peakIdx) - t_valid_inspStart(peakIdx);
+end
+
+insp_end_t = sort(insp_end_t);
+
+% After the loop:
+mean_duration_insp = nanmedian(duration_insp_valid);
+mean_duration_exp = nanmedian(duration_exp_valid);
+IE_ratio = mean_duration_insp / mean_duration_exp;
+fprintf('Mean I:E Ratio = %.2f\n', IE_ratio);
+
+Tab_outlier.numSkippedInspSegments = length(skippedInspTimes);
+Tab_outlier.skippedInspTimes = skippedInspTimes;
+Tab_outlier.skippedInspDurations = skippedInspDurations;
+
+Tab_outlier.numValidPeaksNoInspEnd = noInspEndCount;
+Tab_outlier.validPeaksNoInspEndTimes = noInspEndTimes;
+% Count valid inspiration starts (non-NaN)
+Tab_outlier.numValidInsp = sum(~isnan(t_valid_inspStart));
+
+% Count valid expiration starts (same as valid expirations, since they follow inspiration ends)
+numValidExp = sum(~isnan(t_valid_expStart));
+
+% Total possible (attempted) breaths
+Tab_outlier.totalCandidatesInsp = length(t_valid_inspStart);
+
+% Invalid ones are just the rest
+Tab_outlier.numInvalidInsp = Tab_outlier.totalCandidatesInsp - Tab_outlier.numValidInsp;
+Tab_outlier.numInvalidExp = Tab_outlier.totalCandidatesInsp - numValidExp;
+
+
+
+%% PLot the detected inspiration
+% figure; hold on;
+% plot(t, capFiltered, 'b', 'DisplayName', 'Original Signal'); % Raw capnogram
+% plot(t, capFiltered_rectified, 'k', 'DisplayName', 'Rectified Signal'); % Rectified
+% yline(inspiration_threshold, 'r--', 'DisplayName', 'Inspiration Threshold'); % Threshold line
+% scatter(t(insp_idx), capFiltered_rectified(insp_idx), 'g', 'filled', 'DisplayName', 'Detected Inspiration'); % Inspiration points
+% scatter(insp_end_t, capFiltered_rectified(insp_idx(insp_end_idx)), 'bo', 'filled','DisplayName', 'Improved Inhalation End');
+%
+% % --- Inhalation Segment Points (blue circles) ---
+% for i = 1:length(t_valid_inspStart)
+%     segIdx = find(t >= t_valid_inspStart(i) & t <= t_valid_inspEnd(i));
+%
+%     t_seg = t(segIdx);
+%     y_seg = capFiltered_rectified(segIdx);
+%
+%     if ~isempty(t_seg) && ~isempty(y_seg)
+%         scatter(t_seg(:), y_seg(:), 15, 'b', 'filled'); % Ensure column vectors
+%     end
+% end
+
+
 %%  CALCULATE VARIABLES
 %% amplitude of the peak
 [minimum,locs_min]=findpeaks(-capFiltered,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
-minimum                         = capFiltered(locs_min); 
+minimum                         = capFiltered(locs_min);
 %height_peaks = abs(minimum)+pks(idx_wo_outliers);
 
 %
@@ -292,9 +639,9 @@ if length(B2B_valid_locs)>1,
     % https://de.mathworks.com/matlabcentral/answers/143654-need-an-example-for-calculating-power-spectrum-density
     resampling_rate = 5; % Hz
     t_interp = t(B2B_valid_locs(1)):1/resampling_rate:t(B2B_valid_locs(end));
-
+    
     BPS = interp1(t(B2B_valid_locs),B2B_valid,t_interp,'linear');
-
+    
     % compute the PSD, units of Pxx are squared seconds/Hz.
     % [Pxx,freq] = periodogram(BPS-mean(BPS),[],numel(BPS),resampling_rate);
     [Pxx,freq] = periodogram(BPS-mean(BPS),hamming(length(BPS)),512,resampling_rate);
@@ -308,17 +655,17 @@ if length(B2B_valid_locs)>1,
     lfPower     = bandpower(Pxx,freq,[0.04 0.15],'psd'); % units of sec^2
     hfPower     = bandpower(Pxx,freq,[0.15 0.5],'psd'); % units of sec^2
     totPower    = bandpower(Pxx,freq,'psd'); % units of sec^2
-    % you can then take the ratio of lf, hf, etc. to totPower * 100 to get the percentages etc.    
+    % you can then take the ratio of lf, hf, etc. to totPower * 100 to get the percentages etc.
 end
 
 %% How "much time of the run" was deleted related to the detection of outlier?
 %% How "much time of the run" was deleted related to the detection of outlier?
 Tab_outlier.durationRun_s                   = max(t);
 Tab_outlier.duration_NotValidSegments_s     = max(t)-sum(B2B(idx_valid_B2B));
-Tab_outlier.nrblock                         = i_block; 
+Tab_outlier.nrblock                         = i_block;
 Tab_outlier.nrblock_combinedFiles           = NrBlock;
-if Set.OutlierModus == 1; 
-display(Tab_outlier)
+if Set.OutlierModus == 1;
+    display(Tab_outlier)
 end
 
 
@@ -344,7 +691,7 @@ if length(B2B_valid) < Set.B2B_minValidData,
     out.Rpeak_t                 = [];
     out.Rpeak_sample            = [];
     out.B2B_t                   = [];
-    out.B2B_sample              = [];   
+    out.B2B_sample              = [];
     out.B2B_valid               = [];
     out.B2B_valid_bpm           = [];
     out.B2B_valid_ms            = [];
@@ -352,6 +699,8 @@ if length(B2B_valid) < Set.B2B_minValidData,
     out.inspEnd_t               = [];
     out.expStart_t              = [];
     out.expEnd_t                = [];
+    out.duration_insp_valid     = [];
+    out.duration_exp_valid      = [];
     out.idx_valid_B2B_consec    = [];
     out.mean_B2B_valid_bpm      = nan;
     out.median_B2B_valid_bpm    = nan;
@@ -367,7 +716,8 @@ if length(B2B_valid) < Set.B2B_minValidData,
     out.totPower                = nan;
     out.nrblock                 = [];
     out.nrblock_combinedFiles   = [];
-   % out.ECG_Rpeaks_valid        = [];
+    % out.ECG_Rpeaks_valid        = [];
+    
 else
     out.Rpeak_t                 = t(R_valid_locs);
     out.Rpeak_sample            = R_valid_locs;
@@ -380,6 +730,8 @@ else
     out.inspEnd_t               = t_valid_inspEnd; % times of inspiration ends
     out.expStart_t              = t_valid_expStart; % times of expiration starts
     out.expEnd_t                = t_valid_expEnd; % times of expiration ends
+    out.duration_insp_valid     = duration_insp_valid;
+    out.duration_exp_valid      = duration_exp_valid;
     out.idx_valid_B2B_consec    = idx_valid_B2B_consec; % index into B2B_valid vector!
     out.mean_B2B_valid_bpm      = mean_B2B_valid_bpm;
     out.median_B2B_valid_bpm    = median_B2B_valid_bpm;
@@ -399,7 +751,8 @@ else
 end
 
 
-
+out.settingsStruct = Set.cap;
+out.codeTimestamp  = datestr(now,30);% provenance: yyyymmddTHHMMSS
 
 
 out.hf = [];
@@ -408,36 +761,41 @@ if TOPLOT
     hf = figure('Name',[FigInfo sprintf('block%02d',i_block),'_', sprintf( 'Nrblock%02d',NrBlock)],'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
     
     %% single HR-peak
-%     t = t*1000; 
-%     plot(t,capSignal,'b'); hold on;
-%     set(gca,'xlim',[172 173]);    
-%     
-    ha1 = subplot(4,4,[1:4]); 
+    %     t = t*1000;
+    %     plot(t,capSignal,'b'); hold on;
+    %     set(gca,'xlim',[172 173]);
+    %
+    ha1 = subplot(4,4,[1:4]);
     capPlot1 = plot(t,capSignal,'g'); hold on;
-    plot(t,capFiltered,'b'); 
+    plot(t,capFiltered,'b');
     plot(t(locs_min),capFiltered(locs_min),'bo','MarkerSize',6);
-
+    
     plot(t(locs_peak(idx_wo_outliers)),capSignal(locs_peak(idx_wo_outliers)),'ko','MarkerSize',6);
-     % valid R peaks
+    %idx_Invalid_B2B - after changing the max-values
+    % DEBUG plot(t(locs_peak(idx_Invalid_B2B)),capSignal(locs_peak(idx_Invalid_B2B)),'ro','MarkerSize',6);
+    % DEBUG plot(t(locs_peak(Invalid_peak)),capSignal(locs_peak(Invalid_peak)),'r*','MarkerSize',6);
+    
+    % valid R peaks
     plot(t(R_valid_locs),capSignal(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
     %valid B2B intervals -> filled TRIANGLE
     plot(t(B2B_valid_locs),capSignal(B2B_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
     plot(t(locs_peak(idx_outliers)),capSignal(locs_peak(idx_outliers)),'bx');
-   
-    %line for 
+    
+    %line for
     plot([t(B2B_valid_locs(idx_valid_B2B_consec)) - B2B_valid(idx_valid_B2B_consec); t(B2B_valid_locs(idx_valid_B2B_consec))], ...
-         [capFiltered(B2B_valid_locs(idx_valid_B2B_consec)); capFiltered(B2B_valid_locs(idx_valid_B2B_consec))],'k');
-    plot([t_valid_inspStart t_valid_inspEnd], [0 0], 'b', [t_valid_expStart t_valid_expEnd], [.1 .1], 'r', 'LineWidth', 3)
- 
+        [capFiltered(B2B_valid_locs(idx_valid_B2B_consec)); capFiltered(B2B_valid_locs(idx_valid_B2B_consec))],'k');
+    plot([t_valid_inspStart t_valid_inspEnd], [0 0], 'b', 'LineWidth', 3, 'DisplayName', 'Inhalation');
+    plot([t_valid_expStart t_valid_expEnd], [.1 .1], 'r', 'LineWidth', 3, 'DisplayName', 'Exhalation');
     set(gca,'Xlim',[0 max(t)]);
     xlabel('Time (s)');
     title(sprintf('NrBlock  %d CAP: %d valid peaks, %d valid P2P intervals',NrBlock, length(R_valid_locs),length(B2B_valid_locs)));
     if isempty(idx_outliers)
-    legend({'capSignal','capFiltered','allPeaks','only posPeaks','valid Peaks','valid P2Pinterval'},'location','Best');
+        legend({'capSignal','capFiltered','allPeaks','only posPeaks','valid Peaks','valid P2Pinterval'},'location','Best');
     else
-    legend({'capSignal','capFiltered','allPeaks','posPeaks','valid Rpeaks','valid P2Pinterval','outlier.diff Peaks'},'location','Best');
+        legend({'capSignal','capFiltered','allPeaks','posPeaks','valid Rpeaks','valid P2Pinterval','outlier.diff Peaks','Inhalation'},'location','Best');
     end
- 
+    
+    
     
     ha3 = subplot(4,4,[9:12]);
     plot(t(B2B_valid_locs),B2B_valid,'m.'); hold on
@@ -468,7 +826,7 @@ if TOPLOT
     ylabel('count');
     
     subplot(4,4,14);
-    boxplot(B2B_valid_bpm); 
+    boxplot(B2B_valid_bpm);
     title(sprintf('mean %.1f med %.1f SD %.1f bpm',mean_B2B_valid_bpm,median_B2B_valid_bpm,std_B2B_valid_bpm));
     ylabel('BPM');
     
@@ -478,7 +836,7 @@ if TOPLOT
     
     xlabel('B2B(n)');
     ylabel('B2B(n+1)');
-    title('Poincar� plot');
+    title('Poincaré plot');
     axis square
     ig_set_xy_axes_equal;
     ig_add_equality_line;
@@ -489,8 +847,8 @@ if TOPLOT
         % plot(freq_w,Pxx_w,'m'); hold on;
         % plot(freq(freq>0 & freq<0.04),Pxx(freq>0 & freq<0.04),'b');
         plot(freq(freq>=0.04 & freq<=0.15),Pxx(freq>=0.04 & freq<=0.15),'r'); hold on
-        plot(freq(freq>=0.15 & freq<=0.5),Pxx(freq>=0.15 & freq<=0.5),'g'); 
-        plot(freq(freq>0.5 & freq<=1),Pxx(freq>0.5 & freq<=1),'k'); 
+        plot(freq(freq>=0.15 & freq<=0.5),Pxx(freq>=0.15 & freq<=0.5),'g');
+        plot(freq(freq>0.5 & freq<=1),Pxx(freq>0.5 & freq<=1),'k');
         set(gca,'Xlim',[0 1]);
         xlabel('Hz');
         ylabel('ms^2 / Hz');
