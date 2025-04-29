@@ -47,12 +47,12 @@ capSignal = double(dat.ECG{5});
 %}
 
 
-if nargin < 3,
+if nargin < 3
     TOPLOT = true;
 end
 
 
-if nargin < 4,
+if nargin < 4
     FigInfo = '';
 end
 
@@ -92,7 +92,7 @@ signalRange = range(capFilteredFilled);
 % Define threshold close to minimum but not exactly min
 flatThreshold = signalMin + 0.01 * signalRange;
 flatIdx = capFilteredFilled < flatThreshold;
-sum(flatIdx)
+
 capFilteredFilled(flatIdx) = NaN;
 %capFilteredFilled_interp = fillmissing(capFilteredFilled, 'linear');
 %capFilteredFilled_Smooth = smoothdata(capFilteredFilled_interp, 'sgolay', 1000);
@@ -125,7 +125,8 @@ end
 % %% Full Rectification of Capnogram Signal
 % The signal is fully rectified using the `ig_fullrectify` function.
 % This ensures all values are positive, making it easier to detect inspiratory phases.
-capFiltered_rectified = ig_fullrectify(capFilteredFilled);
+% capFiltered_rectified = ig_fullrectify(capFilteredFilled); %Luba - why???
+capFiltered_rectified = capFilteredFilled; % IK workaround
 
 %% Detecting Remainders of Inspiration
 % According to Singh, Howe, and Malarvili (2018, J. Breath Res.), inspiration phases
@@ -195,15 +196,7 @@ MinPeakProminence = nanmedian(capFiltered_rectified)* Set.cap.MinPeakProminenceC
     'minpeakdistance',fix(Set.cap.min_P2P*Fs), ...
     'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*nanmedian(capFiltered_rectified));
 
-if isempty(locs_peak) || numel(locs_peak) < 30
- %Write in ERROR LOG!!
-  Set.cap.eP_tc_minpeakheight_med_prop = 1;
 
-[pks,locs_peak]=findpeaks(capFiltered_rectified, ...
-    'MinPeakProminence',MinPeakProminence, ...
-    'minpeakdistance',fix(Set.cap.min_P2P*Fs), ...
-    'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*nanmedian(capFiltered_rectified));
-end
 % find peaks which are next to each other without a minimum
 % locs = [locs_min, locs_peak];
 % locs = sort(locs);
@@ -212,8 +205,6 @@ end
 
 % --- Step 2: Estimate min_P2P from initial detections ---
 p2p_intervals_sec = diff(locs_peak) / Fs;
-min(p2p_intervals_sec)
-max(p2p_intervals_sec)
 
 min_peak_height = min(pks);
 max_peak_height = max(pks);
@@ -243,7 +234,7 @@ capFiltered_pos             = max(capFiltered_rectified,0);
 % 'threshold' minimum required height difference between a peak and its neighboring points — not the absolute height of the peak.
 % Only consider something a peak if it's at least eps higher than the adjacent samples.
 [~,pos_cap_locs]  = findpeaks(capFiltered_pos,...
-     'MinPeakProminence',MinPeakProminence, ...
+    'MinPeakProminence',MinPeakProminence, ...
     'minpeakdistance',fix(Set.cap.min_P2P*Fs), ...
     'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered_pos));
 
@@ -254,45 +245,50 @@ capFiltered_pos             = max(capFiltered_rectified,0);
 % plot(t(pos_cap_locs), capFiltered_pos(pos_cap_locs), 'm^', 'MarkerSize', 8);
 % plot(t(locs_peak), capFiltered_pos(locs_peak), 'b^', 'MarkerSize', 8);
 
-% Initialize containers for matched and unmatched cap peaks
-search_segment_n_samples    = fix(appr_cap_peak2peak_n_samples* Set.cap.fraction_B2B_look4peak);
-maybe_valid_pos_cap_locs    = [];
-maybe_Invalid_pos_cap_locs    = [];Invalid_peak= []; Minsearch_ranges= [];Maxsearch_ranges= [];
 
-for p = 1:length(idx_wo_outliers)
-    
-    %computed on locs_peak (filtered with idx_wo_outliers) contains your candidate peaks, based on first peak detection.
-    peak_center = locs_peak(idx_wo_outliers(p));
-    search_range = peak_center - search_segment_n_samples : peak_center + search_segment_n_samples;
-    % Check if any cap peak was detected within the search window
-    idx_overlap = intersect(pos_cap_locs, search_range);
-    
-    if ~isempty(idx_overlap)
-        % If overlap exists, store the matching cap peak (last one found in range)
-        maybe_valid_pos_cap_locs = [maybe_valid_pos_cap_locs idx_overlap(end)];
-    else
-        % If no cap peak found in range, log it as invalid
-        maybe_Invalid_pos_cap_locs = [maybe_Invalid_pos_cap_locs peak_center(end)];
-        Minsearch_ranges = [Minsearch_ranges min(search_range)];
-        Maxsearch_ranges = [Maxsearch_ranges max(search_range)];
-        
-        Invalid_peak = [Invalid_peak, p];
-    end
-    
-end
+% Initialize containers for matched and unmatched cap peaks % IK remove 
+% search_segment_n_samples    = fix(appr_cap_peak2peak_n_samples* Set.cap.fraction_B2B_look4peak);
+% maybe_valid_pos_cap_locs    = [];
+% maybe_Invalid_pos_cap_locs    = [];Invalid_peak= []; Minsearch_ranges= [];Maxsearch_ranges= [];
+% 
+% for p = 1:length(idx_wo_outliers)
+%     
+%     %computed on locs_peak (filtered with idx_wo_outliers) contains your candidate peaks, based on first peak detection.
+%     peak_center = locs_peak(idx_wo_outliers(p));
+%     search_range = peak_center - search_segment_n_samples : peak_center + search_segment_n_samples;
+%     % Check if any cap peak was detected within the search window
+%     idx_overlap = intersect(pos_cap_locs, search_range);
+%     
+%     if ~isempty(idx_overlap)
+%         % If overlap exists, store the matching cap peak (last one found in range)
+%         maybe_valid_pos_cap_locs = [maybe_valid_pos_cap_locs idx_overlap(end)];
+%     else
+%         % If no cap peak found in range, log it as invalid
+%         maybe_Invalid_pos_cap_locs = [maybe_Invalid_pos_cap_locs peak_center(end)];
+%         Minsearch_ranges = [Minsearch_ranges min(search_range)];
+%         Maxsearch_ranges = [Maxsearch_ranges max(search_range)];
+%         
+%         Invalid_peak = [Invalid_peak, p];
+%     end
+%     
+% end
 
+
+maybe_valid_pos_cap_locs = pos_cap_locs;
 
 %% Breathing to breathing intervals
 B2B             = [NaN diff(t(maybe_valid_pos_cap_locs))]; %NaN at the beginning → to keep the vector aligned with original indices
+% B2B             = [diff(t(maybe_valid_pos_cap_locs)) NaN]; %NaN at the beginning → to keep the vector aligned with original indices
 median_B2B      = median(B2B);
 mode_B2B        = mode(B2B);
 min_B2B         = min(B2B);
-[hist_B2B,bins] = hist(B2B,[Set.cap.min_P2P:0.01:1]);
+[hist_B2B,bins] = hist(B2B,[Set.cap.min_P2P:0.1:5]);
 
 % invalidate all B2B less than minFactor_B2BMode (e.g. 0.66) of mode and more than maxFactor_B2BMode (e.g. 1.5) of mode
-idx_valid_B2B         = find((B2B> Set.cap.minFactor_B2BMode*mode_B2B & B2B <  Set.cap.maxFactor_B2BMode *mode_B2B));
+% idx_valid_B2B         = find((B2B> Set.cap.minFactor_B2BMode*mode_B2B & B2B <  Set.cap.maxFactor_B2BMode *mode_B2B));
 idx_Invalid_B2B       = find((B2B< Set.cap.minFactor_B2BMode*mode_B2B | B2B >  Set.cap.maxFactor_B2BMode *mode_B2B));
-
+idx_Invalid_B2B       = [1 idx_Invalid_B2B idx_Invalid_B2B-1];
+idx_valid_B2B = setdiff(1:length(B2B),idx_Invalid_B2B);
 
 detectedOutliers_mode = (length(idx_Invalid_B2B)/length(B2B))*100;
 disp(['Fraction of B2B outliers detected using deviations from B2B mode: ', num2str(detectedOutliers_mode) ])
@@ -306,7 +302,9 @@ Tab_outlier.NrB2B_beforehampel      = length(B2B_valid_before_hampel);
 %% remove outliers from B2B using hampel
 % DX	Window size — the number of neighbors on each side to consider
 %T	Threshold — how many scaled MADs (median absolute deviations) away from the local median a point must be to be considered an outlier
-[YY,idx_outliers_hampel] = hampel(t_valid_B2B,B2B_valid_before_hampel, Set.cap.hampel_DX, Set.cap.hampel_T);
+% [YY,idx_outliers_hampel] = hampel(t_valid_B2B,B2B_valid_before_hampel, Set.cap.hampel_DX, Set.cap.hampel_T);
+
+idx_outliers_hampel = [];
 
 idx_to_delete = [];
 idx_to_delete_after_outliers = [];
@@ -609,7 +607,7 @@ minimum                         = capFiltered(locs_min);
 %
 median_B2B_valid        = median(B2B_valid);
 mode_B2B_valid          = mode(B2B_valid);
-[hist_B2B_valid,bins]   = hist(B2B_valid,[Set.cap.min_P2P:0.01:5]);
+[hist_B2B_valid,bins]   = hist(B2B_valid,[Set.cap.min_P2P:0.1:5]);
 
 B2B_valid_bpm           = 60./B2B_valid;
 B2B_valid_ms            = 1000.*B2B_valid;% sec -> ms
@@ -633,7 +631,7 @@ rmssd_B2B_valid_bpm     = sqrt(mean(B2B_bpm_diff(idx_valid_B2B_consec-1).^2));
 rmssd_B2B_valid_ms      = sqrt(mean((1000*B2B_diff(idx_valid_B2B_consec-1)).^2));
 
 B2B_valid_spectrum = false;
-if length(B2B_valid_locs)>1,
+if length(B2B_valid_locs)>1
     B2B_valid_spectrum = true;
     % BPS spectrum
     % https://de.mathworks.com/matlabcentral/answers/143654-need-an-example-for-calculating-power-spectrum-density
@@ -664,7 +662,7 @@ Tab_outlier.durationRun_s                   = max(t);
 Tab_outlier.duration_NotValidSegments_s     = max(t)-sum(B2B(idx_valid_B2B));
 Tab_outlier.nrblock                         = i_block;
 Tab_outlier.nrblock_combinedFiles           = NrBlock;
-if Set.OutlierModus == 1;
+if Set.OutlierModus == 1
     display(Tab_outlier)
 end
 

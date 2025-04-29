@@ -294,6 +294,7 @@ for f=1:n_blocks
         % respiration
         [ out_cap(i_block), Tab_outlier_cap(i_block) ]= bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,Set.Plot,i_block,NrBlock, ses.monkey{1});
         print(out_cap(i_block).hf, sprintf('%sblock%02d_NrBlock%02d.png', [par.saveResults filesep 'cap_'], i_block, NrBlock),'-dpng','-r0');
+     
         if ~par.keepRunFigs
             close(out_cap(i_block).hf);
         end 
