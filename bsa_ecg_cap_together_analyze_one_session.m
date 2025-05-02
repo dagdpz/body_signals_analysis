@@ -44,7 +44,7 @@ elseif isempty(matchingFiles_OverTime_ecg)
     % Run ECG analysis using a version that includes PoinCare plot features
     out = bsa_ecg_analyze_one_session_NEW_PoinCarePlot(session_path, pathExcel, settings_filename, Set.path.ecg_save);
 end
-
+RSA_P2T =[];
 %% Inhalation and exhalation
 % Iterate over all blocks of ECG data
 for blockNum = [out.nrblock]
@@ -101,7 +101,7 @@ end
 
 
     % Assign results to output struct for the current block
-    if ~isempty(out(blockNum))
+    if ~isempty(out(blockNum))&& sum(is_R_peak_insp) > 5
         out(blockNum).is_R_peak_insp = logical(is_R_peak_insp);
         out(blockNum).is_R_peak_exp  = logical(is_R_peak_exp);
         out(blockNum).is_RR_insp     = logical(is_RR_insp);

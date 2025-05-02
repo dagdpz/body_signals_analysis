@@ -720,7 +720,8 @@ end
 
 
 
-
+out.settingsStruct = Set;            % entire parameter struct (or Set.cap)
+out.codeTimestamp  = datestr(now,30);% provenance: yyyymmddTHHMMSS
 
 out.hf = [];
 

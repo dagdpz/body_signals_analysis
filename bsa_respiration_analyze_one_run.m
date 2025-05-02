@@ -61,6 +61,39 @@ run(settings_path)
 
 n_samples       = length(capSignal);
 t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sample is time 0! (not 1/Fs)
+B2B_valid =[];
+out.hf = [];
+% replace your “Tab_outlier = [];” with this full struct init:
+Tab_outlier = struct( ...
+    'outlier',                   [], ...
+    'NrRpeaks_orig',             [], ...
+    'outlier_Mode_abs',          [], ...
+    'outlier_Mode_pct',          [], ...
+    'NrB2B_beforehampel',        [], ...
+    'outliers_hampel_abs',       [], ...
+    'outliers_delete_abs',       [], ...
+    'outliers_hampel_pct',       [], ...
+    'NrPeaks_valid',             [], ...
+    'NrB2B_valid',               [], ...
+    'outliers_all_abs',          [], ...
+    'outliers_all_pct',          [], ...
+    'median_duration_insp',      [], ...
+    'median_duration_exp',       [], ...
+    'numSkippedInspSegments',    [], ...
+    'skippedInspTimes',          [], ...
+    'skippedInspDurations',      [], ...
+    'numValidPeaksNoInspEnd',    [], ...
+    'validPeaksNoInspEndTimes',  [], ...
+    'numValidInsp',              [], ...
+    'totalCandidatesInsp',       [], ...
+    'numInvalidInsp',            [], ...
+    'numInvalidExp',             [], ...
+    'B2B_consec',                [], ...
+    'durationRun_s',             [], ...
+    'duration_NotValidSegments_s',[], ...
+    'nrblock',                   [], ...
+    'nrblock_combinedFiles',     []  ...
+);
 
 % Step 1: flip cap signal if it's negative, leave the same if it's above zero
 % This will keep the signal the same after swapping connectors between TDT
@@ -71,37 +104,58 @@ else
     capSignal = (-1)*capSignal;
 end
 
+%% KK1 - 
+sortedAbs = sort(abs(capSignal), 'descend'); % Sort by magnitude
+nTop = round(0.05 * length(sortedAbs));      % 10% of total length
+top10percent = sortedAbs(1:nTop);            % Extract top 10%
+
+maxValue = max(top10percent);  % Or use median, max, etc.
+
+threshold = 0.20 * maxValue;
+belowThreshold = abs(capSignal) < threshold;
+
+minDurationSamples = 30 * Fs;
+
+% Identify continuous segments below threshold
+capSignalRemoved = capSignal;  % Initialize output
+
+%  remove signal values only if they stay below a threshold continuously
+%  for 30 seconds
+lowRegions = regionprops(belowThreshold, 'PixelIdxList');
+
+for k = 1:length(lowRegions)
+    idx = lowRegions(k).PixelIdxList;
+    if length(idx) >= minDurationSamples
+        capSignalRemoved(idx) = 0;  % Remove (zero out) only if low for >=30 seconds
+    end
+end
+
+ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are completly removed from analyses
 %% Smoothing
 Set.cap.smoothing_window = 0.3;
-capFiltered = smooth(capSignal, round(Set.cap.smoothing_window*Fs))'; % increase smoothing window to .25s; doesn't affect peak detection but is needed for further inspiration / expiration classification
+capFiltered = smooth(capSignalRemoved, round(Set.cap.smoothing_window*Fs))'; % increase smoothing window to .25s; doesn't affect peak detection but is needed for further inspiration / expiration classification
 capFilteredFilled = filloutliers(capFiltered, 'linear', 'movmedian', 1000);
 %windowDuration = 1000 / Fs;
 %capFiltered2 = smoothdata(capSignal, 'sgolay', 1000);
-
+% any(isnan(capFilteredFilled))
 % figure; hold on;
 % plot(t, capSignal, 'k', 'DisplayName', 'Original Signal');
-% plot(t, capFiltered, 'r', 'DisplayName', 'Smoothed Signal');
+% plot(t, capSignalRemoved, 'r', 'DisplayName', 'Smoothed Signal');
 % plot(t, capFilteredFilled, 'b', 'DisplayName', 'Smoothed sgolay');
 % legend;
 % xlabel('Time (s)');
 
-%% problem with saturation in the signal (e.g., signal stuck at 0 for a while)
-signalMin = min(capFilteredFilled);
-signalRange = range(capFilteredFilled);
-
-% Define threshold close to minimum but not exactly min
-flatThreshold = signalMin + 0.01 * signalRange;
-flatIdx = capFilteredFilled < flatThreshold;
-
-capFilteredFilled(flatIdx) = NaN;
-%capFilteredFilled_interp = fillmissing(capFilteredFilled, 'linear');
-%capFilteredFilled_Smooth = smoothdata(capFilteredFilled_interp, 'sgolay', 1000);
-
-% figure; hold on;
-% plot(t, capSignal, 'k', 'DisplayName', 'Original Signal');
-% plot(t, capFiltered, 'r', 'DisplayName', 'Smoothed Signal');
-% plot(t, capFilteredFilled, 'b', 'DisplayName', 'Smoothed sgolay');
-% %plot(t, capFilteredFilled_Smooth, 'g', 'DisplayName', 'Interpolated');
+% % problem with saturation in the signal (e.g., signal stuck at 0 for a while)
+% % signalMin = min(capFilteredFilled);
+% % signalRange = range(capFilteredFilled);
+% % 
+% % Define threshold close to minimum but not exactly min
+% % flatThreshold = signalMin + 0.01 * signalRange;
+% % flatIdx = capFilteredFilled < flatThreshold;
+% % sum(flatIdx)
+% % capFilteredFilled(flatIdx) = NaN;
+% % 
+% % sum(isnan(capFilteredFilled(:)))
 %%
 if 0 % Debug
     figure ('Name','Single-sided amplitude spectrum');
@@ -174,17 +228,11 @@ insp_end_sample = capFiltered_rectified(insp_idx(insp_end_idx)); % sample of ins
 % yline(inspiration_threshold, 'r--', 'DisplayName', 'Inspiration Threshold'); % Threshold line
 % scatter(t(insp_idx), capFiltered_rectified(insp_idx), 'g', 'filled', 'DisplayName', 'Detected Inspiration'); % Inspiration points
 % scatter(insp_end_t, capFiltered_rectified(insp_idx(insp_end_idx)), 'bo', 'filled','DisplayName', 'Improved Inhalation End');
-%
-% legend;
-% xlabel('Time (s)');
-% ylabel('Capnogram Amplitude');
+
 
 %% Peak Detection for Expiratory Phases
 % Define the minimum peak prominence based on the median of the rectified signal.
 % This helps filter out small fluctuations and retain significant expiratory peaks.
-
-%zcapFilteredFilled = zscore(capFilteredFilled);
-
 
 MinPeakProminence = nanmedian(capFiltered_rectified)* Set.cap.MinPeakProminenceCoef;
 % % Find peaks in the capnogram using three criteria:
@@ -279,16 +327,102 @@ maybe_valid_pos_cap_locs = pos_cap_locs;
 %% Breathing to breathing intervals
 B2B             = [NaN diff(t(maybe_valid_pos_cap_locs))]; %NaN at the beginning → to keep the vector aligned with original indices
 % B2B             = [diff(t(maybe_valid_pos_cap_locs)) NaN]; %NaN at the beginning → to keep the vector aligned with original indices
-median_B2B      = median(B2B);
-mode_B2B        = mode(B2B);
+median_B2B      = nanmedian(B2B);
+mode_B2B        = mode(round(B2B,3));
 min_B2B         = min(B2B);
 [hist_B2B,bins] = hist(B2B,[Set.cap.min_P2P:0.1:5]);
 
+
 % invalidate all B2B less than minFactor_B2BMode (e.g. 0.66) of mode and more than maxFactor_B2BMode (e.g. 1.5) of mode
 % idx_valid_B2B         = find((B2B> Set.cap.minFactor_B2BMode*mode_B2B & B2B <  Set.cap.maxFactor_B2BMode *mode_B2B));
+if abs(min_B2B - mode_B2B) <= 0.2  %%KK3
+idx_Invalid_B2B       = find((B2B< Set.cap.minFactor_B2BMode*median_B2B | B2B >  Set.cap.maxFactor_B2BMode *median_B2B));
+else
 idx_Invalid_B2B       = find((B2B< Set.cap.minFactor_B2BMode*mode_B2B | B2B >  Set.cap.maxFactor_B2BMode *mode_B2B));
+end
+
+
 idx_Invalid_B2B       = [1 idx_Invalid_B2B idx_Invalid_B2B-1];
 idx_valid_B2B = setdiff(1:length(B2B),idx_Invalid_B2B);
+%% KK4: check each B2B intervall for signal drop to add as Invalid_B2B intervall which is not detected through the B2B - threshold
+flatRangeThreshold = 0.005;  % Max range within flat window
+minFlatDurationSamples = round(3 * Fs);  % 3 seconds
+windowSize = 100;  % Window size in samples (e.g., 50 ms)
+stepSize = 10;     % Step between sliding windows
+idx_Invalid_B2B_FlatRegion = [];
+is_valid = true(size(idx_valid_B2B));  % Assume all are valid
+
+for i = 1:length(idx_valid_B2B)
+    idx =idx_valid_B2B(i);
+
+    if idx >= length(maybe_valid_pos_cap_locs)
+        continue;  % Skip last index (no next B2B interval)
+    end
+
+    % Time interval of this B2B
+    t_start = t(maybe_valid_pos_cap_locs(idx));
+    t_end   = t(maybe_valid_pos_cap_locs(idx + 1));
+    
+    % Sample indices
+    sample_start = max(1, round(t_start * Fs));
+    sample_end   = min(length(capSignal), round(t_end * Fs));
+    
+    segment = capSignal(sample_start:sample_end);
+    segment_time = t(sample_start:sample_end);
+
+    % Initialize flatness mask
+    flatMask = false(1, length(segment));
+
+    % Slide a window and mark flat regions
+    for j = 1:stepSize:(length(segment) - windowSize + 1)
+        window = segment(j : j + windowSize - 1);
+        if max(window) - min(window) < flatRangeThreshold
+            flatMask(j : j + windowSize - 1) = true;
+        end
+    end
+
+    % Analyze contiguous flat regions
+    flatRegions = regionprops(flatMask, 'PixelIdxList');
+    isFlatLongEnough = false;
+
+    for r = 1:length(flatRegions)
+        regionLength = length(flatRegions(r).PixelIdxList);
+        if regionLength >= minFlatDurationSamples
+            isFlatLongEnough = true;
+            fprintf('Flat region detected in B2B #%d: %.2f seconds long\n', ...
+                idx, regionLength / Fs);
+            break;
+        end
+    end
+
+    % Invalidate segment if flat region is long enough
+    if isFlatLongEnough
+        is_valid(i) = false;
+        idx_Invalid_B2B_FlatRegion = [idx_Invalid_B2B_FlatRegion, idx];
+    % Plot only the flat region(s) that triggered invalidation
+%     figure;
+%     plot(segment_time, segment, 'Color', [0.1 0.1 0.1]); % light background for full segment
+%     hold on;
+%     for r = 1:length(flatRegions)
+%         idxs = flatRegions(r).PixelIdxList;
+%         if length(idxs) >= minFlatDurationSamples
+%             plot(segment_time(idxs), segment(idxs), 'r', 'LineWidth', 2);  % highlight flat
+%         end
+%     end
+% 
+%     title(sprintf('B2B Segment %d - INVALID (flat ≥ 3s)', i), 'Color', 'r');
+%     xlabel('Time (s)');
+%     ylabel('Signal Amplitude');
+%     grid on;
+
+
+    end
+end
+
+idx_valid_B2B_filtered = idx_valid_B2B(is_valid);
+idx_all_Invalid_B2B = unique([idx_Invalid_B2B, idx_Invalid_B2B_FlatRegion]);
+idx_valid_B2B = setdiff(idx_valid_B2B, idx_all_Invalid_B2B);
+
 
 detectedOutliers_mode = (length(idx_Invalid_B2B)/length(B2B))*100;
 disp(['Fraction of B2B outliers detected using deviations from B2B mode: ', num2str(detectedOutliers_mode) ])
@@ -341,6 +475,7 @@ Tab_outlier.outliers_hampel_pct = 100- (((length(idx_valid_B2B)+Tab_outlier.outl
 idx_valid_R     = unique([idx_valid_B2B idx_valid_B2B-1]); % add start of each valid B2B interval to valid R peaks
 R_valid_locs    = maybe_valid_pos_cap_locs(idx_valid_R);
 %B2Binterval
+B2B_Invalid_locs  = maybe_valid_pos_cap_locs(idx_Invalid_B2B);
 B2B_valid_locs  = maybe_valid_pos_cap_locs(idx_valid_B2B);
 B2B_valid       = B2B(idx_valid_B2B);
 
@@ -605,8 +740,10 @@ minimum                         = capFiltered(locs_min);
 %height_peaks = abs(minimum)+pks(idx_wo_outliers);
 
 %
-median_B2B_valid        = median(B2B_valid);
-mode_B2B_valid          = mode(B2B_valid);
+median_B2B_valid        = nanmedian(B2B_valid);
+mode_B2B_valid          = mode(round(B2B_valid,3)); 
+min_B2B_valid          = min(B2B_valid);
+
 [hist_B2B_valid,bins]   = hist(B2B_valid,[Set.cap.min_P2P:0.1:5]);
 
 B2B_valid_bpm           = 60./B2B_valid;
@@ -618,7 +755,11 @@ std_B2B_valid_ms        = std(B2B_valid_ms);
 
 
 % find consecutive B2Bs
+if min_B2B_valid == mode_B2B_valid
+ idx_valid_B2B_consec = find([NaN diff(t(B2B_valid_locs))]< Set.cap.maxFactor_B2BMode * median_B2B_valid);
+else
 idx_valid_B2B_consec = find([NaN diff(t(B2B_valid_locs))]< Set.cap.maxFactor_B2BMode * mode_B2B_valid);
+end
 B2B_valid_bpm_consec = B2B_valid_bpm(idx_valid_B2B_consec);
 Tab_outlier.B2B_consec = numel(idx_valid_B2B_consec);
 
@@ -685,77 +826,8 @@ end
 
 
 
-if length(B2B_valid) < Set.B2B_minValidData,
-    out.Rpeak_t                 = [];
-    out.Rpeak_sample            = [];
-    out.B2B_t                   = [];
-    out.B2B_sample              = [];
-    out.B2B_valid               = [];
-    out.B2B_valid_bpm           = [];
-    out.B2B_valid_ms            = [];
-    out.inspStart_t             = [];
-    out.inspEnd_t               = [];
-    out.expStart_t              = [];
-    out.expEnd_t                = [];
-    out.duration_insp_valid     = [];
-    out.duration_exp_valid      = [];
-    out.idx_valid_B2B_consec    = [];
-    out.mean_B2B_valid_bpm      = nan;
-    out.median_B2B_valid_bpm    = nan;
-    out.std_B2B_valid_bpm       = nan;
-    out.std_B2B_valid_ms        = nan;
-    out.rmssd_B2B_valid_ms      = nan;
-    out.rmssd_B2B_valid_bpm     = nan;
-    out.Pxx                     = [];
-    out.freq                    = [];
-    out.vlfPower                = nan;
-    out.lfPower                 = nan;
-    out.hfPower                 = nan;
-    out.totPower                = nan;
-    out.nrblock                 = [];
-    out.nrblock_combinedFiles   = [];
-    % out.ECG_Rpeaks_valid        = [];
-    
-else
-    out.Rpeak_t                 = t(R_valid_locs);
-    out.Rpeak_sample            = R_valid_locs;
-    out.B2B_t                   = t(B2B_valid_locs);
-    out.B2B_sample              = B2B_valid_locs;
-    out.B2B_valid               = B2B_valid;
-    out.B2B_valid_bpm           = B2B_valid_bpm;
-    out.B2B_valid_ms            = B2B_valid_ms;
-    out.inspStart_t             = t_valid_inspStart; % times of inspiration starts
-    out.inspEnd_t               = t_valid_inspEnd; % times of inspiration ends
-    out.expStart_t              = t_valid_expStart; % times of expiration starts
-    out.expEnd_t                = t_valid_expEnd; % times of expiration ends
-    out.duration_insp_valid     = duration_insp_valid;
-    out.duration_exp_valid      = duration_exp_valid;
-    out.idx_valid_B2B_consec    = idx_valid_B2B_consec; % index into B2B_valid vector!
-    out.mean_B2B_valid_bpm      = mean_B2B_valid_bpm;
-    out.median_B2B_valid_bpm    = median_B2B_valid_bpm;
-    out.std_B2B_valid_bpm       = std_B2B_valid_bpm;
-    out.std_B2B_valid_ms        = std_B2B_valid_ms;
-    out.rmssd_B2B_valid_ms      = rmssd_B2B_valid_ms;
-    out.rmssd_B2B_valid_bpm     = rmssd_B2B_valid_bpm;
-    out.Pxx                     = Pxx;
-    out.freq                    = freq;
-    out.vlfPower                = vlfPower;
-    out.lfPower                 = lfPower;
-    out.hfPower                 = hfPower;
-    out.totPower                = totPower;
-    out.nrblock                 = i_block ;
-    out.nrblock_combinedFiles   = NrBlock ;
-    %out.ECG_Rpeaks_valid        = cap_data; % +/- 500 ms data segments for consecutive R-peaks
-end
-
-
-out.settingsStruct = Set.cap;
-out.codeTimestamp  = datestr(now,30);% provenance: yyyymmddTHHMMSS
-
-
-out.hf = [];
-
 if TOPLOT
+
     hf = figure('Name',[FigInfo sprintf('block%02d',i_block),'_', sprintf( 'Nrblock%02d',NrBlock)],'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
     
     %% single HR-peak
@@ -782,6 +854,10 @@ if TOPLOT
     %line for
     plot([t(B2B_valid_locs(idx_valid_B2B_consec)) - B2B_valid(idx_valid_B2B_consec); t(B2B_valid_locs(idx_valid_B2B_consec))], ...
         [capFiltered(B2B_valid_locs(idx_valid_B2B_consec)); capFiltered(B2B_valid_locs(idx_valid_B2B_consec))],'k');
+    
+
+
+    
     plot([t_valid_inspStart t_valid_inspEnd], [0 0], 'b', 'LineWidth', 3, 'DisplayName', 'Inhalation');
     plot([t_valid_expStart t_valid_expEnd], [.1 .1], 'r', 'LineWidth', 3, 'DisplayName', 'Exhalation');
     set(gca,'Xlim',[0 max(t)]);
@@ -799,6 +875,10 @@ if TOPLOT
     plot(t(B2B_valid_locs),B2B_valid,'m.'); hold on
     set(gca,'Xlim',[0 max(t)]);
     plot(t(B2B_valid_locs(idx_valid_B2B_consec)),B2B_valid(idx_valid_B2B_consec),'k.','MarkerSize',6); hold on
+    plot(t(B2B_Invalid_locs),B2B(idx_Invalid_B2B),'r.','MarkerSize',6); hold on %DEBUG
+    
+    
+    
     % plot(t(B2B_valid_locs(idx_valid_B2B_consec)),B2B_valid(idx_valid_B2B_consec) - B2B_diff(idx_valid_B2B_consec-1),'ks','MarkerSize',3);
     plot(t_valid_B2B(idx_to_delete_after_outliers),B2B_valid_before_hampel(idx_to_delete_after_outliers),'cx'); hold on
     plot(t_valid_B2B(idx_outliers_hampel),B2B_valid_before_hampel(idx_outliers_hampel),'rx'); hold on
@@ -860,7 +940,85 @@ if TOPLOT
     
     out.hf = hf;
     
-end % of if TOPLOT
+end
+end
+
+if length(B2B_valid) < Set.B2B_minValidData || isempty(B2B_valid)
+    out.Rpeak_t                 = [];
+    out.Rpeak_sample            = [];
+    out.B2B_t                   = [];
+    out.B2B_sample              = [];
+    out.B2B_valid               = [];
+    out.B2B_valid_bpm           = [];
+    out.B2B_valid_ms            = [];
+    out.inspStart_t             = [];
+    out.inspEnd_t               = [];
+    out.expStart_t              = [];
+    out.expEnd_t                = [];
+    out.duration_insp_valid     = [];
+    out.duration_exp_valid      = [];
+    out.idx_valid_B2B_consec    = [];
+    out.mean_B2B_valid_bpm      = nan;
+    out.median_B2B_valid_bpm    = nan;
+    out.std_B2B_valid_bpm       = nan;
+    out.std_B2B_valid_ms        = nan;
+    out.rmssd_B2B_valid_ms      = nan;
+    out.rmssd_B2B_valid_bpm     = nan;
+    out.Pxx                     = [];
+    out.freq                    = [];
+    out.vlfPower                = nan;
+    out.lfPower                 = nan;
+    out.hfPower                 = nan;
+    out.totPower                = nan;
+    out.nrblock                 = [];
+    out.nrblock_combinedFiles   = [];
+    % out.ECG_Rpeaks_valid        = [];
+    
+    Tab_outlier.durationRun_s = nan;
+    Tab_outlier.duration_NotValidSegments_s = nan;
+    Tab_outlier.durationRun_s  = nan;
+    Tab_outlier.nrblock = i_block ;
+    Tab_outlier.nrblock_combinedFiles           = NrBlock;
+
+
+    
+else
+    out.Rpeak_t                 = t(R_valid_locs);
+    out.Rpeak_sample            = R_valid_locs;
+    out.B2B_t                   = t(B2B_valid_locs);
+    out.B2B_sample              = B2B_valid_locs;
+    out.B2B_valid               = B2B_valid;
+    out.B2B_valid_bpm           = B2B_valid_bpm;
+    out.B2B_valid_ms            = B2B_valid_ms;
+    out.inspStart_t             = t_valid_inspStart; % times of inspiration starts
+    out.inspEnd_t               = t_valid_inspEnd; % times of inspiration ends
+    out.expStart_t              = t_valid_expStart; % times of expiration starts
+    out.expEnd_t                = t_valid_expEnd; % times of expiration ends
+    out.duration_insp_valid     = duration_insp_valid;
+    out.duration_exp_valid      = duration_exp_valid;
+    out.idx_valid_B2B_consec    = idx_valid_B2B_consec; % index into B2B_valid vector!
+    out.mean_B2B_valid_bpm      = mean_B2B_valid_bpm;
+    out.median_B2B_valid_bpm    = median_B2B_valid_bpm;
+    out.std_B2B_valid_bpm       = std_B2B_valid_bpm;
+    out.std_B2B_valid_ms        = std_B2B_valid_ms;
+    out.rmssd_B2B_valid_ms      = rmssd_B2B_valid_ms;
+    out.rmssd_B2B_valid_bpm     = rmssd_B2B_valid_bpm;
+    out.Pxx                     = Pxx;
+    out.freq                    = freq;
+    out.vlfPower                = vlfPower;
+    out.lfPower                 = lfPower;
+    out.hfPower                 = hfPower;
+    out.totPower                = totPower;
+    out.nrblock                 = i_block ;
+    out.nrblock_combinedFiles   = NrBlock ;
+    %out.ECG_Rpeaks_valid        = cap_data; % +/- 500 ms data segments for consecutive R-peaks
+end
+
+
+out.settingsStruct = Set.cap;
+out.codeTimestamp  = datestr(now,30);% provenance: yyyymmddTHHMMSS
+
+
 
 function scales = wavelet_init_scales(minFreq, maxFreq, scalesPerDecade)
 MorletFourierFactor = 4*pi/(6+sqrt(2+6^2));

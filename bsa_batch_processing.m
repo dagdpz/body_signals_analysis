@@ -16,10 +16,10 @@ pathExcel = 'Y:\Logs\Inactivation\Cornelius\Cornelius_Inactivation_log_since2019
 settings_filename = 'bsa_settings_Cornelius2019.m';
 %Test for Pont Care
 %out = bsa_ecg_analyze_one_session_NEW_PoinCarePlot('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190214',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190214');
-sessionList = [20190124  ,  20190131  20190129, 20190201, 20190207 ,20190213, 20190214,20190215, 20190216,20190227,  20190313,20190314, 20190228 ,   20190304 , 20190403,20190828,20190904, 20190910,20190912,20190913, 20191007, 20191010, 20191011 , 20191014,20190404  ,  20190408  , ...
-    20190424 ,   20190429 ,   20190430  ,  20190508   , 20190509   , 20190813  ,  20191013 ,20191015  ,  20191017  ,  20191018  ,  20191020  ,  20191021];
-sessionList = [   20191013 ,20191015  ,  20191017  ,  20191018  ,  20191020  ,  20191021];%
-sessionList = [     20190214 ];
+sessionList = [ 20190129, 20190201, 20190207 ,20190213, 20190214,20190215, 20190216,20190227,  20190313,20190314, 20190228 ,   20190304 , 20190403,20190904, 20190910,20190912,20190913, 20191007, 20191010, 20191011 , 20191014,20190404  ,  20190408  , ...
+    20190424 ,   20190429 ,   20190430  ,  20190508   , 20190509   , 20190813  ,20190828,  20191013 ,20191015  ,  20191017  ,  20191018  ,  20191020  ,  20191021];
+sessionList = [   20190124  ,  20190131 ];%
+sessionList = [     20190813  ];
 %Take all sessions from the Excel/File marked as 1
 Excel = readtable(pathExcel);
 SessionsInExcel = unique(Excel.date);
@@ -28,18 +28,24 @@ SessionsInExcel = unique(Excel.date);
 SessionsInExcelStrings = cellstr(num2str(SessionsInExcel));
 % Which Sessions should be analyzed from Excel-File?
 SessionsInExcel_ForAna = unique(Excel.date(Excel.InaDPul_ECG == 1)).';
+SessionsInExcel_DataOrigin_TDT = unique(Excel.date(Excel.DataOrigin_TDT == 1)).';
+
 SessionsInExcel_ForAna_Str = cellstr(num2str(SessionsInExcel_ForAna));
 
 SessionsForAna = intersect(SessionsInExcel_ForAna, sessionList);
+sessionList = setdiff(SessionsInExcel_ForAna, SessionsInExcel_DataOrigin_TDT);
 
 NotInSessionList = setdiff(SessionsInExcel_ForAna, sessionList);
 NotInSessionList = [     20191021, 20191018, 20191020, ];
-sessionList = [     20190227];
+sessionList = [     20191011     ];
 
-% Problem:    20190404 ,
-% Success:  20190304 , 20190408  ,
-% Problem witht he session Corcombined2019-01-31_11_block_10 - 20190131 ,
-% 20190228  ,b
+sessionList = [    20191014,20190404  ,  20190408  , ...
+    20190424 ,   20190429 ,   20190430  ,  20190508   , 20190509   , 20190813  ,  20191013 ,20191015  ,  20191017  ,  20191018  ,  20191020  ,  20191021];
+sessionList = [20191014   ];
+
+sessionList = [  20191015  ,  20191017  ,  20191018  ,  20191020  ,  20191021];
+
+% Problem:    20191013
 for currDate = sessionList
     [out] = ...
         bsa_respiration_analyze_one_session(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Cornelius\' num2str(currDate)]);
@@ -51,7 +57,7 @@ for currDate = NotInSessionList
         bsa_ecg_analyze_one_session_NEW_PoinCarePlot(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel, settings_filename, ['Y:\Data\BodySignals\ECG\Cornelius\' num2str(currDate)]);
 end
 
-for currDate = sessionList
+for currDate = SessionsInExcel_DataOrigin_TDT
     [out_ecg, out_cap] = ...
         bsa_ecg_cap_together_analyze_one_session(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename);
 end
@@ -71,7 +77,7 @@ for sessNum = 1:length(sessionList)
         bsa_ecg_analyze_one_session(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currSession)], pathExcel, settings_filename, ['Y:\Data\BodySignals\ECG\Cornelius\' currSession]);
 end
 
-for currDate = NotInSessionList
+for currDate = SessionsInExcel_DataOrigin_TDT
     %bsa_read_and_save_TDT_data_without_behavior(['Y:\Data\TDTtanks\Cornelius_phys\', currDate], ['Y:\Data\BodySignals\ECG\Cornelius\', currDate]);
 
     [out] = ...
@@ -79,8 +85,8 @@ for currDate = NotInSessionList
 end
 
 
-for  currDate = NotInSessionList
-    currDate
+for  currDate = SessionsInExcel_DataOrigin_TDT
+ 
    % bsa_read_and_save_TDT_data_without_behavior(['Y:\Data\TDTtanks\Cornelius_phys\', currSession], ['Y:\Data\BodySignals\CAP\Cornelius\', currSession]);
 
     [out] = ...
@@ -119,7 +125,7 @@ for currDate = sessionList
         bsa_respiration_analyze_one_session(['Y:\Data\Magnus_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Magnus\' num2str(currDate)]);
 end
 
-for currDate = NotInSessionList
+for currDate = SessionsInExcel_ForAna(end)
     [out_ecg, out_cap] = ...
         bsa_ecg_cap_together_analyze_one_session(['Y:\Data\Magnus_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename);
 end
@@ -227,6 +233,8 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\
 pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905_NoCalibration.xlsx';
 settings_filename = 'bsa_settings_Curius2019.m'; % full path will be complemented in bsa_ecg_analyze_one_session
 
+sessionList = [20190822  ];
+
 sessionList = [20190717, 20190729,20190801,20190802,20190806,20190807, 20190808, 20190809, 20190813, 20190814,20190815, 20190820,20190822, 20190826,20190828,20190903, 20190905,20190910, 20190912,  20190913 ];
 Excel = readtable(pathExcel);
 SessionsInExcel = unique(Excel.date);
@@ -241,7 +249,7 @@ sort(SessionsInExcel_ForAna)
 SessionsForAna = intersect(SessionsInExcel_ForAna, sessionList);
 NotInSessionList = setdiff(SessionsInExcel_ForAna, sessionList);
 
-for currDate = SessionsForAna
+for currDate = sessionList
     [out_ecg, out_cap] = ...
         bsa_ecg_cap_together_analyze_one_session(['Y:\Data\Curius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename);
 end
@@ -256,12 +264,11 @@ end
 pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905_NoCalibration.xlsx';
 settings_filename = 'bsa_settings_Curius2019.m'; % full path will be complemented in bsa_ecg_analyze_one_session
 %20190717, 20190729,
-sessionList = [20190801,20190802,20190806,20190807, 20190808, 20190809, 20190813, 20190814,20190815, 20190820,20190822, 20190826,20190828,20190903, 20190905,20190910, 20190912,  20190913 ];
-
-for sessNum = 1:length(sessionList)
-    currSession = num2str(sessionList(sessNum));
+sessionList = [ 20190809, 20190813, 20190814,20190815, 20190820,20190822, 20190826,20190828,20190903, 20190905,20190910, 20190912,  20190913 ];
+%20190801,20190802,20190806,20190807, 20190808, 20190809,
+for currDate = sessionList %SessionsForAna
     [out] = ...
-        bsa_respiration_analyze_one_session_NEW(['Y:\Data\Curius_phys_combined_monkeypsych_TDT\' currSession], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Curius\' currSession]);
+        bsa_respiration_analyze_one_session(['Y:\Data\Curius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Curius\' num2str(currDate)]);
 end
 
 %% create Table to have the information for a session as overview

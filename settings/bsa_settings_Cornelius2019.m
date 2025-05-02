@@ -44,7 +44,7 @@ Set.R2R_minValidData_min = 5;
 Set.cap.smoothing_window                = 0.25; % s
 % properties for the respiration peak detection
 Set.cap.min_P2P                         = 0.5; % s
-Set.cap.eP_tc_minpeakheight_med_prop    = 0.05; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
+Set.cap.eP_tc_minpeakheight_med_prop    = 0.2; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
 Set.cap.MAD_sensitivity_p2p_diff        = 100; % sensitivity factor for threshold calculation -  larger value -> less sensitive (i.e. less outliers)
 Set.cap.MAD_sensitivity_p2m_diff        = 0; % sensitivity factor for threshold calculation -  smaller value -> smaller threshold -> less sensitive (i.e. less outliers)
 Set.cap.MinPeakProminenceCoef           = 0.05; 

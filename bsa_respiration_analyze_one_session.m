@@ -293,8 +293,9 @@ for f=1:n_blocks
         
         % respiration
         [ out_cap(i_block), Tab_outlier_cap(i_block) ]= bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,Set.Plot,i_block,NrBlock, ses.monkey{1});
+        if  ~isempty(out_cap(i_block).hf)
         print(out_cap(i_block).hf, sprintf('%sblock%02d_NrBlock%02d.png', [par.saveResults filesep 'cap_'], i_block, NrBlock),'-dpng','-r0');
-     
+        end
         if ~par.keepRunFigs
             close(out_cap(i_block).hf);
         end 
@@ -306,11 +307,13 @@ if ~exist(par.saveResults, 'dir')
 end
 
 % Construct file name safely
-fileName = fullfile(par.saveResults, sprintf('cap_block%02d_NrBlock%02d.png', i_block, NrBlock));
+fileName = fullfile(par.saveResults, sprintf('cap_block%02d_NrBlock%02d_N.png', i_block, NrBlock));
 
 % Check if figure handle is valid before saving
-if isvalid(out_cap(i_block).hf)
+if  ~isempty(out_cap(i_block).hf)
+    if isvalid(out_cap(i_block).hf)
     print(out_cap(i_block).hf, fileName, '-dpng', '-r300');
+    end
 else
     warning('Figure handle for block %d is invalid', i_block);
 end
