@@ -351,9 +351,42 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
     idx_Invalid_B2B       = [1 idx_Invalid_B2B idx_Invalid_B2B-1];
     idx_valid_B2B = setdiff(1:length(B2B),idx_Invalid_B2B);
     
-    %% KK4: check each B2B intervall for signal drops to add as Invalid_B2B intervall which is not detected through the B2B threshold
+    %% KK4: check each B2B interval for signal drops to add as Invalid_B2B interval which is not detected through the B2B threshold
     flatRangeThreshold = 0.005;  % Max range within flat window
-    minFlatDurationSamples = round(3 * Fs);  % 3 seconds
+    min_duration_low = 3; % seconds, minimum duration of flat region to be considered as invalid
+    minFlatDurationSamples = round(min_duration_low * Fs); 
+
+    % Preallocate
+    is_valid = true(size(idx_valid_B2B));
+    idx_Invalid_B2B_FlatRegion = [];
+
+    % Process each B2B interval
+    for i = 1:length(idx_valid_B2B)
+        idx = idx_valid_B2B(i);
+        
+        if idx >= length(maybe_valid_pos_cap_locs)
+            continue;  % Skip last index
+        end
+        
+        % Get segment
+        t_start = t(maybe_valid_pos_cap_locs(idx));
+        t_end = t(maybe_valid_pos_cap_locs(idx + 1));
+        sample_start = max(1, round(t_start * Fs));
+        sample_end = min(length(capSignal), round(t_end * Fs));
+        segment = capSignal(sample_start:sample_end);
+        
+        % Find segments where max-min difference is below threshold
+        % Using movmax and movmin to get sliding window statistics
+        window_ranges = movmax(segment, minFlatDurationSamples) - movmin(segment, minFlatDurationSamples);
+        
+        % If any window has range below threshold, mark as invalid
+        if any(window_ranges < flatRangeThreshold)
+            is_valid(i) = false;
+            idx_Invalid_B2B_FlatRegion = [idx_Invalid_B2B_FlatRegion, idx];
+        end
+    end
+
+    if 0 % IK remove
     windowSize = 100;  % Window size in samples (e.g., 50 ms)
     stepSize = 10;     % Step between sliding windows
     idx_Invalid_B2B_FlatRegion = [];
@@ -425,8 +458,9 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
             
         end
     end
-    
-    idx_valid_B2B_filtered = idx_valid_B2B(is_valid);
+    end % of IK remove
+
+    % idx_valid_B2B_filtered = idx_valid_B2B(is_valid);
     idx_all_Invalid_B2B = unique([idx_Invalid_B2B, idx_Invalid_B2B_FlatRegion]);
     idx_valid_B2B = setdiff(idx_valid_B2B, idx_all_Invalid_B2B);
     
