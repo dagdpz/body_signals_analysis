@@ -63,7 +63,7 @@ n_samples       = length(capSignal);
 t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sample is time 0! (not 1/Fs)
 B2B_valid =[];
 out.hf = [];
-% replace your “Tab_outlier = [];” with this full struct init:
+% replace your "Tab_outlier = [];" with this full struct init:
 Tab_outlier = struct( ...
     'outlier',                   [], ...
     'NrRpeaks_orig',             [], ...
@@ -105,10 +105,10 @@ else
 end
 
 %% KK1 - remove (assign to zero) invalid periods that might have low amplitude fluctuations are not real breathing pattern
-% that have some low amplitude fluctuations for the duration of at least
-signal_top_percentile = 5; % of signal length to calculate amplitude
-fraction_of_top_percentile = 0.2;
-min_duration_low = 5; % s
+% that have some low amplitude fluctuations for the duration of at least min_duration_low seconds
+signal_top_percentile = 5; % percent of signal length to calculate amplitude
+fraction_of_top_percentile = 0.2; % fraction of top percentile to use as threshold
+min_duration_low = 5; % seconds 
 
 sortedAbs = sort(abs(capSignal), 'descend'); % Sort by magnitude
 nTop = round(0.01*signal_top_percentile * length(sortedAbs));   
@@ -119,19 +119,22 @@ belowThreshold = abs(capSignal) < threshold;
 
 minDurationSamples = min_duration_low * Fs;
 
-% Identify continuous segments below threshold
-capSignalRemoved = capSignal;  % Initialize output
+% Vectorized version:
+% 1. Create a binary mask for regions below threshold
+belowThreshold = abs(capSignal) < threshold;
 
-%  remove signal values only if they stay below a threshold continuously
-%  for 30 seconds
-lowRegions = regionprops(belowThreshold, 'PixelIdxList');
+% 2. Use regionprops to get the lengths of continuous regions
+stats = regionprops(belowThreshold, 'Area', 'PixelIdxList');
 
-for k = 1:length(lowRegions)
-    idx = lowRegions(k).PixelIdxList;
-    if length(idx) >= minDurationSamples
-        capSignalRemoved(idx) = 0;  % Remove (zero out) only if low for >=30 seconds
-    end
-end
+% 3. Create a mask for regions that are long enough
+longEnoughMask = [stats.Area] >= minDurationSamples;
+
+% 4. Get all indices that need to be zeroed out
+indicesToZero = vertcat(stats(longEnoughMask).PixelIdxList);
+
+% 5. Zero out the signal in one operation
+capSignalRemoved = capSignal;
+capSignalRemoved(indicesToZero) = 0;
 
 if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are completly removed from analyses
     %% Smoothing
@@ -348,7 +351,7 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
     idx_Invalid_B2B       = [1 idx_Invalid_B2B idx_Invalid_B2B-1];
     idx_valid_B2B = setdiff(1:length(B2B),idx_Invalid_B2B);
     
-    %% KK4: check each B2B intervall for signal drop to add as Invalid_B2B intervall which is not detected through the B2B - threshold
+    %% KK4: check each B2B intervall for signal drops to add as Invalid_B2B intervall which is not detected through the B2B threshold
     flatRangeThreshold = 0.005;  % Max range within flat window
     minFlatDurationSamples = round(3 * Fs);  % 3 seconds
     windowSize = 100;  % Window size in samples (e.g., 50 ms)
@@ -614,18 +617,6 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
     %
     %     if ~isempty(t_seg) && ~isempty(y_seg)
     %         scatter(t_seg(:), y_seg(:), 10, 'b', 'filled'); % Ensure column vectors
-    %     end
-    % end
-    %
-    % % --- Inhalation Segment Points (blue circles) ---
-    % for i = 1:length(t_valid_expStart)
-    %     segIdx = find(t >= t_valid_expStart(i) & t <= t_valid_expEnd(i));
-    %
-    %     t_seg = t(segIdx);
-    %     y_seg = capFiltered_rectified(segIdx);
-    %
-    %     if ~isempty(t_seg) && ~isempty(y_seg)
-    %         scatter(t_seg(:), y_seg(:), 10, 'r', 'filled'); % Ensure column vectors
     %     end
     % end
     
