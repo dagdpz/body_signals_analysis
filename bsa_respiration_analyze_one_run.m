@@ -108,13 +108,13 @@ end
 % that have some low amplitude fluctuations for the duration of at least min_duration_low seconds
 signal_top_percentile = 5; % percent of signal length to calculate amplitude
 fraction_of_top_percentile = 0.2; % fraction of top percentile to use as threshold
-min_duration_low = 5; % seconds 
+min_duration_low = 5; % seconds
 
 sortedAbs = sort(abs(capSignal), 'descend'); % Sort by magnitude
-nTop = round(0.01*signal_top_percentile * length(sortedAbs));   
-topPercentile = sortedAbs(1:nTop); 
+nTop = round(0.01*signal_top_percentile * length(sortedAbs));
+topPercentile = sortedAbs(1:nTop);
 
-threshold = fraction_of_top_percentile*median(topPercentile); 
+threshold = fraction_of_top_percentile*median(topPercentile);
 belowThreshold = abs(capSignal) < threshold;
 
 minDurationSamples = min_duration_low * Fs;
@@ -164,7 +164,7 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
     % % sum(isnan(capFilteredFilled(:)))
     %%
     if 0 % Debug
-        figure ('Name','Single-sided amplitude spectrum');
+        figure('Name','Single-sided amplitude spectrum');
         ft_original = fft(capSignal)/n_samples;         % Fourier Transform
         Fv = linspace(0, 1, fix(n_samples/2)+1)*Fn;     % Frequency Vector
         Fv = Fv(Fv<60); % limit to 60 Hz
@@ -354,12 +354,12 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
     %% KK4: check each B2B interval for signal drops to add as Invalid_B2B interval which is not detected through the B2B threshold
     flatRangeThreshold = 0.005;  % Max range within flat window
     min_duration_low = 3; % seconds, minimum duration of flat region to be considered as invalid
-    minFlatDurationSamples = round(min_duration_low * Fs); 
-
+    minFlatDurationSamples = round(min_duration_low * Fs);
+    
     % Preallocate
     is_valid = true(size(idx_valid_B2B));
     idx_Invalid_B2B_FlatRegion = [];
-
+    
     % Process each B2B interval
     for i = 1:length(idx_valid_B2B)
         idx = idx_valid_B2B(i);
@@ -385,90 +385,90 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
             idx_Invalid_B2B_FlatRegion = [idx_Invalid_B2B_FlatRegion, idx];
         end
     end
-
-    if 0 % IK remove
-    windowSize = 100;  % Window size in samples (e.g., 50 ms)
-    stepSize = 10;     % Step between sliding windows
-    idx_Invalid_B2B_FlatRegion = [];
-    is_valid = true(size(idx_valid_B2B));  % Assume all are valid
     
-    for i = 1:length(idx_valid_B2B)
-        idx =idx_valid_B2B(i);
+    if 0 % IK remove (KK version)
+        windowSize = 100;  % Window size in samples (e.g., 50 ms)
+        stepSize = 10;     % Step between sliding windows
+        idx_Invalid_B2B_FlatRegion = [];
+        is_valid = true(size(idx_valid_B2B));  % Assume all are valid
         
-        if idx >= length(maybe_valid_pos_cap_locs)
-            continue;  % Skip last index (no next B2B interval)
-        end
-        
-        % Time interval of this B2B
-        t_start = t(maybe_valid_pos_cap_locs(idx));
-        t_end   = t(maybe_valid_pos_cap_locs(idx + 1));
-        
-        % Sample indices
-        sample_start = max(1, round(t_start * Fs));
-        sample_end   = min(length(capSignal), round(t_end * Fs));
-        
-        segment = capSignal(sample_start:sample_end);
-        segment_time = t(sample_start:sample_end);
-        
-        % Initialize flatness mask
-        flatMask = false(1, length(segment));
-        
-        % Slide a window and mark flat regions
-        for j = 1:stepSize:(length(segment) - windowSize + 1)
-            window = segment(j : j + windowSize - 1);
-            if max(window) - min(window) < flatRangeThreshold
-                flatMask(j : j + windowSize - 1) = true;
+        for i = 1:length(idx_valid_B2B)
+            idx =idx_valid_B2B(i);
+            
+            if idx >= length(maybe_valid_pos_cap_locs)
+                continue;  % Skip last index (no next B2B interval)
+            end
+            
+            % Time interval of this B2B
+            t_start = t(maybe_valid_pos_cap_locs(idx));
+            t_end   = t(maybe_valid_pos_cap_locs(idx + 1));
+            
+            % Sample indices
+            sample_start = max(1, round(t_start * Fs));
+            sample_end   = min(length(capSignal), round(t_end * Fs));
+            
+            segment = capSignal(sample_start:sample_end);
+            segment_time = t(sample_start:sample_end);
+            
+            % Initialize flatness mask
+            flatMask = false(1, length(segment));
+            
+            % Slide a window and mark flat regions
+            for j = 1:stepSize:(length(segment) - windowSize + 1)
+                window = segment(j : j + windowSize - 1);
+                if max(window) - min(window) < flatRangeThreshold
+                    flatMask(j : j + windowSize - 1) = true;
+                end
+            end
+            
+            % Analyze contiguous flat regions
+            flatRegions = regionprops(flatMask, 'PixelIdxList');
+            isFlatLongEnough = false;
+            
+            for r = 1:length(flatRegions)
+                regionLength = length(flatRegions(r).PixelIdxList);
+                if regionLength >= minFlatDurationSamples
+                    isFlatLongEnough = true;
+                    fprintf('Flat region detected in B2B #%d: %.2f seconds long\n', ...
+                        idx, regionLength / Fs);
+                    break;
+                end
+            end
+            
+            % Invalidate segment if flat region is long enough
+            if isFlatLongEnough
+                is_valid(i) = false;
+                idx_Invalid_B2B_FlatRegion = [idx_Invalid_B2B_FlatRegion, idx];
+                % Plot only the flat region(s) that triggered invalidation
+                %     figure;
+                %     plot(segment_time, segment, 'Color', [0.1 0.1 0.1]); % light background for full segment
+                %     hold on;
+                %     for r = 1:length(flatRegions)
+                %         idxs = flatRegions(r).PixelIdxList;
+                %         if length(idxs) >= minFlatDurationSamples
+                %             plot(segment_time(idxs), segment(idxs), 'r', 'LineWidth', 2);  % highlight flat
+                %         end
+                %     end
+                %
+                %     title(sprintf('B2B Segment %d - INVALID (flat ≥ 3s)', i), 'Color', 'r');
+                %     xlabel('Time (s)');
+                %     ylabel('Signal Amplitude');
+                %     grid on;
+                
+                
             end
         end
-        
-        % Analyze contiguous flat regions
-        flatRegions = regionprops(flatMask, 'PixelIdxList');
-        isFlatLongEnough = false;
-        
-        for r = 1:length(flatRegions)
-            regionLength = length(flatRegions(r).PixelIdxList);
-            if regionLength >= minFlatDurationSamples
-                isFlatLongEnough = true;
-                fprintf('Flat region detected in B2B #%d: %.2f seconds long\n', ...
-                    idx, regionLength / Fs);
-                break;
-            end
-        end
-        
-        % Invalidate segment if flat region is long enough
-        if isFlatLongEnough
-            is_valid(i) = false;
-            idx_Invalid_B2B_FlatRegion = [idx_Invalid_B2B_FlatRegion, idx];
-            % Plot only the flat region(s) that triggered invalidation
-            %     figure;
-            %     plot(segment_time, segment, 'Color', [0.1 0.1 0.1]); % light background for full segment
-            %     hold on;
-            %     for r = 1:length(flatRegions)
-            %         idxs = flatRegions(r).PixelIdxList;
-            %         if length(idxs) >= minFlatDurationSamples
-            %             plot(segment_time(idxs), segment(idxs), 'r', 'LineWidth', 2);  % highlight flat
-            %         end
-            %     end
-            %
-            %     title(sprintf('B2B Segment %d - INVALID (flat ≥ 3s)', i), 'Color', 'r');
-            %     xlabel('Time (s)');
-            %     ylabel('Signal Amplitude');
-            %     grid on;
-            
-            
-        end
-    end
     end % of IK remove
-
+    
     % idx_valid_B2B_filtered = idx_valid_B2B(is_valid);
     idx_all_Invalid_B2B = unique([idx_Invalid_B2B, idx_Invalid_B2B_FlatRegion]);
     idx_valid_B2B = setdiff(idx_valid_B2B, idx_all_Invalid_B2B);
     
     
     detectedOutliers_mode = (length(idx_Invalid_B2B)/length(B2B))*100;
-    disp(['Fraction of B2B outliers detected using deviations from B2B mode: ', num2str(detectedOutliers_mode) ])
-    Tab_outlier.outlier_Mode_abs = length(idx_Invalid_B2B);
-    Tab_outlier.outlier_Mode_pct = round((length(idx_Invalid_B2B)/length(B2B))*100 ,4);
+    detectedOutlier2 = 100-((length(idx_valid_B2B)/length(B2B))*100);
+    
+   
     
     t_valid_B2B                         = t(maybe_valid_pos_cap_locs(idx_valid_B2B));
     B2B_valid_before_hampel             = B2B(idx_valid_B2B);
@@ -506,9 +506,6 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
     end
     
     
-    detectedOutlier2                = 100-((length(idx_valid_B2B)/length(B2B))*100);
-    disp(['Fraction of B2B outliers detected using deviations from B2B mode and Hampel: ', num2str(detectedOutlier2) ])
-    
     Tab_outlier.outliers_delete_abs = length(idx_to_delete);
     Tab_outlier.outliers_hampel_pct = 100- (((length(idx_valid_B2B)+Tab_outlier.outlier_Mode_abs)/length(B2B))*100) ;
     
@@ -524,11 +521,6 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
     Tab_outlier.NrB2B_valid         = length(B2B_valid);
     Tab_outlier.outliers_all_abs    = Tab_outlier.outliers_delete_abs  +   Tab_outlier.outlier_Mode_abs    + Tab_outlier.outlier;
     Tab_outlier.outliers_all_pct    = (Tab_outlier.outliers_all_abs/Tab_outlier.NrRpeaks_orig)*100;
-    disp(['Nr of deleted R peaks & B2B outliers: ', num2str(Tab_outlier.outliers_all_abs) ])
-    disp(['Fraction of deleted R peaks & B2B outliers: ', num2str(Tab_outlier.outliers_all_pct) ])
-    
-    
-    
     
     
     
@@ -624,101 +616,15 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
         
     end
     
-    % %%
-    % figure; hold on;
-    % plot(t, capFiltered, 'b', 'DisplayName', 'Original Signal'); % Raw capnogram
-    % plot(t, capFiltered_rectified, 'k', 'DisplayName', 'Rectified Signal'); % Rectified
-    % yline(inspiration_threshold, 'r--', 'DisplayName', 'Inspiration Threshold'); % Threshold line
-    % scatter(t(insp_idx), capFiltered_rectified(insp_idx), 'g', 'filled', 'DisplayName', 'Detected Inspiration'); % Inspiration points
-    % scatter(insp_end_t, capFiltered_rectified(insp_idx(insp_end_idx)), 'bo', 'filled','DisplayName', 'Improved Inhalation End');
-    %     plot(t(locs_peak(idx_wo_outliers)),capSignal(locs_peak(idx_wo_outliers)),'ko','MarkerSize',6);
-    % scatter(corrected_insp_end_t, capFiltered_rectified(corrected_insp_end_idx), 'ro', 'filled','DisplayName', 'Improved Inhalation End');
-    %     plot(t(locs_peak(idx_wo_outliers)),capSignal(locs_peak(idx_wo_outliers)),'ko','MarkerSize',6);
-    %
-    %
-    %     % valid R peaks
-    %     plot(t(R_valid_locs),capSignal(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
-    %     %valid B2B intervals -> filled TRIANGLE
-    %     plot(t(B2B_valid_locs),capSignal(B2B_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
-    %     plot(t(locs_peak(idx_outliers)),capSignal(locs_peak(idx_outliers)),'bx');
-    %
-    % % --- Inhalation Segment Points (blue circles) ---
-    % for i = 1:length(t_valid_inspStart)
-    %     segIdx = find(t >= t_valid_inspStart(i) & t <= t_valid_inspEnd(i));
-    %
-    %     t_seg = t(segIdx);
-    %     y_seg = capFiltered_rectified(segIdx);
-    %
-    %     if ~isempty(t_seg) && ~isempty(y_seg)
-    %         scatter(t_seg(:), y_seg(:), 10, 'b', 'filled'); % Ensure column vectors
-    %     end
-    % end
-    
     % After the loop:
     Tab_outlier.median_duration_insp = nanmedian(duration_insp_valid);
     Tab_outlier.median_duration_exp = nanmedian(duration_exp_valid);
     IE_ratio = Tab_outlier.median_duration_insp / Tab_outlier.median_duration_exp;
-    fprintf('Mean I:E Ratio = %.2f\n', IE_ratio);
-    
-    % --- Post-processing unmatched peaks: estimate inspiration segments ---
-    for jj = 1:length(noInspEndTimes)
-        missingTime = noInspEndTimes(jj); %currPeakTime
-        
-        % Find the index of the missing time in the validPeakTimes array
-        peakIdx = find(validPeakTimes == missingTime);
-        
-        % Estimate inspiration start as expiration end (same as currPeakTime)
-        t_valid_expStart(peakIdx) = missingTime;
-        
-        % Estimate inspiration end as halfway to the next peak (or some fallback)
-        if peakIdx < length(validPeakTimes)
-            nextTime = validPeakTimes(peakIdx + 1);
-            
-            % Get the index range in the time vector
-            rangeIdx = find(t >= missingTime & t <= nextTime);
-            
-            % Find index of minimum value in that segment
-            [~, localMinIdx_rel] = min(capFiltered_rectified(rangeIdx));
-            localMinIdx_abs = rangeIdx(localMinIdx_rel);  % Convert back to full signal index
-            
-            % Assign the trough as inspiration end
-            estimatedInspEnd = t(localMinIdx_abs);
-        else
-            % fallback if it's the last peak
-            estimatedInspEnd = missingTime + mode_B2B * 0.8;
-        end
-        
-        insp_end_t(end+1) = estimatedInspEnd;
-        if ~ismember(localMinIdx_abs, insp_idx)
-            insp_idx(end+1) = localMinIdx_abs;
-        end
-        
-        % Sort insp_idx so it remains ordered
-        [insp_idx, sort_order] = sort(insp_idx);
-        
-        % Update insp_end_idx based on new sorted insp_idx
-        % Find position of the new end index
-        new_end_pos = find(insp_idx == localMinIdx_abs);
-        
-        % Re-sort existing insp_end_idx to maintain alignment
-        insp_end_idx = sort([insp_end_idx, new_end_pos]);
-        
-        t_valid_expEnd(peakIdx)    = missingTime;         % end of expiration
-        t_valid_inspStart(peakIdx) = missingTime;         % inspiration starts at end of expiration
-        t_valid_inspEnd(peakIdx)   = estimatedInspEnd;    % estimated end
-        
-        % Correct durations based on real timestamps
-        duration_exp_valid(peakIdx)  = t_valid_expEnd(peakIdx)  - t_valid_expStart(peakIdx);
-        duration_insp_valid(peakIdx) = t_valid_inspEnd(peakIdx) - t_valid_inspStart(peakIdx);
-    end
-    
-    insp_end_t = sort(insp_end_t);
     
     % After the loop:
     mean_duration_insp = nanmedian(duration_insp_valid);
     mean_duration_exp = nanmedian(duration_exp_valid);
     IE_ratio = mean_duration_insp / mean_duration_exp;
-    fprintf('Mean I:E Ratio = %.2f\n', IE_ratio);
     
     Tab_outlier.numSkippedInspSegments = length(skippedInspTimes);
     Tab_outlier.skippedInspTimes = skippedInspTimes;
@@ -827,7 +733,6 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
     end
     
     %% How "much time of the run" was deleted related to the detection of outlier?
-    %% How "much time of the run" was deleted related to the detection of outlier?
     Tab_outlier.durationRun_s                   = max(t);
     Tab_outlier.duration_NotValidSegments_s     = max(t)-sum(B2B(idx_valid_B2B));
     Tab_outlier.nrblock                         = i_block;
@@ -854,6 +759,10 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
     % cap_data = single(cap_data);
     
     
+     % Replace scattered outputs with single function call
+    verbose = true;  % Control flag for text output
+    printAnalysisSummary(Tab_outlier, detectedOutliers_mode, detectedOutlier2, IE_ratio, verbose, indicesToZero, capSignal, idx_Invalid_B2B_FlatRegion, t, maybe_valid_pos_cap_locs);
+    
     
     if TOPLOT
         
@@ -868,6 +777,32 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
         capPlot1 = plot(t,capSignal,'g'); hold on;
         plot(t,capFiltered,'b');
         plot(t(locs_min),capFiltered(locs_min),'bo','MarkerSize',6);
+        
+        % Add KK1 invalid periods as gray line segments
+        if ~isempty(indicesToZero)
+            % Find continuous segments
+            segments = find(diff([0; indicesToZero; 0]) ~= 1);
+            segments = reshape(segments, 2, [])';
+            
+            % Plot each segment
+            for i = 1:size(segments, 1)
+                start_idx = indicesToZero(segments(i,1));
+                end_idx = indicesToZero(segments(i,2)-1);
+                plot(t(start_idx:end_idx), capSignal(start_idx:end_idx), 'Color', [0.5 0.5 0.5], 'LineWidth', 2, 'DisplayName', 'KK1 Invalid Periods');
+            end
+        end
+        
+        % Add KK4 flat segments as yellow lines
+        if ~isempty(idx_Invalid_B2B_FlatRegion)
+            for i = 1:length(idx_Invalid_B2B_FlatRegion)
+                idx = idx_Invalid_B2B_FlatRegion(i);
+                if idx < length(maybe_valid_pos_cap_locs)
+                    t_start = t(maybe_valid_pos_cap_locs(idx));
+                    t_end = t(maybe_valid_pos_cap_locs(idx + 1));
+                    plot([t_start t_end], [0 0], 'y', 'LineWidth', 2, 'DisplayName', 'KK4 Flat Segments');
+                end
+            end
+        end
         
         plot(t(locs_peak(idx_wo_outliers)),capSignal(locs_peak(idx_wo_outliers)),'ko','MarkerSize',6);
         %idx_Invalid_B2B - after changing the max-values
@@ -1047,20 +982,77 @@ end
 out.settingsStruct = Set.cap;
 out.codeTimestamp  = datestr(now,30);% provenance: yyyymmddTHHMMSS
 
+function printAnalysisSummary(Tab_outlier, detectedOutliers_mode, detectedOutlier2, IE_ratio, verbose, indicesToZero, capSignal, idx_Invalid_B2B_FlatRegion, t, maybe_valid_pos_cap_locs)
+if ~verbose
+    return
+end
+
+fprintf('\n=== Respiration Analysis Summary ===\n');
+
+% Block and Time Information
+fprintf('\nBlock Information:\n');
+fprintf('  - Current block: %d\n', Tab_outlier.nrblock);
+fprintf('  - Combined files block: %d\n', Tab_outlier.nrblock_combinedFiles);
+fprintf('  - Total run duration: %.1f s\n', Tab_outlier.durationRun_s);
+fprintf('  - Valid data percentage: %.1f%%\n', ...
+    (1 - Tab_outlier.duration_NotValidSegments_s/Tab_outlier.durationRun_s)*100);
 
 
-function scales = wavelet_init_scales(minFreq, maxFreq, scalesPerDecade)
-MorletFourierFactor = 4*pi/(6+sqrt(2+6^2));
-sc0                 = 1/(maxFreq*MorletFourierFactor); % we do not consider frequencies above maxFreq
-scMax               = 1/(minFreq*MorletFourierFactor); % we do not consider frequencies below minFreq
-ds                  = 1/scalesPerDecade;
-nSc                 =  fix(log2(scMax/sc0)/ds);
-scales              = {sc0, ds, nSc}; % we use default formula for scales: sc0*2.^((0:nSc-1)*ds)
+ % Invalid Segments Analysis
+fprintf('\nInvalid Segments Analysis:\n');
 
-function energyProfile_tc = get_energy_profile(sig,waveName,sca)
-cwtstruct = cwtft(sig, 'wavelet', waveName, 'scales', sca);
-energyProfile = abs(cwtstruct.cfs).^2;
-energyProfile_tc = mean(abs(energyProfile));
-clear cwtstruct energyProfile
+% KK1 Low Amplitude Segments
+if ~isempty(indicesToZero)
+    segments = find(diff([0; indicesToZero; 0]) ~= 1);
+    segments = reshape(segments, 2, [])';
+    num_segments = size(segments, 1);
+    total_duration = length(indicesToZero) / length(capSignal) * 100;
+    fprintf('  KK1 Low Amplitude:\n');
+    fprintf('    - Number of segments: %d\n', num_segments);
+    fprintf('    - Total duration: %.1f%% of signal\n', total_duration);
+end
+
+% KK4 Flat Segments
+if ~isempty(idx_Invalid_B2B_FlatRegion)
+    num_flat_segments = length(idx_Invalid_B2B_FlatRegion);
+    total_flat_duration = 0;
+    for i = 1:length(idx_Invalid_B2B_FlatRegion)
+        idx = idx_Invalid_B2B_FlatRegion(i);
+        if idx < length(maybe_valid_pos_cap_locs)
+            t_start = t(maybe_valid_pos_cap_locs(idx));
+            t_end = t(maybe_valid_pos_cap_locs(idx + 1));
+            total_flat_duration = total_flat_duration + (t_end - t_start);
+        end
+    end
+    flat_duration_percent = (total_flat_duration / t(end)) * 100;
+    fprintf('  KK4 Flat Segments:\n');
+    fprintf('    - Number of segments: %d\n', num_flat_segments);
+    fprintf('    - Total duration: %.1f%% of signal\n', flat_duration_percent);
+end
+
+% Peak Analysis Summary
+fprintf('\nPeak Analysis:\n');
+fprintf('  - Total peaks detected: %d\n', Tab_outlier.NrRpeaks_orig);
+fprintf('  - Valid peaks: %d\n', Tab_outlier.NrPeaks_valid);
+fprintf('  - Consecutive valid peaks: %d\n', Tab_outlier.B2B_consec);
+fprintf('  - Invalid peaks: %d (%.1f%%)\n', ...
+    Tab_outlier.outliers_all_abs, Tab_outlier.outliers_all_pct);
+
+% B2B and Outlier Analysis
+fprintf('\nBreath-to-Breath Analysis:\n');
+fprintf('  - Valid B2B intervals: %d\n', Tab_outlier.NrB2B_valid);
+fprintf('  - Mode-based outliers: %.1f%%\n', detectedOutliers_mode);
+fprintf('  - Hampel-based outliers: %.1f%%\n', detectedOutlier2);
+fprintf('  - Deleted outliers: %d\n', Tab_outlier.outliers_delete_abs);
+
+% Breathing Pattern
+fprintf('\nBreathing Pattern:\n');
+fprintf('  - I:E Ratio: %.2f\n', IE_ratio);
+fprintf('  - Median inspiration duration: %.2f s\n', Tab_outlier.median_duration_insp);
+fprintf('  - Median expiration duration: %.2f s\n', Tab_outlier.median_duration_exp);
+
+
+
+fprintf('\n==============================\n\n');
 
 
