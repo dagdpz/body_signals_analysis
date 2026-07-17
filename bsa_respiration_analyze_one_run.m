@@ -115,7 +115,6 @@ nTop = round(0.01*signal_top_percentile * length(sortedAbs));
 topPercentile = sortedAbs(1:nTop);
 
 threshold = fraction_of_top_percentile*median(topPercentile);
-belowThreshold = abs(capSignal) < threshold;
 
 minDurationSamples = min_duration_low * Fs;
 
@@ -352,39 +351,31 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
     idx_valid_B2B = setdiff(1:length(B2B),idx_Invalid_B2B);
     
     %% KK4: check each B2B interval for signal drops to add as Invalid_B2B interval which is not detected through the B2B threshold
-    flatRangeThreshold = 0.005;  % Max range within flat window
-    min_duration_low = 3; % seconds, minimum duration of flat region to be considered as invalid
+    flatRangeThreshold = 0.05;  % Max range within flat window
+    min_duration_low = 0.2; % seconds, minimum duration of flat region to be considered as invalid
     minFlatDurationSamples = round(min_duration_low * Fs);
     
-    % Preallocate
-    is_valid = true(size(idx_valid_B2B));
-    idx_Invalid_B2B_FlatRegion = [];
+    % Get all B2B segments at once
+    valid_indices = idx_valid_B2B(idx_valid_B2B < length(maybe_valid_pos_cap_locs));
+    t_starts = t(maybe_valid_pos_cap_locs(valid_indices));
+    t_ends = t(maybe_valid_pos_cap_locs(valid_indices + 1));
+    sample_starts = max(1, round(t_starts * Fs));
+    sample_ends = min(length(capSignal), round(t_ends * Fs));
     
-    % Process each B2B interval
-    for i = 1:length(idx_valid_B2B)
-        idx = idx_valid_B2B(i);
-        
-        if idx >= length(maybe_valid_pos_cap_locs)
-            continue;  % Skip last index
-        end
-        
-        % Get segment
-        t_start = t(maybe_valid_pos_cap_locs(idx));
-        t_end = t(maybe_valid_pos_cap_locs(idx + 1));
-        sample_start = max(1, round(t_start * Fs));
-        sample_end = min(length(capSignal), round(t_end * Fs));
-        segment = capSignal(sample_start:sample_end);
-        
-        % Find segments where max-min difference is below threshold
-        % Using movmax and movmin to get sliding window statistics
-        window_ranges = movmax(segment, minFlatDurationSamples) - movmin(segment, minFlatDurationSamples);
-        
-        % If any window has range below threshold, mark as invalid
-        if any(window_ranges < flatRangeThreshold)
-            is_valid(i) = false;
-            idx_Invalid_B2B_FlatRegion = [idx_Invalid_B2B_FlatRegion, idx];
-        end
-    end
+    % Create binary mask for all points below threshold
+    belowThreshold = abs(capSignal) < flatRangeThreshold;
+    
+    % Find continuous segments using regionprops
+    stats = regionprops(belowThreshold, 'Area', 'PixelIdxList');
+    
+    % Get segments that are long enough
+    longSegments = [stats.Area] >= minFlatDurationSamples;
+    longSegmentIndices = vertcat(stats(longSegments).PixelIdxList);
+    
+    % Use arrayfun to check each interval for long segments
+    containsLongSegment = arrayfun(@(start, end_idx) ...
+        any(longSegmentIndices >= start & longSegmentIndices <= end_idx), ...
+        sample_starts, sample_ends);
     
     if 0 % IK remove (KK version)
         windowSize = 100;  % Window size in samples (e.g., 50 ms)
@@ -459,6 +450,9 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
             end
         end
     end % of IK remove
+    
+    % Get the indices of B2B intervals that contain long segments
+    idx_Invalid_B2B_FlatRegion = valid_indices(containsLongSegment);
     
     % idx_valid_B2B_filtered = idx_valid_B2B(is_valid);
     idx_all_Invalid_B2B = unique([idx_Invalid_B2B, idx_Invalid_B2B_FlatRegion]);
@@ -851,11 +845,16 @@ if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are complet
             % plot(t_interp,BPS,'y','Color',[0.4706    0.3059    0.4471]);
         end
         
-        set(gca,'Xlim',[0 max(t)]);
-        title(sprintf('B2B (s): %d valid, %d consecutive, %d outliers, RMSSD %.3f bpm | %.1f ms',...
-            length(B2B_valid_locs),length(idx_valid_B2B_consec),length(unique([idx_outliers_hampel' idx_to_delete_after_outliers])), rmssd_B2B_valid_bpm, rmssd_B2B_valid_ms));
+        set(gca,'Xlim',[0 max(t)]); 
+        title(sprintf('B2B (s): %d valid, %d consecutive, %d mode outliers, %d hampel outliers, %d flat regions, RMSSD %.3f bpm | %.1f ms',...
+            length(B2B_valid_locs),...
+            length(idx_valid_B2B_consec),...
+            length(idx_Invalid_B2B),...
+            length(unique([idx_outliers_hampel' idx_to_delete_after_outliers])),...
+            length(idx_Invalid_B2B_FlatRegion),...
+            rmssd_B2B_valid_bpm, rmssd_B2B_valid_ms));
         ylabel('B2B (s)');
-        legend({'valid','consecutive','after outliers','hampel outliers'},'location','Best');
+        legend({'valid','consecutive','mode outliers','hampel outliers'},'location','Best');
         
         
         subplot(4,4,13);
