@@ -1,11 +1,11 @@
-function [out,Tab_outlier] = bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,TOPLOT,i_block,NrBlock,FigInfo)
-%bsa_respiration_analyze_one_run  - analyses ECG in one run/block
-%
+function [out, Tab_outlier] = bsa_respiration_analyze_one_run(capSignal, settings_path, Fs, TOPLOT, i_block, NrBlock, FigInfo)
+% Analyses one capnogram run/block and returns respiration variables plus
+% explicit respiration-only QC masks for later cardiorespiratory coupling.%
 % USAGE:
 % out = bsa_respiration_analyze_one_run(capSignal,settings_path,Fs,1,sprintf('block%02d',r));
 %
 % INPUTS:
-%		capSignal		- ECG
+%		capSignal		- capnography 
 %       settings_path   - full path to mfile with specific session/monkey settings
 %		Fs              - sampling rate (Hz)
 %       TOPLOT          - plot figure
@@ -23,929 +23,889 @@ function [out,Tab_outlier] = bsa_respiration_analyze_one_run(capSignal,settings_
 % Author(s):	I.Kagan, DAG, DPZ
 % URL:		http://www.dpz.eu/dag
 %
-% Change log:
-% 20190226:	Created function (Igor Kagan)
-% ...
-% $Revision: 1.0 $  $Date: 2019-02-26 14:11:47 $
+% Respiration-only badBreath criteria hard-coded here:
+% affecting    out.resp_qc, out.breathDur_s,  out.respRate_bpm_perBreath, out.inspFrac_perBreath, Tab_outlier.resp_qc_*
+%   1) NaN/Inf phase times
+%   2) impossible order: inspEnd <= inspStart, expStart < inspEnd, expEnd <= expStart
+%   3) respiration rate outside 5-120 breaths/min
+%   4) inspiration fraction outside 0.10-0.90
+%   5) global 6-MAD outlier in breath duration or respiration rate
+%   6) local 6-MAD outlier in breath duration using a 21-breath window
 
-% ADDITIONAL INFO:
-% CAREFUL - the function filtfilt has the same name in the fieldtrip toolbox
-%
-% https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0140783
-% https://github.com/fieldtrip/fieldtrip/blob/master/ft_heartrate.m
-
-% filtering according to https://de.mathworks.com/matlabcentral/answers/270238-how-can-i-filter-ecg-signals-with-high-motion-artifact
-% (or see also https://de.mathworks.com/matlabcentral/answers/364788-ecg-signal-artifact-removing)
-%%%%%%%%%%%%%%%%%%%%%%%%%[DAG mfile header version 1]%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-%{
-[remove "{" above to run it for debugging specific blocks]
-load('bodysignals_wo_behavior.mat');
-Fs = double(dat.ECG_SR);
-capSignal = double(dat.ECG{5});
-%}
-
-
-if nargin < 3
+if nargin < 4 || isempty(TOPLOT)
     TOPLOT = true;
 end
 
-
-if nargin < 4
+if nargin < 7 || isempty(FigInfo)
     FigInfo = '';
 end
 
 run(settings_path)
 
+capSignal = double(capSignal(:));
+Fs = double(Fs);
+n_samples = length(capSignal);
+t = (0:n_samples-1)' ./ Fs; % first sample is time 0
 
-n_samples       = length(capSignal);
-t               = 0:1/Fs:1/Fs*(n_samples-1); % time axis  -> IMPORTANT: first sample is time 0! (not 1/Fs)
-B2B_valid =[];
+out = initialize_empty_resp_output();
+Tab_outlier = initialize_empty_Tab_outlier();
+resp_qc = initialize_empty_resp_qc();
+
 out.hf = [];
-% replace your "Tab_outlier = [];" with this full struct init:
-Tab_outlier = struct( ...
-    'outlier',                   [], ...
-    'NrRpeaks_orig',             [], ...
-    'outlier_Mode_abs',          [], ...
-    'outlier_Mode_pct',          [], ...
-    'NrB2B_beforehampel',        [], ...
-    'outliers_hampel_abs',       [], ...
-    'outliers_delete_abs',       [], ...
-    'outliers_hampel_pct',       [], ...
-    'NrPeaks_valid',             [], ...
-    'NrB2B_valid',               [], ...
-    'outliers_all_abs',          [], ...
-    'outliers_all_pct',          [], ...
-    'median_duration_insp',      [], ...
-    'median_duration_exp',       [], ...
-    'numSkippedInspSegments',    [], ...
-    'skippedInspTimes',          [], ...
-    'skippedInspDurations',      [], ...
-    'numValidPeaksNoInspEnd',    [], ...
-    'validPeaksNoInspEndTimes',  [], ...
-    'numValidInsp',              [], ...
-    'totalCandidatesInsp',       [], ...
-    'numInvalidInsp',            [], ...
-    'numInvalidExp',             [], ...
-    'B2B_consec',                [], ...
-    'durationRun_s',             [], ...
-    'duration_NotValidSegments_s',[], ...
-    'nrblock',                   [], ...
-    'nrblock_combinedFiles',     []  ...
-    );
+Tab_outlier.session_index = i_block;
+Tab_outlier.nrblock = NrBlock;
+Tab_outlier.nrblock_combinedFiles = NrBlock;
+Tab_outlier.durationRun_s = max(t);
 
-% Step 1: flip cap signal if it's negative, leave the same if it's above zero
-% This will keep the signal the same after swapping connectors between TDT
-% and capnographic monitor (done by Luba in June 2023)
-if median(capSignal) > 0
-    % do nothing to the signal
-else
-    capSignal = (-1)*capSignal;
+% -------------------------------------------------------------------------
+% Flip cap signal if needed
+% -------------------------------------------------------------------------
+if nanmedian(capSignal) <= 0
+    capSignal = -capSignal;
 end
 
-%% KK1 - remove (assign to zero) invalid periods that might have low amplitude fluctuations are not real breathing pattern
-% that have some low amplitude fluctuations for the duration of at least min_duration_low seconds
-signal_top_percentile = 5; % percent of signal length to calculate amplitude
-fraction_of_top_percentile = 0.2; % fraction of top percentile to use as threshold
-min_duration_low = 5; % seconds
+% -------------------------------------------------------------------------
+% KK1: low-amplitude invalid periods
+% -------------------------------------------------------------------------
 
-sortedAbs = sort(abs(capSignal), 'descend'); % Sort by magnitude
-nTop = round(0.01*signal_top_percentile * length(sortedAbs));
+sortedAbs = sort(abs(capSignal), 'descend');
+nTop = max(1, round(0.01 * Set.cap.signal_top_percentile * length(sortedAbs)));
 topPercentile = sortedAbs(1:nTop);
+threshold = Set.cap.fraction_of_top_percentile * nanmedian(topPercentile);
 
-threshold = fraction_of_top_percentile*median(topPercentile);
 belowThreshold = abs(capSignal) < threshold;
+minDurationSamples = round(Set.cap.min_duration_low * Fs);
 
-minDurationSamples = min_duration_low * Fs;
-
-% Vectorized version:
-% 1. Create a binary mask for regions below threshold
-belowThreshold = abs(capSignal) < threshold;
-
-% 2. Use regionprops to get the lengths of continuous regions
 stats = regionprops(belowThreshold, 'Area', 'PixelIdxList');
-
-% 3. Create a mask for regions that are long enough
 longEnoughMask = [stats.Area] >= minDurationSamples;
 
-% 4. Get all indices that need to be zeroed out
-indicesToZero = vertcat(stats(longEnoughMask).PixelIdxList);
+if any(longEnoughMask)
+    indicesToZero = vertcat(stats(longEnoughMask).PixelIdxList);
+else
+    indicesToZero = [];
+end
 
-% 5. Zero out the signal in one operation
 capSignalRemoved = capSignal;
 capSignalRemoved(indicesToZero) = 0;
 
-if median(capSignalRemoved) > 0.15 %KK2 - blocks below this criteria are completly removed from analyses
-    %% Smoothing
-    Set.cap.smoothing_window = 0.3;
-    capFiltered = smooth(capSignalRemoved, round(Set.cap.smoothing_window*Fs))'; % increase smoothing window to .25s; doesn't affect peak detection but is needed for further inspiration / expiration classification
-    capFilteredFilled = filloutliers(capFiltered, 'linear', 'movmedian', 1000);
-    %windowDuration = 1000 / Fs;
-    %capFiltered2 = smoothdata(capSignal, 'sgolay', 1000);
-    % any(isnan(capFilteredFilled))
-    % figure; hold on;
-    % plot(t, capSignal, 'k', 'DisplayName', 'Original Signal');
-    % plot(t, capSignalRemoved, 'r', 'DisplayName', 'Smoothed Signal');
-    % plot(t, capFilteredFilled, 'b', 'DisplayName', 'Smoothed sgolay');
-    % legend;
-    % xlabel('Time (s)');
-    
-    % % problem with saturation in the signal (e.g., signal stuck at 0 for a while)
-    % % signalMin = min(capFilteredFilled);
-    % % signalRange = range(capFilteredFilled);
-    % %
-    % % Define threshold close to minimum but not exactly min
-    % % flatThreshold = signalMin + 0.01 * signalRange;
-    % % flatIdx = capFilteredFilled < flatThreshold;
-    % % sum(flatIdx)
-    % % capFilteredFilled(flatIdx) = NaN;
-    % %
-    % % sum(isnan(capFilteredFilled(:)))
-    %%
-    if 0 % Debug
-        figure('Name','Single-sided amplitude spectrum');
-        ft_original = fft(capSignal)/n_samples;         % Fourier Transform
-        Fv = linspace(0, 1, fix(n_samples/2)+1)*Fn;     % Frequency Vector
-        Fv = Fv(Fv<60); % limit to 60 Hz
-        
-        ft_filtered = fft(ecgFiltered)/n_samples;
-        
-        plot(Fv, abs(ft_original(1:length(Fv)))*2,'b'); hold on
-        plot(Fv, abs(ft_filtered(1:length(Fv)))*2,'g');
-        
-        grid
-        xlabel('Frequency');
-        ylabel('Amplitude');
-        title('Single-sided amplitude spectrum');
+if isempty(indicesToZero)
+    lowAmpSegments_s = [];
+else
+    lowAmpIdx = unique(indicesToZero(:));
+    lowAmpBounds = [1; find(diff(lowAmpIdx) ~= 1) + 1; numel(lowAmpIdx) + 1];
+    lowAmpSegments = [lowAmpBounds(1:end-1), lowAmpBounds(2:end) - 1];
+    lowAmpSampleRanges = [lowAmpIdx(lowAmpSegments(:, 1)), ...
+        lowAmpIdx(lowAmpSegments(:, 2))];
+    lowAmpSegments_s = [t(lowAmpSampleRanges(:, 1)), ...
+        t(lowAmpSampleRanges(:, 2))];
+end
+resp_qc.lowAmpSegments_s = lowAmpSegments_s;
+resp_qc.nLowAmpSegments = size(lowAmpSegments_s, 1);
+if isempty(lowAmpSegments_s)
+    resp_qc.durationLowAmp_s = 0;
+else
+    resp_qc.durationLowAmp_s = ...
+        sum(lowAmpSegments_s(:, 2) - lowAmpSegments_s(:, 1));
+end
+
+Tab_outlier.resp_qc_lowAmpSegments_s = resp_qc.lowAmpSegments_s;
+Tab_outlier.resp_qc_nLowAmpSegments = resp_qc.nLowAmpSegments;
+Tab_outlier.resp_qc_durationLowAmp_s = resp_qc.durationLowAmp_s;
+
+% If the remaining signal is too small, return empty outputs but keep QC.
+if nanmedian(capSignalRemoved) <= 0.15
+    [out, Tab_outlier] = finalize_empty_output( ...
+        out, Tab_outlier, resp_qc, Set, i_block, NrBlock);
+    Tab_outlier.duration_NotValidSegments_s = max(t);
+    return
+end
+
+% -------------------------------------------------------------------------
+% Smooth and prepare signal
+% -------------------------------------------------------------------------
+Set.cap.smoothing_window = 0.3;
+capFiltered = smooth(capSignalRemoved, round(Set.cap.smoothing_window * Fs));
+capFiltered = capFiltered(:);
+capFilteredFilled = filloutliers(capFiltered, 'linear', 'movmedian', 1000);
+capFiltered_rectified = capFilteredFilled;
+
+% -------------------------------------------------------------------------
+% Detect inspiration candidates and expiratory peaks
+% -------------------------------------------------------------------------
+cap_mode = mode(capFiltered_rectified);
+fractionBelowMode = sum(capFiltered_rectified < cap_mode) / length(capFiltered_rectified);
+
+if fractionBelowMode > 0.5
+    fraction_of_inspiration = sum(capFiltered_rectified < cap_mode) / length(capFiltered_rectified);
+else
+    fraction_of_inspiration = 2 * sum(capFiltered_rectified < cap_mode) / length(capFiltered_rectified);
+end
+
+fraction_of_inspiration = min(max(fraction_of_inspiration, 0.01), 0.99);
+inspiration_threshold = prctile(capFiltered_rectified, 100 * fraction_of_inspiration);
+insp_idx = find(capFiltered_rectified < inspiration_threshold); %#ok<NASGU>
+
+MinPeakProminence = nanmedian(capFiltered_rectified) * Set.cap.MinPeakProminenceCoef;
+
+[pks, locs_peak] = findpeaks(capFiltered_rectified, ...
+    'MinPeakProminence', MinPeakProminence, ...
+    'MinPeakDistance', fix(Set.cap.min_P2P * Fs), ...
+    'MinPeakHeight', Set.cap.eP_tc_minpeakheight_med_prop * nanmedian(capFiltered_rectified));
+
+Tab_outlier.NrRpeaks_orig = length(pks);
+
+if numel(locs_peak) < 3
+    [out, Tab_outlier] = finalize_empty_output( ...
+        out, Tab_outlier, resp_qc, Set, i_block, NrBlock);
+    return
+end
+
+% Remove peak-amplitude jump outliers using your existing helper.
+diff_peaks = [0; abs(diff(pks(:)))];
+[~, idx_wo_outliers, ~, idx_outliers, ~] = bsa_remove_outliers(diff_peaks, Set.cap.MAD_sensitivity_p2p_diff);
+Tab_outlier.outlier = length(idx_outliers);
+
+capFiltered_pos = max(capFiltered_rectified, 0);
+[~, pos_cap_locs] = findpeaks(capFiltered_pos, ...
+    'MinPeakProminence', MinPeakProminence, ...
+    'MinPeakDistance', fix(Set.cap.min_P2P * Fs), ...
+    'MinPeakHeight', Set.cap.eP_tc_minpeakheight_med_prop * nanmedian(capFiltered_pos));
+
+maybe_valid_pos_cap_locs = pos_cap_locs(:)';
+
+if numel(maybe_valid_pos_cap_locs) < 3
+    [out, Tab_outlier] = finalize_empty_output( ...
+        out, Tab_outlier, resp_qc, Set, i_block, NrBlock);
+    return
+end
+
+% -------------------------------------------------------------------------
+% Breath-to-breath intervals and B2B outlier removal
+% -------------------------------------------------------------------------
+B2B = [NaN, diff(t(maybe_valid_pos_cap_locs))'];
+median_B2B = nanmedian(B2B);
+mode_B2B = mode(round(B2B(~isnan(B2B)), 3));
+min_B2B = min(B2B(~isnan(B2B)));
+
+if abs(min_B2B - mode_B2B) <= 0.2
+    idx_Invalid_B2B = find(B2B < Set.cap.minFactor_B2BMode * median_B2B | ...
+                           B2B > Set.cap.maxFactor_B2BMode * median_B2B);
+else
+    idx_Invalid_B2B = find(B2B < Set.cap.minFactor_B2BMode * mode_B2B | ...
+                           B2B > Set.cap.maxFactor_B2BMode * mode_B2B);
+end
+
+idx_Invalid_B2B = unique([1, idx_Invalid_B2B, idx_Invalid_B2B - 1]);
+idx_Invalid_B2B = idx_Invalid_B2B(idx_Invalid_B2B >= 1 & idx_Invalid_B2B <= length(B2B));
+idx_valid_B2B_initial = setdiff(1:length(B2B), idx_Invalid_B2B);
+
+% -------------------------------------------------------------------------
+% KK4: flat/invalid signal periods within B2B intervals
+% -------------------------------------------------------------------------
+flatRangeThreshold = 0.005;
+min_duration_flat = 3;
+minFlatDurationSamples = round(min_duration_flat * Fs);
+idx_Invalid_B2B_FlatRegion = [];
+
+for ii = 1:length(idx_valid_B2B_initial)
+    idx = idx_valid_B2B_initial(ii);
+
+    if idx <= 1 || idx > length(maybe_valid_pos_cap_locs)
+        continue
     end
-    
-    
-    %% full  rectification
-    % %% Full Rectification of Capnogram Signal
-    % The signal is fully rectified using the `ig_fullrectify` function.
-    % This ensures all values are positive, making it easier to detect inspiratory phases.
-    % capFiltered_rectified = ig_fullrectify(capFilteredFilled); %Luba - why???
-    capFiltered_rectified = capFilteredFilled; % IK workaround
-    
-    %% Detecting Remainders of Inspiration
-    % According to Singh, Howe, and Malarvili (2018, J. Breath Res.), inspiration phases
-    % are characterized by negative deflections with plateaus in the capnogram.
-    
-    % Find the mode (most frequently occurring value) of the rectified signal.
-    % Flat portions of inspiration are expected to be near this mode.
-    cap_mode = mode(capFiltered_rectified);
-    %cap_mode = median(capFiltered_rectified);
-    
-    % Compute the fraction of data points below the mode.
-    fractionBelowMode = sum(capFiltered_rectified < cap_mode) / length(capFiltered_rectified);
-    
-    % If more than 50% of the data points are below the mode, use this fraction directly.
-    % Otherwise, double it to emphasize inspiration segments.
-    if fractionBelowMode > 0.5 % for meaningful data this parameter will be below 0.5
-        fraction_of_inspiration = sum(capFiltered_rectified < cap_mode) / length(capFiltered_rectified);
-    else
-        fraction_of_inspiration = 2 * sum(capFiltered_rectified < cap_mode) / length(capFiltered_rectified); % find data points below the mode, they are supposed to be inspiration for sure, double them
+
+    sample_start = maybe_valid_pos_cap_locs(idx - 1);
+    sample_end   = maybe_valid_pos_cap_locs(idx);
+    segment = capSignal(sample_start:sample_end);
+
+    if numel(segment) < minFlatDurationSamples
+        continue
     end
-    
-    % Define an inspiration threshold based on the computed fraction.
-    % This sets a cut-off below which points are considered part of inspiration.
-    inspiration_threshold = prctile(capFiltered_rectified, 100*fraction_of_inspiration);
-    %inspiration_threshold = prctile(capFiltered_rectified, 10); % 5th percentile
-    
-    insp_idx = find(capFiltered_rectified < inspiration_threshold); %% Identify indices of inspiration points (values below the threshold).
-    
-    %% PREVIOUS VERSION - too simplistic
-    %Find the end points of inspiration phases by detecting large gaps (>500 samples).
-    insp_end_idx = find(diff(insp_idx)>500);
-    % Extract the corresponding times of inspiration end points.
-    % These indicate the start of expiration.
-    insp_end_t = t(insp_idx(insp_end_idx));
-    % Extract signal values at inspiration end points.
-    insp_end_sample = capFiltered_rectified(insp_idx(insp_end_idx)); % sample of inspiration ends (the same as expiration starts)
-    
-    
-    
-    
-    %% PLot the detected inspiration
-    % figure; hold on;
-    % plot(t, capFiltered, 'b', 'DisplayName', 'Original Signal'); % Raw capnogram
-    % plot(t, capFiltered_rectified, 'k', 'DisplayName', 'Rectified Signal'); % Rectified
-    % yline(inspiration_threshold, 'r--', 'DisplayName', 'Inspiration Threshold'); % Threshold line
-    % scatter(t(insp_idx), capFiltered_rectified(insp_idx), 'g', 'filled', 'DisplayName', 'Detected Inspiration'); % Inspiration points
-    % scatter(insp_end_t, capFiltered_rectified(insp_idx(insp_end_idx)), 'bo', 'filled','DisplayName', 'Improved Inhalation End');
-    
-    
-    %% Peak Detection for Expiratory Phases
-    % Define the minimum peak prominence based on the median of the rectified signal.
-    % This helps filter out small fluctuations and retain significant expiratory peaks.
-    
-    MinPeakProminence = nanmedian(capFiltered_rectified)* Set.cap.MinPeakProminenceCoef;
-    % % Find peaks in the capnogram using three criteria:
-    % 1) amplitude of the previous & next minimum
-    % 2) Distance between two peaks - required in samples
-    % 3) Min Peak height
-    [pks,locs_peak]=findpeaks(capFiltered_rectified, ...
-        'MinPeakProminence',MinPeakProminence, ...
-        'minpeakdistance',fix(Set.cap.min_P2P*Fs), ...
-        'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*nanmedian(capFiltered_rectified));
-    
-    
-    % find peaks which are next to each other without a minimum
-    % locs = [locs_min, locs_peak];
-    % locs = sort(locs);
-    % [C, il,ilp] = intersect(locs,locs_peak );
-    % idx = locs(il(diff(il) == 1)); %shifted!!
-    
-    % --- Step 2: Estimate min_P2P from initial detections ---
-    p2p_intervals_sec = diff(locs_peak) / Fs;
-    
-    min_peak_height = min(pks);
-    max_peak_height = max(pks);
-    mean_peak_height = mean(pks);
-    %remove peaks which
-    %criterium = 'SmallDifference';
-    %[data_wo_outliers_p2m,idx_wo_outliers_p2m,outliers_p2m,idx_outliers,thresholdValue_p2m] = bsa_remove_outliers(height_peaks,Set.cap.MAD_sensitivity_p2m_diff,criterium);
-    
-    % Compute difference between consecutive peak amplitudes
-    % Start with 0 so length matches pks
-    diff_peaks = [0 abs(diff(pks))];
-    
-    % Remove outliers based on large amplitude jumps using MAD (Median Absolute Deviation)
-    [data_wo_outliers,idx_wo_outliers,outliers,idx_outliers,thresholdValue] = bsa_remove_outliers(diff_peaks,Set.cap.MAD_sensitivity_p2p_diff);
-    
-    Tab_outlier.outlier = length(idx_outliers);
-    Tab_outlier.NrRpeaks_orig       = length(pks);
-    
-    
-    % Estimate the typical (mode) peak-to-peak interval (in samples)
-    % using peaks that passed the amplitude difference filter
-    appr_cap_peak2peak_n_samples = mode(abs(diff(locs_peak(idx_wo_outliers)))); % rough number of samples between peaks
-    
-    % Leave only positive values in capFiltered (e.g., ignore downward deflections)
-    capFiltered_pos             = max(capFiltered_rectified,0);
-    
-    % 'threshold' minimum required height difference between a peak and its neighboring points — not the absolute height of the peak.
-    % Only consider something a peak if it's at least eps higher than the adjacent samples.
-    [~,pos_cap_locs]  = findpeaks(capFiltered_pos,...
-        'MinPeakProminence',MinPeakProminence, ...
-        'minpeakdistance',fix(Set.cap.min_P2P*Fs), ...
-        'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered_pos));
-    
-    % --- Visualization: Compare peak locations ---
-    % figure;
-    % plot(t, capFiltered); hold on;
-    % plot(t, capFiltered_rectified); hold on;
-    % plot(t(pos_cap_locs), capFiltered_pos(pos_cap_locs), 'm^', 'MarkerSize', 8);
-    % plot(t(locs_peak), capFiltered_pos(locs_peak), 'b^', 'MarkerSize', 8);
-    
-    
-    % Initialize containers for matched and unmatched cap peaks % IK remove
-    % search_segment_n_samples    = fix(appr_cap_peak2peak_n_samples* Set.cap.fraction_B2B_look4peak);
-    % maybe_valid_pos_cap_locs    = [];
-    % maybe_Invalid_pos_cap_locs    = [];Invalid_peak= []; Minsearch_ranges= [];Maxsearch_ranges= [];
-    %
-    % for p = 1:length(idx_wo_outliers)
-    %
-    %     %computed on locs_peak (filtered with idx_wo_outliers) contains your candidate peaks, based on first peak detection.
-    %     peak_center = locs_peak(idx_wo_outliers(p));
-    %     search_range = peak_center - search_segment_n_samples : peak_center + search_segment_n_samples;
-    %     % Check if any cap peak was detected within the search window
-    %     idx_overlap = intersect(pos_cap_locs, search_range);
-    %
-    %     if ~isempty(idx_overlap)
-    %         % If overlap exists, store the matching cap peak (last one found in range)
-    %         maybe_valid_pos_cap_locs = [maybe_valid_pos_cap_locs idx_overlap(end)];
-    %     else
-    %         % If no cap peak found in range, log it as invalid
-    %         maybe_Invalid_pos_cap_locs = [maybe_Invalid_pos_cap_locs peak_center(end)];
-    %         Minsearch_ranges = [Minsearch_ranges min(search_range)];
-    %         Maxsearch_ranges = [Maxsearch_ranges max(search_range)];
-    %
-    %         Invalid_peak = [Invalid_peak, p];
-    %     end
-    %
-    % end
-    
-    
-    maybe_valid_pos_cap_locs = pos_cap_locs;
-    
-    %% Breathing to breathing intervals
-    B2B             = [NaN diff(t(maybe_valid_pos_cap_locs))]; %NaN at the beginning → to keep the vector aligned with original indices
-    % B2B             = [diff(t(maybe_valid_pos_cap_locs)) NaN]; %NaN at the beginning → to keep the vector aligned with original indices
-    median_B2B      = nanmedian(B2B);
-    mode_B2B        = mode(round(B2B,3));
-    min_B2B         = min(B2B);
-    [hist_B2B,bins] = hist(B2B,[Set.cap.min_P2P:0.1:5]);
-    
-    
-    % invalidate all B2B less than minFactor_B2BMode (e.g. 0.66) of mode and more than maxFactor_B2BMode (e.g. 1.5) of mode
-    % idx_valid_B2B         = find((B2B> Set.cap.minFactor_B2BMode*mode_B2B & B2B <  Set.cap.maxFactor_B2BMode *mode_B2B));
-    if abs(min_B2B - mode_B2B) <= 0.2  %%KK3
-        idx_Invalid_B2B       = find((B2B< Set.cap.minFactor_B2BMode*median_B2B | B2B >  Set.cap.maxFactor_B2BMode *median_B2B));
-    else
-        idx_Invalid_B2B       = find((B2B< Set.cap.minFactor_B2BMode*mode_B2B | B2B >  Set.cap.maxFactor_B2BMode *mode_B2B));
-    end
-    
-    
-    idx_Invalid_B2B       = [1 idx_Invalid_B2B idx_Invalid_B2B-1];
-    idx_valid_B2B = setdiff(1:length(B2B),idx_Invalid_B2B);
-    
-    %% KK4: check each B2B interval for signal drops to add as Invalid_B2B interval which is not detected through the B2B threshold
-    flatRangeThreshold = 0.005;  % Max range within flat window
-    min_duration_low = 3; % seconds, minimum duration of flat region to be considered as invalid
-    minFlatDurationSamples = round(min_duration_low * Fs);
-    
-    % Preallocate
-    is_valid = true(size(idx_valid_B2B));
-    idx_Invalid_B2B_FlatRegion = [];
-    
-    % Process each B2B interval
-    for i = 1:length(idx_valid_B2B)
-        idx = idx_valid_B2B(i);
-        
-        if idx >= length(maybe_valid_pos_cap_locs)
-            continue;  % Skip last index
-        end
-        
-        % Get segment
-        t_start = t(maybe_valid_pos_cap_locs(idx));
-        t_end = t(maybe_valid_pos_cap_locs(idx + 1));
-        sample_start = max(1, round(t_start * Fs));
-        sample_end = min(length(capSignal), round(t_end * Fs));
-        segment = capSignal(sample_start:sample_end);
-        
-        % Find segments where max-min difference is below threshold
-        % Using movmax and movmin to get sliding window statistics
-        window_ranges = movmax(segment, minFlatDurationSamples) - movmin(segment, minFlatDurationSamples);
-        
-        % If any window has range below threshold, mark as invalid
-        if any(window_ranges < flatRangeThreshold)
-            is_valid(i) = false;
-            idx_Invalid_B2B_FlatRegion = [idx_Invalid_B2B_FlatRegion, idx];
-        end
-    end
-    
-    if 0 % IK remove (KK version)
-        windowSize = 100;  % Window size in samples (e.g., 50 ms)
-        stepSize = 10;     % Step between sliding windows
-        idx_Invalid_B2B_FlatRegion = [];
-        is_valid = true(size(idx_valid_B2B));  % Assume all are valid
-        
-        for i = 1:length(idx_valid_B2B)
-            idx =idx_valid_B2B(i);
-            
-            if idx >= length(maybe_valid_pos_cap_locs)
-                continue;  % Skip last index (no next B2B interval)
-            end
-            
-            % Time interval of this B2B
-            t_start = t(maybe_valid_pos_cap_locs(idx));
-            t_end   = t(maybe_valid_pos_cap_locs(idx + 1));
-            
-            % Sample indices
-            sample_start = max(1, round(t_start * Fs));
-            sample_end   = min(length(capSignal), round(t_end * Fs));
-            
-            segment = capSignal(sample_start:sample_end);
-            segment_time = t(sample_start:sample_end);
-            
-            % Initialize flatness mask
-            flatMask = false(1, length(segment));
-            
-            % Slide a window and mark flat regions
-            for j = 1:stepSize:(length(segment) - windowSize + 1)
-                window = segment(j : j + windowSize - 1);
-                if max(window) - min(window) < flatRangeThreshold
-                    flatMask(j : j + windowSize - 1) = true;
-                end
-            end
-            
-            % Analyze contiguous flat regions
-            flatRegions = regionprops(flatMask, 'PixelIdxList');
-            isFlatLongEnough = false;
-            
-            for r = 1:length(flatRegions)
-                regionLength = length(flatRegions(r).PixelIdxList);
-                if regionLength >= minFlatDurationSamples
-                    isFlatLongEnough = true;
-                    fprintf('Flat region detected in B2B #%d: %.2f seconds long\n', ...
-                        idx, regionLength / Fs);
-                    break;
-                end
-            end
-            
-            % Invalidate segment if flat region is long enough
-            if isFlatLongEnough
-                is_valid(i) = false;
-                idx_Invalid_B2B_FlatRegion = [idx_Invalid_B2B_FlatRegion, idx];
-                % Plot only the flat region(s) that triggered invalidation
-                %     figure;
-                %     plot(segment_time, segment, 'Color', [0.1 0.1 0.1]); % light background for full segment
-                %     hold on;
-                %     for r = 1:length(flatRegions)
-                %         idxs = flatRegions(r).PixelIdxList;
-                %         if length(idxs) >= minFlatDurationSamples
-                %             plot(segment_time(idxs), segment(idxs), 'r', 'LineWidth', 2);  % highlight flat
-                %         end
-                %     end
-                %
-                %     title(sprintf('B2B Segment %d - INVALID (flat ≥ 3s)', i), 'Color', 'r');
-                %     xlabel('Time (s)');
-                %     ylabel('Signal Amplitude');
-                %     grid on;
-                
-                
-            end
-        end
-    end % of IK remove
-    
-    % idx_valid_B2B_filtered = idx_valid_B2B(is_valid);
-    idx_all_Invalid_B2B = unique([idx_Invalid_B2B, idx_Invalid_B2B_FlatRegion]);
-    idx_valid_B2B = setdiff(idx_valid_B2B, idx_all_Invalid_B2B);
-    
-    
-    detectedOutliers_mode = (length(idx_Invalid_B2B)/length(B2B))*100;
-    detectedOutlier2 = 100-((length(idx_valid_B2B)/length(B2B))*100);
-    
-   
-    
-    t_valid_B2B                         = t(maybe_valid_pos_cap_locs(idx_valid_B2B));
-    B2B_valid_before_hampel             = B2B(idx_valid_B2B);
-    Tab_outlier.NrB2B_beforehampel      = length(B2B_valid_before_hampel);
-    
-    %% remove outliers from B2B using hampel
-    % DX	Window size — the number of neighbors on each side to consider
-    %T	Threshold — how many scaled MADs (median absolute deviations) away from the local median a point must be to be considered an outlier
-    % [YY,idx_outliers_hampel] = hampel(t_valid_B2B,B2B_valid_before_hampel, Set.cap.hampel_DX, Set.cap.hampel_T);
-    
-    idx_outliers_hampel = [];
-    
-    idx_to_delete = [];
-    idx_to_delete_after_outliers = [];
-    Tab_outlier.outliers_hampel_abs = sum(idx_outliers_hampel);
-    
-    if sum(idx_outliers_hampel), % there are outliers
-        idx_outliers_hampel = find(idx_outliers_hampel); % convert to numbers
-        
-        for k = 1:length(idx_outliers_hampel),
-            idx_to_delete = [idx_to_delete idx_outliers_hampel(k)];
-            
-            if idx_outliers_hampel(k)+1 <= length(idx_valid_B2B), % outlier not last B2B
-                if t_valid_B2B(idx_outliers_hampel(k)+1) - t_valid_B2B(idx_outliers_hampel(k)) < 1.5*mode_B2B,
-                    idx_to_delete = [idx_to_delete idx_outliers_hampel(k)+1];
-                    idx_to_delete_after_outliers = [idx_to_delete_after_outliers idx_outliers_hampel(k)+1];
-                    
-                end
-                
-            end
-            
-        end
-        idx_valid_B2B(idx_to_delete) = []; % delete outliers, and also next B2B after each outlier, if it is consecutive
-        
-    end
-    
-    
-    Tab_outlier.outliers_delete_abs = length(idx_to_delete);
-    Tab_outlier.outliers_hampel_pct = 100- (((length(idx_valid_B2B)+Tab_outlier.outlier_Mode_abs)/length(B2B))*100) ;
-    
-    %R-peaks
-    idx_valid_R     = unique([idx_valid_B2B idx_valid_B2B-1]); % add start of each valid B2B interval to valid R peaks
-    R_valid_locs    = maybe_valid_pos_cap_locs(idx_valid_R);
-    %B2Binterval
-    B2B_Invalid_locs  = maybe_valid_pos_cap_locs(idx_Invalid_B2B);
-    B2B_valid_locs  = maybe_valid_pos_cap_locs(idx_valid_B2B);
-    B2B_valid       = B2B(idx_valid_B2B);
-    
-    Tab_outlier.NrPeaks_valid      = length(R_valid_locs);
-    Tab_outlier.NrB2B_valid         = length(B2B_valid);
-    Tab_outlier.outliers_all_abs    = Tab_outlier.outliers_delete_abs  +   Tab_outlier.outlier_Mode_abs    + Tab_outlier.outlier;
-    Tab_outlier.outliers_all_pct    = (Tab_outlier.outliers_all_abs/Tab_outlier.NrRpeaks_orig)*100;
-    
-    
-    
-    %% match P2P intervals and expiration / inspiration
-    % Extract the time points of possible valid positive capnograph peaks
-    validPeakTimes = t(R_valid_locs);
-    
-    
-    t_valid_inspStart = nan(length(validPeakTimes), 1);
-    t_valid_inspEnd = nan(length(validPeakTimes), 1);
-    t_valid_expStart = nan(length(validPeakTimes), 1);
-    t_valid_expEnd = nan(length(validPeakTimes), 1);
-    duration_insp_valid = nan(length(validPeakTimes), 1);
-    duration_exp_valid = nan(length(validPeakTimes), 1);
-    
-    % Initialize tracking for skipped inhalation segments
-    skippedInspTimes = [];
-    skippedInspDurations = [];
-    noInspEndCount = 0;
-    noInspEndTimes = [];
-    % Loop through all possible valid peaks (except the last one)
-    maxSegmentDuration = 1.5 * mode_B2B;
-    
-    
-    % === Compute corrected inspiration end (trough) for each breath ===
-    corrected_insp_end_t = nan(length(validPeakTimes) - 1, 1);
-    corrected_insp_end_idx = nan(length(validPeakTimes) - 1, 1);
-    
-    for ii = 1:length(validPeakTimes)-1
-        currPeakTime = validPeakTimes(ii);
-        nextPeakTime = validPeakTimes(ii + 1);
-        
-        % Get signal region between the two peaks
-        segment_idx = find(t >= currPeakTime & t <= nextPeakTime);
-        
-        % Find the local minimum (trough)
-        [~, localMinIdx_rel] = min(capFiltered_rectified(segment_idx));
-        localMinIdx_abs = segment_idx(localMinIdx_rel);
-        estimatedInspEnd = t(localMinIdx_abs);
-        
-        % Store in new vectors
-        corrected_insp_end_t(ii) = estimatedInspEnd;
-        corrected_insp_end_idx(ii) = localMinIdx_abs;
-    end
-    for ii = 1:length(validPeakTimes)-1 % loop through peaks
-        
-        currPeakTime = validPeakTimes(ii);
-        nextPeakTime = validPeakTimes(ii+1);
-        
-        
-        %% adapt the insp_end_t that they are the minimum = independent of the threshold
-        
-        % Find the first inspiration end that occurs after the current peak
-        nextInspEndId = find(corrected_insp_end_t > currPeakTime & corrected_insp_end_t < nextPeakTime, 1, 'first');
-        % If a valid inspiration end is found
-        if ~isempty(nextInspEndId)
-            inspEndTime = corrected_insp_end_t(nextInspEndId);
-            durationExp  =  nextPeakTime - inspEndTime;
-            durationInsp  =  inspEndTime - currPeakTime ;
-            
-            % Sanity check: valid durations
-            if durationInsp > Set.cap.min_P2P / 3 && ...
-                    durationExp > Set.cap.min_P2P / 3 && ...
-                    durationInsp < 1.5 * mode_B2B && ...
-                    durationExp < 2 * mode_B2B
-                
-                
-                %             t_valid_expStart(ii)  = currPeakTime;
-                %             t_valid_expEnd(ii)    = inspEndTime;
-                %             t_valid_inspStart(ii) = inspEndTime;  % inspiration starts here
-                %             t_valid_inspEnd(ii)   = nextPeakTime;
-                
-                t_valid_inspStart(ii)   = currPeakTime;
-                t_valid_inspEnd(ii)     = corrected_insp_end_t(nextInspEndId);
-                t_valid_expStart(ii)    = corrected_insp_end_t(nextInspEndId); %
-                t_valid_expEnd(ii)      = nextPeakTime; % expiration end is next R-peak start
-                
-                %             t_valid_expEnd(ii)    = inspEndTime;
-                
-                duration_insp_valid(ii) = durationInsp;
-                duration_exp_valid(ii) = durationExp;
-                
-            else
-                % Log skipped segment
-                skippedInspTimes(end+1) = currPeakTime;
-                skippedInspDurations(end+1) = durationInsp;
-            end
-        else
-            % No inspiration end found — log it
-            noInspEndCount = noInspEndCount + 1;
-            noInspEndTimes(end+1) = currPeakTime;
-        end
-        
-    end
-    
-    % After the loop:
-    Tab_outlier.median_duration_insp = nanmedian(duration_insp_valid);
-    Tab_outlier.median_duration_exp = nanmedian(duration_exp_valid);
-    IE_ratio = Tab_outlier.median_duration_insp / Tab_outlier.median_duration_exp;
-    
-    % After the loop:
-    mean_duration_insp = nanmedian(duration_insp_valid);
-    mean_duration_exp = nanmedian(duration_exp_valid);
-    IE_ratio = mean_duration_insp / mean_duration_exp;
-    
-    Tab_outlier.numSkippedInspSegments = length(skippedInspTimes);
-    Tab_outlier.skippedInspTimes = skippedInspTimes;
-    Tab_outlier.skippedInspDurations = skippedInspDurations;
-    
-    Tab_outlier.numValidPeaksNoInspEnd = noInspEndCount;
-    Tab_outlier.validPeaksNoInspEndTimes = noInspEndTimes;
-    % Count valid inspiration starts (non-NaN)
-    Tab_outlier.numValidInsp = sum(~isnan(t_valid_inspStart));
-    
-    % Count valid expiration starts (same as valid expirations, since they follow inspiration ends)
-    numValidExp = sum(~isnan(t_valid_expStart));
-    
-    % Total possible (attempted) breaths
-    Tab_outlier.totalCandidatesInsp = length(t_valid_inspStart);
-    
-    % Invalid ones are just the rest
-    Tab_outlier.numInvalidInsp = Tab_outlier.totalCandidatesInsp - Tab_outlier.numValidInsp;
-    Tab_outlier.numInvalidExp = Tab_outlier.totalCandidatesInsp - numValidExp;
-    
-    
-    
-    %% PLot the detected inspiration
-    % figure; hold on;
-    % plot(t, capFiltered, 'b', 'DisplayName', 'Original Signal'); % Raw capnogram
-    % plot(t, capFiltered_rectified, 'k', 'DisplayName', 'Rectified Signal'); % Rectified
-    % yline(inspiration_threshold, 'r--', 'DisplayName', 'Inspiration Threshold'); % Threshold line
-    % scatter(t(insp_idx), capFiltered_rectified(insp_idx), 'g', 'filled', 'DisplayName', 'Detected Inspiration'); % Inspiration points
-    % scatter(insp_end_t, capFiltered_rectified(insp_idx(insp_end_idx)), 'bo', 'filled','DisplayName', 'Improved Inhalation End');
-    %
-    % % --- Inhalation Segment Points (blue circles) ---
-    % for i = 1:length(t_valid_inspStart)
-    %     segIdx = find(t >= t_valid_inspStart(i) & t <= t_valid_inspEnd(i));
-    %
-    %     t_seg = t(segIdx);
-    %     y_seg = capFiltered_rectified(segIdx);
-    %
-    %     if ~isempty(t_seg) && ~isempty(y_seg)
-    %         scatter(t_seg(:), y_seg(:), 15, 'b', 'filled'); % Ensure column vectors
-    %     end
-    % end
-    
-    
-    %%  CALCULATE VARIABLES
-    %% amplitude of the peak
-    [minimum,locs_min]=findpeaks(-capFiltered,'threshold',eps,'minpeakdistance',fix(Set.cap.min_P2P*Fs),'minpeakheight',Set.cap.eP_tc_minpeakheight_med_prop*median(capFiltered));
-    minimum                         = capFiltered(locs_min);
-    %height_peaks = abs(minimum)+pks(idx_wo_outliers);
-    
-    %
-    median_B2B_valid        = nanmedian(B2B_valid);
-    mode_B2B_valid          = mode(round(B2B_valid,3));
-    min_B2B_valid          = min(B2B_valid);
-    
-    [hist_B2B_valid,bins]   = hist(B2B_valid,[Set.cap.min_P2P:0.1:5]);
-    
-    B2B_valid_bpm           = 60./B2B_valid;
-    B2B_valid_ms            = 1000.*B2B_valid;% sec -> ms
-    mean_B2B_valid_bpm      = mean(B2B_valid_bpm);
-    median_B2B_valid_bpm    = median(B2B_valid_bpm);
-    std_B2B_valid_bpm       = std(B2B_valid_bpm);
-    std_B2B_valid_ms        = std(B2B_valid_ms);
-    
-    
-    % find consecutive B2Bs
-    if min_B2B_valid == mode_B2B_valid
-        idx_valid_B2B_consec = find([NaN diff(t(B2B_valid_locs))]< Set.cap.maxFactor_B2BMode * median_B2B_valid);
-    else
-        idx_valid_B2B_consec = find([NaN diff(t(B2B_valid_locs))]< Set.cap.maxFactor_B2BMode * mode_B2B_valid);
-    end
-    B2B_valid_bpm_consec = B2B_valid_bpm(idx_valid_B2B_consec);
-    Tab_outlier.B2B_consec = numel(idx_valid_B2B_consec);
-    
-    % RMSSD ("root mean square of successive differences")
-    % the square root of the mean of the squares of the successive differences between ***adjacent*** intervals
-    B2B_diff = diff(B2B_valid);
-    B2B_bpm_diff = diff(B2B_valid_bpm);
-    
-    rmssd_B2B_valid_bpm     = sqrt(mean(B2B_bpm_diff(idx_valid_B2B_consec-1).^2));
-    rmssd_B2B_valid_ms      = sqrt(mean((1000*B2B_diff(idx_valid_B2B_consec-1)).^2));
-    
-    B2B_valid_spectrum = false;
-    if length(B2B_valid_locs)>1
-        B2B_valid_spectrum = true;
-        % BPS spectrum
-        % https://de.mathworks.com/matlabcentral/answers/143654-need-an-example-for-calculating-power-spectrum-density
-        resampling_rate = 5; % Hz
-        t_interp = t(B2B_valid_locs(1)):1/resampling_rate:t(B2B_valid_locs(end));
-        
-        BPS = interp1(t(B2B_valid_locs),B2B_valid,t_interp,'linear');
-        
-        % compute the PSD, units of Pxx are squared seconds/Hz.
-        % [Pxx,freq] = periodogram(BPS-mean(BPS),[],numel(BPS),resampling_rate);
-        [Pxx,freq] = periodogram(BPS-mean(BPS),hamming(length(BPS)),512,resampling_rate);
-        % [Pxx_w,freq_w] = pwelch(BPS-mean(BPS),[],[],256,resampling_rate);
-        
-        % convert to ms^2 / Hz
-        Pxx = Pxx*1e6;
-        
-        % compute the power in the various bands...
-        vlfPower    = bandpower(Pxx,freq,[0 0.04],'psd'); % units of sec^2
-        lfPower     = bandpower(Pxx,freq,[0.04 0.15],'psd'); % units of sec^2
-        hfPower     = bandpower(Pxx,freq,[0.15 0.5],'psd'); % units of sec^2
-        totPower    = bandpower(Pxx,freq,'psd'); % units of sec^2
-        % you can then take the ratio of lf, hf, etc. to totPower * 100 to get the percentages etc.
-    end
-    
-    %% How "much time of the run" was deleted related to the detection of outlier?
-    Tab_outlier.durationRun_s                   = max(t);
-    Tab_outlier.duration_NotValidSegments_s     = max(t)-sum(B2B(idx_valid_B2B));
-    Tab_outlier.nrblock                         = i_block;
-    Tab_outlier.nrblock_combinedFiles           = NrBlock;
-    if Set.OutlierModus == 1
-        display(Tab_outlier)
-    end
-    
-    
-    % put data segments around R-peaks together
-    %idx_valid_B2B_consec_2 = idx_valid_B2B_consec;
-    % while t(end) < t(B2B_valid_locs(idx_valid_B2B_consec_2(end)))+0.5
-    %     idx_valid_B2B_consec_2 = idx_valid_B2B_consec_2(1:end-1);
-    % end
-    % while t(1) > t(B2B_valid_locs(idx_valid_B2B_consec_2(1)))-0.5
-    %     idx_valid_B2B_consec_2 = idx_valid_B2B_consec_2(2:end);
-    % end
-    % cap_data = nan(length(idx_valid_B2B_consec_2), round(Fs));
-    % for RpeakNum = 1:length(idx_valid_B2B_consec_2)
-    %     curr_t_idx = t > t(B2B_valid_locs(idx_valid_B2B_consec_2(RpeakNum)))-0.5 & ...
-    %         t < t(B2B_valid_locs(idx_valid_B2B_consec_2(RpeakNum)))+0.5;
-    %     cap_data(RpeakNum,:) = capFiltered(curr_t_idx);
-    % end
-    % cap_data = single(cap_data);
-    
-    
-     % Replace scattered outputs with single function call
-    verbose = true;  % Control flag for text output
-    printAnalysisSummary(Tab_outlier, detectedOutliers_mode, detectedOutlier2, IE_ratio, verbose, indicesToZero, capSignal, idx_Invalid_B2B_FlatRegion, t, maybe_valid_pos_cap_locs);
-    
-    
-    if TOPLOT
-        
-        hf = figure('Name',[FigInfo sprintf('block%02d',i_block),'_', sprintf( 'Nrblock%02d',NrBlock)],'Position',[200 100 1400 1200],'PaperPositionMode', 'auto');
-        
-        %% single HR-peak
-        %     t = t*1000;
-        %     plot(t,capSignal,'b'); hold on;
-        %     set(gca,'xlim',[172 173]);
-        %
-        ha1 = subplot(4,4,[1:4]);
-        capPlot1 = plot(t,capSignal,'g'); hold on;
-        plot(t,capFiltered,'b');
-        plot(t(locs_min),capFiltered(locs_min),'bo','MarkerSize',6);
-        
-        % Add KK1 invalid periods as gray line segments
-        if ~isempty(indicesToZero)
-            % Find continuous segments
-            segments = find(diff([0; indicesToZero; 0]) ~= 1);
-            segments = reshape(segments, 2, [])';
-            
-            % Plot each segment
-            for i = 1:size(segments, 1)
-                start_idx = indicesToZero(segments(i,1));
-                end_idx = indicesToZero(segments(i,2)-1);
-                plot(t(start_idx:end_idx), capSignal(start_idx:end_idx), 'Color', [0.5 0.5 0.5], 'LineWidth', 2, 'DisplayName', 'KK1 Invalid Periods');
-            end
-        end
-        
-        % Add KK4 flat segments as yellow lines
-        if ~isempty(idx_Invalid_B2B_FlatRegion)
-            for i = 1:length(idx_Invalid_B2B_FlatRegion)
-                idx = idx_Invalid_B2B_FlatRegion(i);
-                if idx < length(maybe_valid_pos_cap_locs)
-                    t_start = t(maybe_valid_pos_cap_locs(idx));
-                    t_end = t(maybe_valid_pos_cap_locs(idx + 1));
-                    plot([t_start t_end], [0 0], 'y', 'LineWidth', 2, 'DisplayName', 'KK4 Flat Segments');
-                end
-            end
-        end
-        
-        plot(t(locs_peak(idx_wo_outliers)),capSignal(locs_peak(idx_wo_outliers)),'ko','MarkerSize',6);
-        %idx_Invalid_B2B - after changing the max-values
-        % DEBUG plot(t(locs_peak(idx_Invalid_B2B)),capSignal(locs_peak(idx_Invalid_B2B)),'ro','MarkerSize',6);
-        % DEBUG plot(t(locs_peak(Invalid_peak)),capSignal(locs_peak(Invalid_peak)),'r*','MarkerSize',6);
-        
-        % valid R peaks
-        plot(t(R_valid_locs),capSignal(R_valid_locs),'mv','MarkerFaceColor',[1 1 1],'MarkerSize',6);
-        %valid B2B intervals -> filled TRIANGLE
-        plot(t(B2B_valid_locs),capSignal(B2B_valid_locs),'mv','MarkerFaceColor',[1.0000    0.6000    0.7843],'MarkerSize',6);
-        plot(t(locs_peak(idx_outliers)),capSignal(locs_peak(idx_outliers)),'bx');
-        
-        %line for
-        plot([t(B2B_valid_locs(idx_valid_B2B_consec)) - B2B_valid(idx_valid_B2B_consec); t(B2B_valid_locs(idx_valid_B2B_consec))], ...
-            [capFiltered(B2B_valid_locs(idx_valid_B2B_consec)); capFiltered(B2B_valid_locs(idx_valid_B2B_consec))],'k');
-        
-        
-        
-        
-        plot([t_valid_inspStart t_valid_inspEnd], [0 0], 'b', 'LineWidth', 3, 'DisplayName', 'Inhalation');
-        plot([t_valid_expStart t_valid_expEnd], [.1 .1], 'r', 'LineWidth', 3, 'DisplayName', 'Exhalation');
-        set(gca,'Xlim',[0 max(t)]);
-        xlabel('Time (s)');
-        title(sprintf('NrBlock  %d CAP: %d valid peaks, %d valid P2P intervals',NrBlock, length(R_valid_locs),length(B2B_valid_locs)));
-        if isempty(idx_outliers)
-            legend({'capSignal','capFiltered','allPeaks','only posPeaks','valid Peaks','valid P2Pinterval'},'location','Best');
-        else
-            legend({'capSignal','capFiltered','allPeaks','posPeaks','valid Rpeaks','valid P2Pinterval','outlier.diff Peaks','Inhalation'},'location','Best');
-        end
-        
-        
-        
-        ha3 = subplot(4,4,[9:12]);
-        plot(t(B2B_valid_locs),B2B_valid,'m.'); hold on
-        set(gca,'Xlim',[0 max(t)]);
-        plot(t(B2B_valid_locs(idx_valid_B2B_consec)),B2B_valid(idx_valid_B2B_consec),'k.','MarkerSize',6); hold on
-        plot(t(B2B_Invalid_locs),B2B(idx_Invalid_B2B),'r.','MarkerSize',6); hold on %DEBUG
-        
-        
-        
-        % plot(t(B2B_valid_locs(idx_valid_B2B_consec)),B2B_valid(idx_valid_B2B_consec) - B2B_diff(idx_valid_B2B_consec-1),'ks','MarkerSize',3);
-        plot(t_valid_B2B(idx_to_delete_after_outliers),B2B_valid_before_hampel(idx_to_delete_after_outliers),'cx'); hold on
-        plot(t_valid_B2B(idx_outliers_hampel),B2B_valid_before_hampel(idx_outliers_hampel),'rx'); hold on
-        
-        if B2B_valid_spectrum,
-            % plot(t_interp,BPS,'y','Color',[0.4706    0.3059    0.4471]);
-        end
-        
-        set(gca,'Xlim',[0 max(t)]);
-        title(sprintf('B2B (s): %d valid, %d consecutive, %d outliers, RMSSD %.3f bpm | %.1f ms',...
-            length(B2B_valid_locs),length(idx_valid_B2B_consec),length(unique([idx_outliers_hampel' idx_to_delete_after_outliers])), rmssd_B2B_valid_bpm, rmssd_B2B_valid_ms));
-        ylabel('B2B (s)');
-        legend({'valid','consecutive','after outliers','hampel outliers'},'location','Best');
-        
-        
-        subplot(4,4,13);
-        plot(bins,hist_B2B); hold on;
-        plot(median_B2B,0,'rv','MarkerSize',6);
-        plot(mode_B2B,0,'mv','MarkerSize',6);
-        plot(bins,hist_B2B_valid,'m');
-        title(sprintf('%d all B2B, %d valid B2B',length(B2B), length(B2B_valid)));
-        xlabel('B2B (s)');
-        ylabel('count');
-        
-        subplot(4,4,14);
-        boxplot(B2B_valid_bpm);
-        title(sprintf('mean %.1f med %.1f SD %.1f bpm',mean_B2B_valid_bpm,median_B2B_valid_bpm,std_B2B_valid_bpm));
-        ylabel('BPM');
-        
-        subplot(4,4,15);
-        plot(B2B_valid_bpm(1:end-1),B2B_valid_bpm(2:end),'k.','MarkerEdgeColor',[0.5 0.5 0.5]); hold on
-        plot(B2B_valid_bpm_consec(1:end-1),B2B_valid_bpm_consec(2:end),'m.','MarkerEdgeColor',[0.4235    0.2510    0.3922]);
-        
-        xlabel('B2B(n)');
-        ylabel('B2B(n+1)');
-        title('Poincaré plot');
-        axis square
-        ig_set_xy_axes_equal;
-        ig_add_equality_line;
-        
-        if B2B_valid_spectrum,
-            subplot(4,4,16);
-            % plot(freq,Pxx,'k'); hold on;
-            % plot(freq_w,Pxx_w,'m'); hold on;
-            % plot(freq(freq>0 & freq<0.04),Pxx(freq>0 & freq<0.04),'b');
-            plot(freq(freq>=0.04 & freq<=0.15),Pxx(freq>=0.04 & freq<=0.15),'r'); hold on
-            plot(freq(freq>=0.15 & freq<=0.5),Pxx(freq>=0.15 & freq<=0.5),'g');
-            plot(freq(freq>0.5 & freq<=1),Pxx(freq>0.5 & freq<=1),'k');
-            set(gca,'Xlim',[0 1]);
-            xlabel('Hz');
-            ylabel('ms^2 / Hz');
-            title(sprintf('[vlf %.3f] lf %.3f hf %.3f',vlfPower,lfPower,hfPower));
-        end
-        
-        
-        ax = get(gcf,'Children');
-        set(ax,'FontSize',8);
-        
-        
-        out.hf = hf;
-        
+
+    window_ranges = movmax(segment, minFlatDurationSamples) - ...
+                    movmin(segment, minFlatDurationSamples);
+
+    if any(window_ranges < flatRangeThreshold)
+        idx_Invalid_B2B_FlatRegion = [idx_Invalid_B2B_FlatRegion, idx]; %#ok<AGROW>
     end
 end
 
-if length(B2B_valid) < Set.B2B_minValidData || isempty(B2B_valid)
-    out.Rpeak_t                 = [];
-    out.Rpeak_sample            = [];
-    out.B2B_t                   = [];
-    out.B2B_sample              = [];
-    out.B2B_valid               = [];
-    out.B2B_valid_bpm           = [];
-    out.B2B_valid_ms            = [];
-    out.inspStart_t             = [];
-    out.inspEnd_t               = [];
-    out.expStart_t              = [];
-    out.expEnd_t                = [];
-    out.duration_insp_valid     = [];
-    out.duration_exp_valid      = [];
-    out.idx_valid_B2B_consec    = [];
-    out.mean_B2B_valid_bpm      = nan;
-    out.median_B2B_valid_bpm    = nan;
-    out.std_B2B_valid_bpm       = nan;
-    out.std_B2B_valid_ms        = nan;
-    out.rmssd_B2B_valid_ms      = nan;
-    out.rmssd_B2B_valid_bpm     = nan;
-    out.Pxx                     = [];
-    out.freq                    = [];
-    out.vlfPower                = nan;
-    out.lfPower                 = nan;
-    out.hfPower                 = nan;
-    out.totPower                = nan;
-    out.nrblock                 = [];
-    out.nrblock_combinedFiles   = [];
-    % out.ECG_Rpeaks_valid        = [];
-    
-    Tab_outlier.durationRun_s = nan;
-    Tab_outlier.duration_NotValidSegments_s = nan;
-    Tab_outlier.durationRun_s  = nan;
-    Tab_outlier.nrblock = i_block ;
-    Tab_outlier.nrblock_combinedFiles           = NrBlock;
-    
-    
-    
+% Collect deleted/rejected B2B intervals.
+idx_B2B_candidates = 2:length(B2B);
+
+idx_deleted_B2B_mode = unique(idx_Invalid_B2B);
+idx_deleted_B2B_mode = idx_deleted_B2B_mode( ...
+    idx_deleted_B2B_mode >= 2 & idx_deleted_B2B_mode <= length(B2B));
+
+idx_deleted_B2B_flat = unique(idx_Invalid_B2B_FlatRegion);
+idx_deleted_B2B_flat = idx_deleted_B2B_flat( ...
+    idx_deleted_B2B_flat >= 2 & idx_deleted_B2B_flat <= length(B2B));
+
+idx_deleted_B2B_all = unique([idx_deleted_B2B_mode, idx_deleted_B2B_flat]);
+idx_valid_B2B = setdiff(idx_B2B_candidates, idx_deleted_B2B_all);
+
+Tab_outlier.idx_deleted_B2B_all  = idx_deleted_B2B_all;
+Tab_outlier.idx_deleted_B2B_mode = idx_deleted_B2B_mode;
+Tab_outlier.idx_deleted_B2B_flat = idx_deleted_B2B_flat;
+Tab_outlier.outlier_Mode_abs = numel(idx_deleted_B2B_mode);
+if isempty(idx_B2B_candidates) || numel(idx_B2B_candidates) == 0
+    Tab_outlier.outlier_Mode_pct = NaN;
+else
+    Tab_outlier.outlier_Mode_pct = ...
+        100 * Tab_outlier.outlier_Mode_abs / numel(idx_B2B_candidates);
+end
+Tab_outlier.outliers_delete_abs = numel(idx_deleted_B2B_all);
+Tab_outlier.outliers_all_abs = numel(idx_deleted_B2B_all);
+if isempty(idx_B2B_candidates) || numel(idx_B2B_candidates) == 0
+    Tab_outlier.outliers_all_pct = NaN;
+else
+    Tab_outlier.outliers_all_pct = ...
+        100 * Tab_outlier.outliers_all_abs / numel(idx_B2B_candidates);
+end
+Tab_outlier.NrB2B_beforehampel = numel(idx_valid_B2B);
+
+flatSegments_s = [];
+for ff = 1:numel(idx_Invalid_B2B_FlatRegion)
+    idxFlat = idx_Invalid_B2B_FlatRegion(ff);
+    if idxFlat > 1 && idxFlat <= numel(maybe_valid_pos_cap_locs)
+        flatSegments_s = [flatSegments_s; ... %#ok<AGROW>
+            t(maybe_valid_pos_cap_locs(idxFlat - 1)), ...
+            t(maybe_valid_pos_cap_locs(idxFlat))];
+    end
+end
+resp_qc.flatSegments_s = flatSegments_s;
+resp_qc.nFlatSegments = size(flatSegments_s, 1);
+if isempty(flatSegments_s)
+    resp_qc.durationFlat_s = 0;
+else
+    resp_qc.durationFlat_s = ...
+        sum(flatSegments_s(:, 2) - flatSegments_s(:, 1));
+end
+
+Tab_outlier.resp_qc_flatSegments_s = resp_qc.flatSegments_s;
+Tab_outlier.resp_qc_nFlatSegments = resp_qc.nFlatSegments;
+Tab_outlier.resp_qc_durationFlat_s = resp_qc.durationFlat_s;
+
+% Valid cap peaks and B2B variables.
+idx_valid_R = unique([idx_valid_B2B, idx_valid_B2B - 1]);
+idx_valid_R = idx_valid_R(idx_valid_R >= 1 & idx_valid_R <= numel(maybe_valid_pos_cap_locs));
+R_valid_locs = maybe_valid_pos_cap_locs(idx_valid_R);
+
+B2B_valid_locs = maybe_valid_pos_cap_locs(idx_valid_B2B);
+B2B_valid = B2B(idx_valid_B2B);
+
+Tab_outlier.NrPeaks_valid = length(R_valid_locs);
+Tab_outlier.NrB2B_valid = length(B2B_valid);
+
+% -------------------------------------------------------------------------
+% Match valid B2B intervals with inspiration / expiration timing
+% -------------------------------------------------------------------------
+nBreaths = numel(idx_valid_B2B);
+
+t_valid_inspStart = nan(nBreaths, 1);
+t_valid_inspEnd   = nan(nBreaths, 1);
+t_valid_expStart  = nan(nBreaths, 1);
+t_valid_expEnd    = nan(nBreaths, 1);
+
+duration_insp_valid = nan(nBreaths, 1);
+duration_exp_valid  = nan(nBreaths, 1);
+
+corrected_insp_end_t = nan(nBreaths, 1); %#ok<NASGU>
+corrected_insp_end_idx = nan(nBreaths, 1); %#ok<NASGU>
+
+skippedInspTimes = [];
+skippedInspDurations = [];
+noInspEndCount = 0;
+noInspEndTimes = [];
+
+for ii = 1:nBreaths
+    k = idx_valid_B2B(ii);
+
+    if k <= 1 || k > numel(maybe_valid_pos_cap_locs)
+        continue
+    end
+
+    currPeakIdx = maybe_valid_pos_cap_locs(k - 1);
+    nextPeakIdx = maybe_valid_pos_cap_locs(k);
+
+    currPeakTime = t(currPeakIdx);
+    nextPeakTime = t(nextPeakIdx);
+
+    segIdx = currPeakIdx:nextPeakIdx;
+    seg = capFiltered_rectified(segIdx);
+
+    [segMin, iMin] = min(seg);
+    lowThr = segMin + Set.cap.lowPlateauFrac * range(seg);
+    iEnd = find(seg <= lowThr & (1:numel(seg))' >= iMin, 1, 'last');
+
+    if isempty(iEnd)
+        iEnd = iMin;
+    end
+
+    inspEndIdx = segIdx(iEnd);
+    inspEndTime = t(inspEndIdx);
+
+    durationInsp = inspEndTime - currPeakTime;
+    durationExp  = nextPeakTime - inspEndTime;
+
+    if durationInsp > Set.cap.min_P2P / 3 && ...
+       durationExp  > Set.cap.min_P2P / 3 && ...
+       durationInsp < 1.5 * mode_B2B && ...
+       durationExp  < 2.0 * mode_B2B
+
+        t_valid_inspStart(ii) = currPeakTime;
+        t_valid_inspEnd(ii)   = inspEndTime;
+        t_valid_expStart(ii)  = inspEndTime;
+        t_valid_expEnd(ii)    = nextPeakTime;
+
+        duration_insp_valid(ii) = durationInsp;
+        duration_exp_valid(ii)  = durationExp;
+    else
+        skippedInspTimes(end+1) = currPeakTime; %#ok<AGROW>
+        skippedInspDurations(end+1) = durationInsp; %#ok<AGROW>
+    end
+end
+
+Tab_outlier.median_duration_insp = nanmedian(duration_insp_valid);
+Tab_outlier.median_duration_exp  = nanmedian(duration_exp_valid);
+IE_ratio = Tab_outlier.median_duration_insp / Tab_outlier.median_duration_exp;
+
+Tab_outlier.numSkippedInspSegments = numel(skippedInspTimes);
+Tab_outlier.skippedInspTimes = skippedInspTimes;
+Tab_outlier.skippedInspDurations = skippedInspDurations;
+Tab_outlier.numValidPeaksNoInspEnd = noInspEndCount;
+Tab_outlier.validPeaksNoInspEndTimes = noInspEndTimes;
+Tab_outlier.numValidInsp = sum(~isnan(t_valid_inspStart));
+numValidExp = sum(~isnan(t_valid_expStart));
+Tab_outlier.totalCandidatesInsp = nBreaths;
+Tab_outlier.numInvalidInsp = nBreaths - Tab_outlier.numValidInsp;
+Tab_outlier.numInvalidExp  = nBreaths - numValidExp;
+
+% -------------------------------------------------------------------------
+% Respiration-only per-breath QC
+% -------------------------------------------------------------------------
+[resp_qc, Tab_outlier] = compute_respiration_only_qc( ...
+    resp_qc, Tab_outlier, ...
+    t_valid_inspStart, t_valid_inspEnd, t_valid_expStart, t_valid_expEnd, ...
+    lowAmpSegments_s, flatSegments_s);
+
+% -------------------------------------------------------------------------
+% Calculate summary variables
+% -------------------------------------------------------------------------
+B2B_valid_bpm = 60 ./ B2B_valid;
+B2B_valid_ms = 1000 .* B2B_valid;
+mean_B2B_valid_bpm = nanmean(B2B_valid_bpm);
+median_B2B_valid_bpm = nanmedian(B2B_valid_bpm);
+std_B2B_valid_bpm = nanstd(B2B_valid_bpm);
+std_B2B_valid_ms = nanstd(B2B_valid_ms);
+
+median_B2B_valid = nanmedian(B2B_valid);
+mode_B2B_valid = mode(round(B2B_valid(~isnan(B2B_valid)), 3));
+min_B2B_valid = min(B2B_valid(~isnan(B2B_valid)));
+
+if min_B2B_valid == mode_B2B_valid
+    idx_valid_B2B_consec = find([NaN, diff(t(B2B_valid_locs))'] < ...
+        Set.cap.maxFactor_B2BMode * median_B2B_valid);
+else
+    idx_valid_B2B_consec = find([NaN, diff(t(B2B_valid_locs))'] < ...
+        Set.cap.maxFactor_B2BMode * mode_B2B_valid);
+end
+Tab_outlier.B2B_consec = numel(idx_valid_B2B_consec);
+
+validDiffIdx = idx_valid_B2B_consec - 1;
+validDiffIdx = validDiffIdx(validDiffIdx >= 1 & validDiffIdx <= numel(B2B_valid)-1);
+
+B2B_diff = diff(B2B_valid);
+B2B_bpm_diff = diff(B2B_valid_bpm);
+
+if isempty(validDiffIdx)
+    rmssd_B2B_valid_bpm = NaN;
+    rmssd_B2B_valid_ms = NaN;
+else
+    rmssd_B2B_valid_bpm = sqrt(nanmean(B2B_bpm_diff(validDiffIdx).^2));
+    rmssd_B2B_valid_ms = sqrt(nanmean((1000 * B2B_diff(validDiffIdx)).^2));
+end
+
+% Respiration spectrum, if possible.
+Pxx = [];
+freq = [];
+vlfPower = NaN;
+lfPower = NaN;
+hfPower = NaN;
+totPower = NaN;
+
+if numel(B2B_valid_locs) > 1
+    resampling_rate = 5;
+    t_interp = t(B2B_valid_locs(1)):1/resampling_rate:t(B2B_valid_locs(end));
+
+    if numel(t_interp) > 3
+        BPS = interp1(t(B2B_valid_locs), B2B_valid, t_interp, 'linear');
+        [Pxx, freq] = periodogram(BPS - nanmean(BPS), hamming(length(BPS)), 512, resampling_rate);
+        Pxx = Pxx * 1e6;
+
+        vlfPower = bandpower(Pxx, freq, [0 0.04], 'psd');
+        lfPower  = bandpower(Pxx, freq, [0.04 0.15], 'psd');
+        hfPower  = bandpower(Pxx, freq, [0.15 0.5], 'psd');
+        totPower = bandpower(Pxx, freq, 'psd');
+    end
+end
+
+Tab_outlier.durationRun_s = max(t);
+Tab_outlier.duration_NotValidSegments_s = max(t) - nansum(B2B(idx_valid_B2B));
+Tab_outlier.session_index = i_block;
+Tab_outlier.nrblock = NrBlock;
+Tab_outlier.nrblock_combinedFiles = NrBlock;
+
+if isfield(Set, 'OutlierModus') && Set.OutlierModus == 1
+    display(Tab_outlier)
+end
+
+printAnalysisSummary(Tab_outlier, IE_ratio, true, ...
+    indicesToZero, capSignal, idx_Invalid_B2B_FlatRegion, t, maybe_valid_pos_cap_locs);
+
+% -------------------------------------------------------------------------
+% Optional diagnostic plot
+% -------------------------------------------------------------------------
+if TOPLOT
+
+    hf = figure( ...
+        'Name', [FigInfo sprintf('block%02d', i_block), '_', sprintf('Nrblock%02d', NrBlock)], ...
+        'Position', [100 50 1600 1000], ...
+        'PaperPositionMode', 'auto');
+
+    %% --------------------------------------------------------------------
+    % Plot 1: signal QC / peak detection / respiratory phases
+    % ---------------------------------------------------------------------
+    subplot(4,4,1:4)
+
+    h = [];
+    lab = {};
+
+    h(end+1) = plot(t, capSignal, 'Color', [0.2 0.7 0.2]); hold on
+    lab{end+1} = 'raw CAP signal';
+
+    h(end+1) = plot(t, capFiltered, 'b');
+    lab{end+1} = 'filtered CAP signal';
+
+    % ---------------------------------------------------------------------
+    % Overlay inspiration and expiration phases
+    % ---------------------------------------------------------------------
+    yl = ylim;
+    yPhase = yl(1) + 0.08 * range(yl);
+
+    firstInspHandle = [];
+    firstExpHandle  = [];
+
+    for bb = 1:numel(t_valid_inspStart)
+
+        % Inspiration phase: blue
+        if isfinite(t_valid_inspStart(bb)) && isfinite(t_valid_inspEnd(bb)) && ...
+                t_valid_inspEnd(bb) > t_valid_inspStart(bb)
+
+            hh = plot([t_valid_inspStart(bb), t_valid_inspEnd(bb)], ...
+                      [yPhase, yPhase], ...
+                      'b-', 'LineWidth', 2);
+
+            if isempty(firstInspHandle)
+                firstInspHandle = hh;
+            end
+        end
+
+        % Expiration phase: red
+        if isfinite(t_valid_expStart(bb)) && isfinite(t_valid_expEnd(bb)) && ...
+                t_valid_expEnd(bb) > t_valid_expStart(bb)
+
+            hh = plot([t_valid_expStart(bb), t_valid_expEnd(bb)], ...
+                      [yPhase, yPhase], ...
+                      'r-', 'LineWidth', 2);
+
+            if isempty(firstExpHandle)
+                firstExpHandle = hh;
+            end
+        end
+    end
+
+    if ~isempty(firstInspHandle)
+        h(end+1) = firstInspHandle;
+        lab{end+1} = 'inspiration phase';
+    end
+
+    if ~isempty(firstExpHandle)
+        h(end+1) = firstExpHandle;
+        lab{end+1} = 'expiration phase';
+    end
+
+    % ---------------------------------------------------------------------
+    % Peaks
+    % ---------------------------------------------------------------------
+    if exist('locs_peak', 'var') && ~isempty(locs_peak)
+        h(end+1) = plot(t(locs_peak), capSignal(locs_peak), 'kv', ...
+            'MarkerFaceColor', [0.5 0.5 0.5]);
+        lab{end+1} = 'all detected peaks';
+    end
+
+    if exist('pos_cap_locs', 'var') && ~isempty(pos_cap_locs)
+        h(end+1) = plot(t(pos_cap_locs), capSignal(pos_cap_locs), 'co');
+        lab{end+1} = 'positive CAP peaks';
+    end
+
+    if exist('R_valid_locs', 'var') && ~isempty(R_valid_locs)
+        h(end+1) = plot(t(R_valid_locs), capSignal(R_valid_locs), 'mv', ...
+            'MarkerFaceColor', [1 0.6 0.78]);
+        lab{end+1} = 'valid respiratory peaks';
+    end
+
+    % ---------------------------------------------------------------------
+    % Valid B2B/P2P intervals
+    % ---------------------------------------------------------------------
+    if exist('idx_valid_B2B', 'var') && ~isempty(idx_valid_B2B)
+        yl = ylim;
+        yLine = yl(1) + 0.03 * range(yl);
+
+        firstIntervalHandle = [];
+
+        for jj = 1:numel(idx_valid_B2B)
+            idxB = idx_valid_B2B(jj);
+
+            if idxB > 1 && idxB <= numel(maybe_valid_pos_cap_locs)
+                x1 = t(maybe_valid_pos_cap_locs(idxB - 1));
+                x2 = t(maybe_valid_pos_cap_locs(idxB));
+
+                hh = plot([x1 x2], [yLine yLine], 'y-', 'LineWidth', 2);
+
+                if isempty(firstIntervalHandle)
+                    firstIntervalHandle = hh;
+                end
+            end
+        end
+
+        if ~isempty(firstIntervalHandle)
+            h(end+1) = firstIntervalHandle;
+            lab{end+1} = 'valid B2B/P2P interval';
+        end
+    end
+
+    % ---------------------------------------------------------------------
+    % Low-amplitude signal QC segments
+    % ---------------------------------------------------------------------
+    if ~isempty(lowAmpSegments_s)
+        yl = ylim;
+        firstPatch = [];
+
+        for ss = 1:size(lowAmpSegments_s,1)
+            hp = patch( ...
+                [lowAmpSegments_s(ss,1) lowAmpSegments_s(ss,2) lowAmpSegments_s(ss,1) lowAmpSegments_s(ss,2)], ...
+                [yl(1) yl(1) yl(2) yl(2)], ...
+                [0.7 0.7 0.7], ...
+                'FaceAlpha', 0.25, ...
+                'EdgeColor', 'none');
+
+            if isempty(firstPatch)
+                firstPatch = hp;
+            end
+        end
+
+        if ~isempty(firstPatch)
+            h(end+1) = firstPatch;
+            lab{end+1} = 'low-amplitude signal QC segment';
+        end
+    end
+
+    xlabel('Time [s]')
+    ylabel('CAP signal')
+    title(sprintf(['QC layer 1: signal/peak/phase detection -> affects Rpeak_t, ', ...
+        'B2B candidates, insp/exp phase times, and B2B_valid. Block %d, NrBlock %d'], ...
+        i_block, NrBlock), ...
+        'Interpreter', 'none');
+
+    if ~isempty(h)
+        legend(h, lab, 'Location', 'Best');
+    end
+
+    %% --------------------------------------------------------------------
+    % Plot 2: B2B/P2P filtering
+    % ---------------------------------------------------------------------
+    subplot(4,4,5:8)
+
+    h = [];
+    lab = {};
+
+    if ~isempty(B2B_valid_locs)
+        h(end+1) = plot(t(B2B_valid_locs), B2B_valid, 'm.'); hold on
+        lab{end+1} = 'B2B_valid: used for CAP summary variables';
+    else
+        hold on
+    end
+
+    if exist('idx_valid_B2B_consec', 'var') && ~isempty(idx_valid_B2B_consec)
+        idxConsec = idx_valid_B2B_consec;
+        idxConsec = idxConsec(idxConsec >= 1 & idxConsec <= numel(B2B_valid));
+
+        if ~isempty(idxConsec)
+            h(end+1) = plot(t(B2B_valid_locs(idxConsec)), B2B_valid(idxConsec), 'k.');
+            lab{end+1} = 'consecutive valid B2B used for RMSSD';
+        end
+    end
+
+    if exist('idx_deleted_B2B_mode', 'var') && ~isempty(idx_deleted_B2B_mode)
+        idxMode = idx_deleted_B2B_mode;
+        idxMode = idxMode(idxMode >= 1 & idxMode <= numel(B2B));
+
+        if ~isempty(idxMode)
+            h(end+1) = plot(t(maybe_valid_pos_cap_locs(idxMode)), B2B(idxMode), 'rx');
+            lab{end+1} = 'rejected by B2B mode/median QC';
+        end
+    end
+
+    if exist('idx_deleted_B2B_flat', 'var') && ~isempty(idx_deleted_B2B_flat)
+        idxFlat = idx_deleted_B2B_flat;
+        idxFlat = idxFlat(idxFlat >= 1 & idxFlat <= numel(B2B));
+
+        if ~isempty(idxFlat)
+            h(end+1) = plot(t(maybe_valid_pos_cap_locs(idxFlat)), B2B(idxFlat), 'cx');
+            lab{end+1} = 'rejected by flat-segment QC';
+        end
+    end
+
+    xlabel('Time [s]')
+    ylabel('B2B [s]')
+    title(sprintf(['QC layer 2: B2B/P2P filtering -> affects B2B_valid, ', ...
+        'mean/median B2B, SD, RMSSD, LF/HF. %d valid, %d rejected, median %.2f s'], ...
+        numel(B2B_valid), numel(idx_deleted_B2B_all), median_B2B_valid), ...
+        'Interpreter', 'none');
+
+    if ~isempty(h)
+        legend(h, lab, 'Location', 'Best');
+    end
+
+    %% --------------------------------------------------------------------
+    % Previous diagnostic plot 1: B2B histogram
+    % ---------------------------------------------------------------------
+    subplot(4,4,9)
+
+    h = [];
+    lab = {};
+
+    b2bAll = B2B(idx_B2B_candidates);
+    b2bAll = b2bAll(isfinite(b2bAll));
+
+    b2bVal = B2B_valid;
+    b2bVal = b2bVal(isfinite(b2bVal));
+
+    if ~isempty(b2bAll)
+        minEdge = min(b2bAll);
+        maxEdge = max(b2bAll);
+
+        if minEdge == maxEdge
+            minEdge = minEdge - 0.5;
+            maxEdge = maxEdge + 0.5;
+        end
+
+        edges = linspace(minEdge, maxEdge, 30);
+
+        [nAll, cAll] = hist(b2bAll, edges);
+        h(end+1) = plot(cAll, nAll, 'Color', [0.5 0.5 0.5]); hold on
+        lab{end+1} = 'all candidate B2B';
+
+        if ~isempty(b2bVal)
+            [nVal, cVal] = hist(b2bVal, edges);
+            h(end+1) = plot(cVal, nVal, 'm');
+            lab{end+1} = 'B2B_valid';
+        end
+    end
+
+    xlabel('B2B [s]')
+    ylabel('Count')
+    title(sprintf('Diagnostic: B2B distribution. %d candidate, %d valid', ...
+        numel(b2bAll), numel(b2bVal)), ...
+        'Interpreter', 'none');
+
+    if ~isempty(h)
+        legend(h, lab, 'Location', 'Best');
+    end
+
+    %% --------------------------------------------------------------------
+    % Previous diagnostic plot 2: B2B bpm boxplot
+    % ---------------------------------------------------------------------
+    subplot(4,4,10)
+
+    h = [];
+    lab = {};
+
+    if ~isempty(B2B_valid_bpm)
+        boxplot(B2B_valid_bpm(:)); hold on
+
+        h(end+1) = plot(nan, nan, 'b-');
+        lab{end+1} = 'boxplot of B2B_valid_bpm';
+
+        h(end+1) = plot(ones(size(B2B_valid_bpm(:))), B2B_valid_bpm(:), 'k.', ...
+            'MarkerSize', 4);
+        lab{end+1} = 'individual valid breaths';
+
+        ylabel('Breaths/min')
+        title(sprintf('Diagnostic: B2B bpm. mean %.1f, median %.1f, SD %.1f', ...
+            mean_B2B_valid_bpm, median_B2B_valid_bpm, std_B2B_valid_bpm), ...
+            'Interpreter', 'none');
+    else
+        title('Diagnostic: B2B bpm boxplot. No valid B2B', 'Interpreter', 'none')
+    end
+
+    if ~isempty(h)
+        legend(h, lab, 'Location', 'Best');
+    end
+
+    %% --------------------------------------------------------------------
+    % Previous diagnostic plot 3: Poincare plot
+    % ---------------------------------------------------------------------
+    subplot(4,4,11)
+
+    h = [];
+    lab = {};
+
+    if numel(B2B_valid_bpm) >= 2
+        xP = B2B_valid_bpm(1:end-1);
+        yP = B2B_valid_bpm(2:end);
+
+        h(end+1) = plot(xP, yP, '.', 'Color', [0.45 0.25 0.40]); hold on
+        lab{end+1} = 'successive B2B pairs';
+
+        minP = min([xP(:); yP(:)]);
+        maxP = max([xP(:); yP(:)]);
+
+        if minP == maxP
+            minP = minP - 1;
+            maxP = maxP + 1;
+        end
+
+        h(end+1) = plot([minP maxP], [minP maxP], 'k:');
+        lab{end+1} = 'identity line';
+
+        xlabel('B2B(n) [breaths/min]')
+        ylabel('B2B(n+1) [breaths/min]')
+        title('Diagnostic: Poincare plot of B2B_valid_bpm', ...
+            'Interpreter', 'none')
+    else
+        title('Diagnostic: Poincare plot. Not enough valid B2B', ...
+            'Interpreter', 'none')
+    end
+
+    if ~isempty(h)
+        legend(h, lab, 'Location', 'Best');
+    end
+
+    %% --------------------------------------------------------------------
+    % Previous diagnostic plot 4: respiration spectrum
+    % ---------------------------------------------------------------------
+    subplot(4,4,12)
+
+    h = [];
+    lab = {};
+
+    if ~isempty(Pxx) && ~isempty(freq)
+        h(end+1) = plot(freq, Pxx, 'k-'); hold on
+        lab{end+1} = 'total spectrum';
+
+        idxVLF = freq >= 0 & freq < 0.04;
+        idxLF  = freq >= 0.04 & freq < 0.15;
+        idxHF  = freq >= 0.15 & freq <= 0.50;
+
+        if any(idxVLF)
+            h(end+1) = plot(freq(idxVLF), Pxx(idxVLF), 'b-', 'LineWidth', 1.5);
+            lab{end+1} = 'VLF band';
+        end
+
+        if any(idxLF)
+            h(end+1) = plot(freq(idxLF), Pxx(idxLF), 'r-', 'LineWidth', 1.5);
+            lab{end+1} = 'LF band';
+        end
+
+        if any(idxHF)
+            h(end+1) = plot(freq(idxHF), Pxx(idxHF), 'g-', 'LineWidth', 1.5);
+            lab{end+1} = 'HF band';
+        end
+
+        xlabel('Hz')
+        ylabel('Power')
+        title(sprintf('Diagnostic: spectrum. VLF %.1f, LF %.1f, HF %.1f', ...
+            vlfPower, lfPower, hfPower), ...
+            'Interpreter', 'none');
+    else
+        title('Diagnostic: respiration spectrum. Not enough valid B2B', ...
+            'Interpreter', 'none');
+    end
+
+    if ~isempty(h)
+        legend(h, lab, 'Location', 'Best');
+    end
+
+    %% --------------------------------------------------------------------
+    % Plot 3: respiration-only badBreath QC
+    % ---------------------------------------------------------------------
+    subplot(4,4,13:16)
+
+    h = [];
+    lab = {};
+
+    breathIdx = 1:resp_qc.nBreaths;
+
+    if ~isempty(resp_qc.respRate_bpm_perBreath)
+        h(end+1) = plot(breathIdx, resp_qc.respRate_bpm_perBreath, 'k.'); hold on
+        lab{end+1} = 'all breaths entering respiration-only QC';
+    else
+        hold on
+    end
+
+    if isfield(resp_qc, 'badBreath_detected') && ~isempty(resp_qc.badBreath_detected)
+        badDetected = resp_qc.badBreath_detected(:);
+    else
+        badDetected = resp_qc.badBreath(:);
+    end
+
+    badApplied = resp_qc.badBreath(:);
+
+    if any(badDetected)
+        h(end+1) = plot(find(badDetected), ...
+            resp_qc.respRate_bpm_perBreath(badDetected), ...
+            'o', 'Color', [1.0 0.5 0.0], 'MarkerSize', 5);
+        lab{end+1} = 'detected by respiration-only badBreath criteria';
+    end
+
+    if any(badApplied)
+        h(end+1) = plot(find(badApplied), ...
+            resp_qc.respRate_bpm_perBreath(badApplied), ...
+            'rx', 'MarkerSize', 8, 'LineWidth', 1.5);
+        lab{end+1} = 'applied badBreath mask';
+    end
+
+    xlabel('Breath number')
+    ylabel('Respiration rate [breaths/min]')
+
+    if isfield(resp_qc, 'applyRespBadBreathCriteria') && ...
+            ~isempty(resp_qc.applyRespBadBreathCriteria) && ...
+            ~resp_qc.applyRespBadBreathCriteria
+        qcModeText = 'diagnostic only';
+    else
+        qcModeText = 'applied to resp_qc summaries';
+    end
+
+    title(sprintf(['QC layer 3: respiration-only badBreath QC (%s) -> affects resp_qc fields ', ...
+        'and later cardioresp QC; B2B_valid/CAP summary variables unchanged. %d/%d applied bad breaths'], ...
+        qcModeText, resp_qc.nBadBreaths, resp_qc.nBreaths), ...
+        'Interpreter', 'none');
+
+    if ~isempty(h)
+        legend(h, lab, 'Location', 'Best');
+    end
+
+    out.hf = hf;
+end
+
+% -------------------------------------------------------------------------
+% Final output
+% -------------------------------------------------------------------------
+if numel(B2B_valid) < Set.B2B_minValidData || isempty(B2B_valid)
+    [out, Tab_outlier] = finalize_empty_output( ...
+        out, Tab_outlier, resp_qc, Set, i_block, NrBlock);
 else
     out.Rpeak_t                 = t(R_valid_locs);
     out.Rpeak_sample            = R_valid_locs;
@@ -954,13 +914,26 @@ else
     out.B2B_valid               = B2B_valid;
     out.B2B_valid_bpm           = B2B_valid_bpm;
     out.B2B_valid_ms            = B2B_valid_ms;
-    out.inspStart_t             = t_valid_inspStart; % times of inspiration starts
-    out.inspEnd_t               = t_valid_inspEnd; % times of inspiration ends
-    out.expStart_t              = t_valid_expStart; % times of expiration starts
-    out.expEnd_t                = t_valid_expEnd; % times of expiration ends
+    out.inspStart_t             = t_valid_inspStart;
+    out.inspEnd_t               = t_valid_inspEnd;
+    out.expStart_t              = t_valid_expStart;
+    out.expEnd_t                = t_valid_expEnd;
     out.duration_insp_valid     = duration_insp_valid;
     out.duration_exp_valid      = duration_exp_valid;
-    out.idx_valid_B2B_consec    = idx_valid_B2B_consec; % index into B2B_valid vector!
+
+    % New respiration-only QC variables
+    out.breathDur_s             = resp_qc.breathDur_s;
+    out.inspDur_s               = resp_qc.inspDur_s;
+    out.expDur_s                = resp_qc.expDur_s;
+    out.respRate_bpm_perBreath  = resp_qc.respRate_bpm_perBreath;
+    out.inspFrac_perBreath      = resp_qc.inspFrac_perBreath;
+    out.meanRespRate_bpm        = resp_qc.meanRespRate_bpm;
+    out.medianRespRate_bpm      = resp_qc.medianRespRate_bpm;
+    out.medianBreathDur_s       = resp_qc.medianBreathDur_s;
+    out.medianInspFrac          = resp_qc.medianInspFrac;
+    out.resp_qc                 = resp_qc;
+
+    out.idx_valid_B2B_consec    = idx_valid_B2B_consec;
     out.mean_B2B_valid_bpm      = mean_B2B_valid_bpm;
     out.median_B2B_valid_bpm    = median_B2B_valid_bpm;
     out.std_B2B_valid_bpm       = std_B2B_valid_bpm;
@@ -973,86 +946,434 @@ else
     out.lfPower                 = lfPower;
     out.hfPower                 = hfPower;
     out.totPower                = totPower;
-    out.nrblock                 = i_block ;
-    out.nrblock_combinedFiles   = NrBlock ;
-    %out.ECG_Rpeaks_valid        = cap_data; % +/- 500 ms data segments for consecutive R-peaks
+    out.session_index           = i_block;
+    out.nrblock                 = NrBlock;
+    out.nrblock_combinedFiles   = NrBlock;
 end
+% -------------------------------------------------------------------------
+% Store respiration time series for later RSA visualization
+% -------------------------------------------------------------------------
+out.resp_plotData = struct();
 
+out.resp_plotData.t_s = t(:);
+out.resp_plotData.capSignal_raw = capSignal(:);
+out.resp_plotData.capSignal_filtered = capFiltered_rectified(:);
+
+out.resp_plotData.inspStart_s = out.inspStart_t(:);
+out.resp_plotData.inspEnd_s   = out.inspEnd_t(:);
+out.resp_plotData.expStart_s  = out.expStart_t(:);
+out.resp_plotData.expEnd_s    = out.expEnd_t(:);
 
 out.settingsStruct = Set.cap;
-out.codeTimestamp  = datestr(now,30);% provenance: yyyymmddTHHMMSS
+out.codeTimestamp = datestr(now, 30);
 
-function printAnalysisSummary(Tab_outlier, detectedOutliers_mode, detectedOutlier2, IE_ratio, verbose, indicesToZero, capSignal, idx_Invalid_B2B_FlatRegion, t, maybe_valid_pos_cap_locs)
+end
+
+% =========================================================================
+% Helper functions
+% =========================================================================
+
+function out = initialize_empty_resp_output()
+out = struct();
+out.hf = [];
+out.Rpeak_t = [];
+out.Rpeak_sample = [];
+out.B2B_t = [];
+out.B2B_sample = [];
+out.B2B_valid = [];
+out.B2B_valid_bpm = [];
+out.B2B_valid_ms = [];
+out.inspStart_t = [];
+out.inspEnd_t = [];
+out.expStart_t = [];
+out.expEnd_t = [];
+out.duration_insp_valid = [];
+out.duration_exp_valid = [];
+out.idx_valid_B2B_consec = [];
+out.mean_B2B_valid_bpm = NaN;
+out.median_B2B_valid_bpm = NaN;
+out.std_B2B_valid_bpm = NaN;
+out.std_B2B_valid_ms = NaN;
+out.rmssd_B2B_valid_ms = NaN;
+out.rmssd_B2B_valid_bpm = NaN;
+out.Pxx = [];
+out.freq = [];
+out.vlfPower = NaN;
+out.lfPower = NaN;
+out.hfPower = NaN;
+out.totPower = NaN;
+out.nrblock = [];
+out.nrblock_combinedFiles = [];
+out.session_index = [];
+out.breathDur_s = [];
+out.inspDur_s = [];
+out.expDur_s = [];
+out.respRate_bpm_perBreath = [];
+out.inspFrac_perBreath = [];
+out.meanRespRate_bpm = NaN;
+out.medianRespRate_bpm = NaN;
+out.medianBreathDur_s = NaN;
+out.medianInspFrac = NaN;
+out.resp_qc = [];
+out.resp_plotData = [];
+end
+
+function Tab_outlier = initialize_empty_Tab_outlier()
+Tab_outlier = struct( ...
+    'outlier', [], ...
+    'NrRpeaks_orig', [], ...
+    'outlier_Mode_abs', [], ...
+    'outlier_Mode_pct', [], ...
+    'outliers_delete_abs', [], ...
+    'NrPeaks_valid', [], ...
+    'NrB2B_valid', [], ...
+    'outliers_all_abs', [], ...
+    'outliers_all_pct', [], ...
+    'median_duration_insp', [], ...
+    'median_duration_exp', [], ...
+    'numSkippedInspSegments', [], ...
+    'skippedInspTimes', [], ...
+    'skippedInspDurations', [], ...
+    'numValidPeaksNoInspEnd', [], ...
+    'validPeaksNoInspEndTimes', [], ...
+    'numValidInsp', [], ...
+    'totalCandidatesInsp', [], ...
+    'numInvalidInsp', [], ...
+    'numInvalidExp', [], ...
+    'B2B_consec', [], ...
+    'durationRun_s', [], ...
+    'duration_NotValidSegments_s', [], ...
+    'session_index', [], ...
+    'nrblock', [], ...
+    'nrblock_combinedFiles', [], ...
+    'idx_deleted_B2B_all', [], ...
+    'idx_deleted_B2B_mode', [], ...
+    'idx_deleted_B2B_flat', [], ...
+    'NrB2B_beforehampel', [], ...
+    'resp_qc_nBreaths', [], ...
+    'resp_qc_nBadBreaths', [], ...
+    'resp_qc_fracBadBreath', [], ...
+    'resp_qc_idx_badBreath', [], ...
+    'resp_qc_idx_badBreath_nan', [], ...
+    'resp_qc_idx_badBreath_order', [], ...
+    'resp_qc_idx_badBreath_abs', [], ...
+    'resp_qc_idx_badBreath_global', [], ...
+    'resp_qc_idx_badBreath_local', [], ...
+    'resp_qc_medianRespRate_bpm', [], ...
+    'resp_qc_meanRespRate_bpm', [], ...
+    'resp_qc_medianBreathDur_s', [], ...
+    'resp_qc_medianInspFrac', [], ...
+    'resp_qc_lowAmpSegments_s', [], ...
+    'resp_qc_flatSegments_s', [], ...
+    'resp_qc_nLowAmpSegments', [], ...
+    'resp_qc_nFlatSegments', [], ...
+    'resp_qc_durationLowAmp_s', [], ...
+    'resp_qc_durationFlat_s', []);
+end
+
+function resp_qc = initialize_empty_resp_qc()
+resp_qc = struct();
+resp_qc.badBreath = [];
+resp_qc.goodBreath = [];
+resp_qc.badBreath_nan = [];
+resp_qc.badBreath_order = [];
+resp_qc.badBreath_abs = [];
+resp_qc.badBreath_global = [];
+resp_qc.badBreath_local = [];
+resp_qc.breathStart_t = [];
+resp_qc.breathEnd_t = [];
+resp_qc.breathDur_s = [];
+resp_qc.inspDur_s = [];
+resp_qc.expDur_s = [];
+resp_qc.respRate_bpm_perBreath = [];
+resp_qc.inspFrac_perBreath = [];
+resp_qc.nBreaths = 0;
+resp_qc.nBadBreaths = 0;
+resp_qc.fracBadBreath = NaN;
+resp_qc.medianRespRate_bpm = NaN;
+resp_qc.meanRespRate_bpm = NaN;
+resp_qc.medianBreathDur_s = NaN;
+resp_qc.medianInspFrac = NaN;
+resp_qc.lowAmpSegments_s = [];
+resp_qc.flatSegments_s = [];
+resp_qc.nLowAmpSegments = 0;
+resp_qc.nFlatSegments = 0;
+resp_qc.durationLowAmp_s = 0;
+resp_qc.durationFlat_s = 0;
+end
+
+function [resp_qc, Tab_outlier] = compute_respiration_only_qc(resp_qc, Tab_outlier, inspStart, inspEnd, expStart, expEnd, lowAmpSegments_s, flatSegments_s)
+
+respRateLimits_bpm = [5 120];
+inspFracLimits = [0.10 0.90];
+globalMadK = 6;
+localMadK = 6;
+localWindow = 21;
+minLocalBreathDurMAD_s = 0.05;
+
+inspStart = inspStart(:);
+inspEnd = inspEnd(:);
+expStart = expStart(:);
+expEnd = expEnd(:);
+
+nBreaths = numel(inspStart);
+
+breathDur_s = expEnd - inspStart;
+inspDur_s = inspEnd - inspStart;
+expDur_s = expEnd - expStart;
+respRate_bpm_perBreath = 60 ./ breathDur_s;
+inspFrac_perBreath = (expStart - inspStart) ./ breathDur_s;
+
+badBreath_nan = ...
+    isnan(inspStart) | isnan(inspEnd) | isnan(expStart) | isnan(expEnd) | ...
+    ~isfinite(inspStart) | ~isfinite(inspEnd) | ~isfinite(expStart) | ~isfinite(expEnd);
+
+badBreath_order = ...
+    inspEnd <= inspStart | ...
+    expStart < inspEnd | ...
+    expEnd <= expStart;
+
+badBreath_abs = ...
+    breathDur_s <= 0 | ...
+    inspDur_s <= 0 | ...
+    expDur_s <= 0 | ...
+    respRate_bpm_perBreath < respRateLimits_bpm(1) | ...
+    respRate_bpm_perBreath > respRateLimits_bpm(2) | ...
+    inspFrac_perBreath < inspFracLimits(1) | ...
+    inspFrac_perBreath > inspFracLimits(2) | ...
+    ~isfinite(respRate_bpm_perBreath) | ...
+    ~isfinite(inspFrac_perBreath);
+
+badBreath_global = false(nBreaths, 1);
+validForStats = ~(badBreath_nan | badBreath_order | badBreath_abs);
+
+breathDur_valid = breathDur_s(validForStats);
+respRate_valid = respRate_bpm_perBreath(validForStats);
+
+if ~isempty(breathDur_valid)
+    medDur = nanmedian(breathDur_valid);
+    madDur = nanmedian(abs(breathDur_valid - medDur));
+    if isfinite(madDur) && madDur > 0
+        badBreath_global = badBreath_global | abs(breathDur_s - medDur) > globalMadK * madDur;
+    end
+end
+
+if ~isempty(respRate_valid)
+    medRate = nanmedian(respRate_valid);
+    madRate = nanmedian(abs(respRate_valid - medRate));
+    if isfinite(madRate) && madRate > 0
+        badBreath_global = badBreath_global | abs(respRate_bpm_perBreath - medRate) > globalMadK * madRate;
+    end
+end
+
+badBreath_local = false(nBreaths, 1);
+if nBreaths >= localWindow
+    localMedDur = movmedian(breathDur_s, localWindow, 'omitnan');
+    localAbsDev = abs(breathDur_s - localMedDur);
+    localMadDur = movmedian(localAbsDev, localWindow, 'omitnan');
+    globalDurMAD = nanmedian(abs(breathDur_s - nanmedian(breathDur_s)));
+
+    if ~isfinite(globalDurMAD) || globalDurMAD <= 0
+        globalDurMAD = minLocalBreathDurMAD_s;
+    end
+
+    localMadDur(localMadDur < minLocalBreathDurMAD_s) = max(globalDurMAD, minLocalBreathDurMAD_s);
+    badBreath_local = abs(breathDur_s - localMedDur) > localMadK * localMadDur;
+end
+
+badBreath = badBreath_nan | badBreath_order | badBreath_abs | badBreath_global | badBreath_local;
+goodBreath = ~badBreath;
+
+resp_qc.badBreath = badBreath;
+resp_qc.goodBreath = goodBreath;
+resp_qc.badBreath_nan = badBreath_nan;
+resp_qc.badBreath_order = badBreath_order;
+resp_qc.badBreath_abs = badBreath_abs;
+resp_qc.badBreath_global = badBreath_global;
+resp_qc.badBreath_local = badBreath_local;
+resp_qc.breathStart_t = inspStart;
+resp_qc.breathEnd_t = expEnd;
+resp_qc.breathDur_s = breathDur_s;
+resp_qc.inspDur_s = inspDur_s;
+resp_qc.expDur_s = expDur_s;
+resp_qc.respRate_bpm_perBreath = respRate_bpm_perBreath;
+resp_qc.inspFrac_perBreath = inspFrac_perBreath;
+resp_qc.nBreaths = nBreaths;
+resp_qc.nBadBreaths = sum(badBreath);
+resp_qc.fracBadBreath = mean(badBreath);
+resp_qc.medianRespRate_bpm = nanmedian(respRate_bpm_perBreath(goodBreath));
+resp_qc.meanRespRate_bpm = nanmean(respRate_bpm_perBreath(goodBreath));
+resp_qc.medianBreathDur_s = nanmedian(breathDur_s(goodBreath));
+resp_qc.medianInspFrac = nanmedian(inspFrac_perBreath(goodBreath));
+resp_qc.lowAmpSegments_s = lowAmpSegments_s;
+resp_qc.flatSegments_s = flatSegments_s;
+resp_qc.nLowAmpSegments = size(lowAmpSegments_s, 1);
+resp_qc.nFlatSegments = size(flatSegments_s, 1);
+if isempty(lowAmpSegments_s)
+    resp_qc.durationLowAmp_s = 0;
+else
+    resp_qc.durationLowAmp_s = ...
+        sum(lowAmpSegments_s(:, 2) - lowAmpSegments_s(:, 1));
+end
+if isempty(flatSegments_s)
+    resp_qc.durationFlat_s = 0;
+else
+    resp_qc.durationFlat_s = ...
+        sum(flatSegments_s(:, 2) - flatSegments_s(:, 1));
+end
+resp_qc.medianInspDur_s = nanmedian(inspDur_s(goodBreath));
+resp_qc.medianExpDur_s  = nanmedian(expDur_s(goodBreath));
+resp_qc.meanInspDur_s = nanmean(inspDur_s(goodBreath));
+resp_qc.meanExpDur_s  = nanmean(expDur_s(goodBreath));
+
+Tab_outlier.resp_qc_nBreaths = nBreaths;
+Tab_outlier.resp_qc_nBadBreaths = resp_qc.nBadBreaths;
+Tab_outlier.resp_qc_fracBadBreath = resp_qc.fracBadBreath;
+Tab_outlier.resp_qc_idx_badBreath = find(badBreath);
+Tab_outlier.resp_qc_idx_badBreath_nan = find(badBreath_nan);
+Tab_outlier.resp_qc_idx_badBreath_order = find(badBreath_order);
+Tab_outlier.resp_qc_idx_badBreath_abs = find(badBreath_abs);
+Tab_outlier.resp_qc_idx_badBreath_global = find(badBreath_global);
+Tab_outlier.resp_qc_idx_badBreath_local = find(badBreath_local);
+Tab_outlier.resp_qc_medianRespRate_bpm = resp_qc.medianRespRate_bpm;
+Tab_outlier.resp_qc_meanRespRate_bpm = resp_qc.meanRespRate_bpm;
+Tab_outlier.resp_qc_medianBreathDur_s = resp_qc.medianBreathDur_s;
+Tab_outlier.resp_qc_medianInspFrac = resp_qc.medianInspFrac;
+Tab_outlier.resp_qc_lowAmpSegments_s = lowAmpSegments_s;
+Tab_outlier.resp_qc_flatSegments_s = flatSegments_s;
+Tab_outlier.resp_qc_nLowAmpSegments = resp_qc.nLowAmpSegments;
+Tab_outlier.resp_qc_nFlatSegments = resp_qc.nFlatSegments;
+Tab_outlier.resp_qc_durationLowAmp_s = resp_qc.durationLowAmp_s;
+Tab_outlier.resp_qc_durationFlat_s = resp_qc.durationFlat_s;
+
+end
+
+function [out, Tab_outlier] = finalize_empty_output(out, Tab_outlier, resp_qc, Set, i_block, NrBlock)
+out.Rpeak_t = [];
+out.Rpeak_sample = [];
+out.B2B_t = [];
+out.B2B_sample = [];
+out.B2B_valid = [];
+out.B2B_valid_bpm = [];
+out.B2B_valid_ms = [];
+out.inspStart_t = [];
+out.inspEnd_t = [];
+out.expStart_t = [];
+out.expEnd_t = [];
+out.duration_insp_valid = [];
+out.duration_exp_valid = [];
+out.idx_valid_B2B_consec = [];
+out.mean_B2B_valid_bpm = NaN;
+out.median_B2B_valid_bpm = NaN;
+out.std_B2B_valid_bpm = NaN;
+out.std_B2B_valid_ms = NaN;
+out.rmssd_B2B_valid_ms = NaN;
+out.rmssd_B2B_valid_bpm = NaN;
+out.Pxx = [];
+out.freq = [];
+out.vlfPower = NaN;
+out.lfPower = NaN;
+out.hfPower = NaN;
+out.totPower = NaN;
+out.session_index = i_block;
+out.nrblock = NrBlock;
+out.nrblock_combinedFiles = NrBlock;
+out.breathDur_s = [];
+out.inspDur_s = [];
+out.expDur_s = [];
+out.respRate_bpm_perBreath = [];
+out.inspFrac_perBreath = [];
+out.meanRespRate_bpm = NaN;
+out.medianRespRate_bpm = NaN;
+out.medianBreathDur_s = NaN;
+out.medianInspFrac = NaN;
+out.resp_qc = resp_qc;
+out.settingsStruct = Set.cap;
+out.codeTimestamp = datestr(now, 30);
+Tab_outlier.session_index = i_block;
+Tab_outlier.nrblock = NrBlock;
+Tab_outlier.nrblock_combinedFiles = NrBlock;
+out.resp_plotData = [];
+end
+
+function printAnalysisSummary(Tab_outlier, IE_ratio, verbose, indicesToZero, capSignal, idx_Invalid_B2B_FlatRegion, t, maybe_valid_pos_cap_locs)
+
 if ~verbose
     return
 end
 
 fprintf('\n=== Respiration Analysis Summary ===\n');
 
-% Block and Time Information
 fprintf('\nBlock Information:\n');
+fprintf('  - Session index: %d\n', Tab_outlier.session_index);
 fprintf('  - Current block: %d\n', Tab_outlier.nrblock);
 fprintf('  - Combined files block: %d\n', Tab_outlier.nrblock_combinedFiles);
 fprintf('  - Total run duration: %.1f s\n', Tab_outlier.durationRun_s);
-fprintf('  - Valid data percentage: %.1f%%\n', ...
-    (1 - Tab_outlier.duration_NotValidSegments_s/Tab_outlier.durationRun_s)*100);
 
+if isfinite(Tab_outlier.duration_NotValidSegments_s) && isfinite(Tab_outlier.durationRun_s) && Tab_outlier.durationRun_s > 0
+    fprintf('  - Valid data percentage: %.1f%%\n', ...
+        (1 - Tab_outlier.duration_NotValidSegments_s / Tab_outlier.durationRun_s) * 100);
+end
 
- % Invalid Segments Analysis
 fprintf('\nInvalid Segments Analysis:\n');
 
-% KK1 Low Amplitude Segments
 if ~isempty(indicesToZero)
-    segments = find(diff([0; indicesToZero; 0]) ~= 1);
-    segments = reshape(segments, 2, [])';
+    idx = indicesToZero(:);
+    bounds = [1; find(diff(idx) ~= 1) + 1; numel(idx) + 1];
+    segments = [bounds(1:end-1), bounds(2:end)-1];
     num_segments = size(segments, 1);
     total_duration = length(indicesToZero) / length(capSignal) * 100;
+
     fprintf('  KK1 Low Amplitude:\n');
     fprintf('    - Number of segments: %d\n', num_segments);
     fprintf('    - Total duration: %.1f%% of signal\n', total_duration);
 end
 
-% KK4 Flat Segments
 if ~isempty(idx_Invalid_B2B_FlatRegion)
     num_flat_segments = length(idx_Invalid_B2B_FlatRegion);
     total_flat_duration = 0;
+
     for i = 1:length(idx_Invalid_B2B_FlatRegion)
         idx = idx_Invalid_B2B_FlatRegion(i);
-        if idx < length(maybe_valid_pos_cap_locs)
-            t_start = t(maybe_valid_pos_cap_locs(idx));
-            t_end = t(maybe_valid_pos_cap_locs(idx + 1));
+        if idx > 1 && idx <= length(maybe_valid_pos_cap_locs)
+            t_start = t(maybe_valid_pos_cap_locs(idx - 1));
+            t_end   = t(maybe_valid_pos_cap_locs(idx));
             total_flat_duration = total_flat_duration + (t_end - t_start);
         end
     end
+
     flat_duration_percent = (total_flat_duration / t(end)) * 100;
+
     fprintf('  KK4 Flat Segments:\n');
     fprintf('    - Number of segments: %d\n', num_flat_segments);
     fprintf('    - Total duration: %.1f%% of signal\n', flat_duration_percent);
 end
 
-% Peak Analysis Summary
 fprintf('\nPeak Analysis:\n');
 fprintf('  - Total peaks detected: %d\n', Tab_outlier.NrRpeaks_orig);
 fprintf('  - Valid peaks: %d\n', Tab_outlier.NrPeaks_valid);
 fprintf('  - Consecutive valid peaks: %d\n', Tab_outlier.B2B_consec);
-fprintf('  - Invalid peaks: %d (%.1f%%)\n', ...
+fprintf('  - Rejected B2B intervals: %d (%.1f%%)\n', ...
     Tab_outlier.outliers_all_abs, Tab_outlier.outliers_all_pct);
 
-% B2B and Outlier Analysis
 fprintf('\nBreath-to-Breath Analysis:\n');
 fprintf('  - Valid B2B intervals: %d\n', Tab_outlier.NrB2B_valid);
-fprintf('  - Mode-based outliers: %.1f%%\n', detectedOutliers_mode);
-fprintf('  - Hampel-based outliers: %.1f%%\n', detectedOutlier2);
-fprintf('  - Deleted outliers: %d\n', Tab_outlier.outliers_delete_abs);
+fprintf('  - Mode/median-based rejected B2B: %d (%.1f%%)\n', ...
+    Tab_outlier.outlier_Mode_abs, Tab_outlier.outlier_Mode_pct);
+fprintf('  - Total rejected B2B intervals: %d (%.1f%%)\n', ...
+    Tab_outlier.outliers_delete_abs, Tab_outlier.outliers_all_pct);
 
-% Breathing Pattern
+fprintf('\nRespiration-only QC:\n');
+fprintf('  - Bad breaths: %d / %d (%.1f%%)\n', ...
+    Tab_outlier.resp_qc_nBadBreaths, Tab_outlier.resp_qc_nBreaths, ...
+    100 * Tab_outlier.resp_qc_fracBadBreath);
+fprintf('  - Median respiration rate: %.2f breaths/min\n', Tab_outlier.resp_qc_medianRespRate_bpm);
+fprintf('  - Median inspiration fraction: %.2f\n', Tab_outlier.resp_qc_medianInspFrac);
+
 fprintf('\nBreathing Pattern:\n');
 fprintf('  - I:E Ratio: %.2f\n', IE_ratio);
 fprintf('  - Median inspiration duration: %.2f s\n', Tab_outlier.median_duration_insp);
 fprintf('  - Median expiration duration: %.2f s\n', Tab_outlier.median_duration_exp);
 
-
-
 fprintf('\n==============================\n\n');
-
-
+end

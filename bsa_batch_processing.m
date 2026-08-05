@@ -1,73 +1,72 @@
 % this is not a function, it is just a convenience script to run functions over several sessions
-%% TODO
-% 1) vector with sessions & monkey to have only one line
-%%
-%cmb-File
-% 20 Session for the choiceBias
 addpath(genpath('C:\Source\MATLAB\Igtools\')) %round2
 addpath 'C:\Users\kkaduk\Desktop\Kristin\GitHub\body_signals_analysis'
 addpath(genpath('C:\Users\kkaduk\Desktop\Kristin\GitHub\PhysioNet-Cardiovascular-Signal-Toolbox'));
 addpath(genpath( 'C:\Users\kkaduk\Desktop\Kristin\GitHub\robust_hrv')); 
-
-
-
 %%
 pathExcel = 'Y:\Logs\Inactivation\Cornelius\Cornelius_Inactivation_log_since201901_NoCalibration_030524.xlsx';
 settings_filename = 'bsa_settings_Cornelius2019.m';
-%Test for Pont Care
-%out = bsa_ecg_analyze_one_session_NEW_PoinCarePlot('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\20190214',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Cornelius\20190214');
-sessionList = [ 20190129, 20190201, 20190207 ,20190213, 20190214,20190215, 20190216,20190227,  20190313,20190314, 20190228 ,   20190304 , 20190403,20190904, 20190910,20190912,20190913, 20191007, 20191010, 20191011 , 20191014,20190404  ,  20190408  , ...
-    20190424 ,   20190429 ,   20190430  ,  20190508   , 20190509   , 20190813  ,20190828,  20191013 ,20191015  ,  20191017  ,  20191018  ,  20191020  ,  20191021];
-sessionList = [   20190124  ,  20190131 ];%
-sessionList = [     20190813  ];
+
 %Take all sessions from the Excel/File marked as 1
 Excel = readtable(pathExcel);
 SessionsInExcel = unique(Excel.date);
 
 % Which Sessions are in the Excel-File?
 SessionsInExcelStrings = cellstr(num2str(SessionsInExcel));
-% Which Sessions should be analyzed from Excel-File?
+% All sessions marked for ECG/CAP analysis
 SessionsInExcel_ForAna = unique(Excel.date(Excel.InaDPul_ECG == 1)).';
 SessionsInExcel_DataOrigin_TDT = unique(Excel.date(Excel.DataOrigin_TDT == 1)).';
+% Sessions that should be loaded from TDT origin
+SessionsInExcel_DataOrigin_TDT = unique(Excel.date(Excel.DataOrigin_TDT == 1)).';
+% Optional manual exclusions
+manualExclude = [];
+% Final list: all sessions marked for analysis, except manual exclusions
+sessionList = setdiff(SessionsInExcel_ForAna, manualExclude);
 
-SessionsInExcel_ForAna_Str = cellstr(num2str(SessionsInExcel_ForAna));
+%sessionList = setdiff(SessionsInExcel_ForAna, SessionsInExcel_DataOrigin_TDT);
+%SessionsForAna = intersect(SessionsInExcel_ForAna, sessionList);
+%sessionList = [20190131];
 
-SessionsForAna = intersect(SessionsInExcel_ForAna, sessionList);
-sessionList = setdiff(SessionsInExcel_ForAna, SessionsInExcel_DataOrigin_TDT);
 
-NotInSessionList = setdiff(SessionsInExcel_ForAna, sessionList);
-NotInSessionList = [     20191021, 20191018, 20191020, ];
-sessionList = [     20191011     ];
-
-sessionList = [    20191014,20190404  ,  20190408  , ...
-    20190424 ,   20190429 ,   20190430  ,  20190508   , 20190509   , 20190813  ,  20191013 ,20191015  ,  20191017  ,  20191018  ,  20191020  ,  20191021];
-sessionList = [20191014   ];
-
-sessionList = [  20191015  ,  20191017  ,  20191018  ,  20191020  ,  20191021];
-
-% Problem:    20191013
-for currDate = sessionList
+for sessNum = 1:length(sessionList)
+    currSession = num2str(sessionList(sessNum));
     [out] = ...
-        bsa_respiration_analyze_one_session(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Cornelius\' num2str(currDate)]);
+        bsa_respiration_analyze_one_session(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currSession)], pathExcel, settings_filename, ['Y:\Data\BodySignals\ECG\Cornelius\' currSession]);
 end
 
 
-for currDate = NotInSessionList
-    [out] = ...
-        bsa_ecg_analyze_one_session_NEW_PoinCarePlot(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel, settings_filename, ['Y:\Data\BodySignals\ECG\Cornelius\' num2str(currDate)]);
+% Final list: all sessions marked for analysis, except manual exclusions
+for iSess = 1:numel(sessionList)
+    currDate = sessionList(iSess);
+    currDateStr = num2str(currDate);
+    if ismember(currDate, SessionsInExcel_DataOrigin_TDT)
+        dataOrigin = 'TDT';
+        tdtRoot = 'Y:\Data\BodySignals\';
+        session_path = fullfile(tdtRoot, currDateStr);
+    else
+        dataOrigin = 'combined';
+        combinedRoot = 'Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\'; 
+        session_path = fullfile(combinedRoot, currDateStr);
+    end
+    
+    session_path = fullfile('Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\', currDateStr);
+
+    [out, out_cap] = ...
+    bsa_ecg_cap_together_analyze_one_session( ...
+        session_path, ...
+        pathExcel, ...
+        settings_filename, ...
+        'recompute', 'cap');
+    
+   % [out_ecg, out_cap] = ...
+   %     bsa_ecg_cap_together_analyze_one_session(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename, 'dataOrigin',dataOrigin);
 end
 
-for currDate = SessionsInExcel_DataOrigin_TDT
+for currDate = SessionsInExcel_DataOrigin_TDT %sessionList(1:2) %SessionsInExcel_DataOrigin_TDT
     [out_ecg, out_cap] = ...
-        bsa_ecg_cap_together_analyze_one_session(['Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename);
+        bsa_ecg_cap_together_analyze_one_session(['Y:\Data\BodySignals\CAP\Cornelius\' num2str(currDate)], pathExcel,settings_filename, 'dataOrigin', 'TDT');
 end
 
-sessionList = [20190129, 20190201, 20190207 ,20190213, 20190214,20190216,20190227,  20190313,20190314, 20190403,20190828,20190910,20191007, 20191010, 20191011 , 20191014];
-% 20190912, 20190913- PBS
-% right Inactivation
-sessionList = [20190813, 20191014, 20191015, 20191017, 20191018, 20191020, 20191021];
-% DPul only TDT  
-sessionList = [20190124, 20190131, 20190216,20190228, 20190304 ];
 %VPul
 sessionList = [20190404, 20190408, 20190424, 20190429, 20190430, 20190508, 20190509];
 
@@ -85,9 +84,9 @@ for currDate = SessionsInExcel_DataOrigin_TDT
 end
 
 
-for  currDate = SessionsInExcel_DataOrigin_TDT
+for  currDate = NotInSessionList(1)
  
-   % bsa_read_and_save_TDT_data_without_behavior(['Y:\Data\TDTtanks\Cornelius_phys\', currSession], ['Y:\Data\BodySignals\CAP\Cornelius\', currSession]);
+   bsa_read_and_save_TDT_data_without_behavior(['Y:\Data\TDTtanks\Cornelius_phys\', currDate], ['Y:\Data\BodySignals\CAP\Cornelius\', currDate]);
 
     [out] = ...
         bsa_respiration_analyze_one_session(['Y:\Data\BodySignals\CAP\Cornelius\', num2str(currDate)], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Cornelius\' num2str(currDate)],'keepRunFigs',false,'dataOrigin','TDT');
@@ -102,22 +101,41 @@ out = bsa_ecg_analyze_one_session('Y:\Data\BodySignals\ECG\Cornelius\20190808\bo
 pathExcel = 'Y:\Logs\Inactivation\Magnus\Magnus_bodySignals_inactivation_log.xlsx';
 
 settings_filename = 'bsa_settings_Magnus2019.m';
-% deteleted data in 20220921
-sessionList = [ 20191119,20191205, 20191210, 20191211, 20191212, 20191213,20191120,20191121,20191127, 20191128, 20191204];
-sessionList = [ 20191211];
-%20191119 - cmb files differ to excel
 Excel = readtable(pathExcel);
 SessionsInExcel = unique(Excel.date);
 
 % Which Sessions are in the Excel-File?
-%SessionsInExcelStrings = cellstr(num2str(SessionsInExcel));
-% Which Sessions should be analyzed from Excel-File?
+SessionsInExcelStrings = cellstr(num2str(SessionsInExcel));
+% All sessions marked for ECG/CAP analysis
 SessionsInExcel_ForAna = unique(Excel.date(Excel.InaDPul_ECG == 1)).';
-SessionsInExcel_ForAna_Str = cellstr(num2str(SessionsInExcel_ForAna));
+% Sessions that should be loaded from TDT origin
+SessionsInExcel_DataOrigin_TDT = unique(Excel.date(Excel.DataOrigin_TDT == 1)).';
+% Optional manual exclusions
+manualExclude = [];
+% Final list: all sessions marked for analysis, except manual exclusions
+sessionList = setdiff(SessionsInExcel_ForAna, manualExclude);
 
-SessionsForAna = intersect(SessionsInExcel_ForAna, sessionList);
-sort(SessionsForAna)
-NotInSessionList = setdiff(SessionsInExcel_ForAna, sessionList);
+% Final list: all sessions marked for analysis, except manual exclusions
+for iSess = 1:numel(sessionList)
+    currDate = sessionList(iSess);
+    currDateStr = num2str(currDate);
+    if ismember(currDate, SessionsInExcel_DataOrigin_TDT)
+        dataOrigin = 'TDT';
+        tdtRoot = 'Y:\Data\BodySignals\';
+        session_path = fullfile(tdtRoot, currDateStr);
+    else
+        dataOrigin = 'combined';
+        combinedRoot = 'Y:\Data\Magnus_phys_combined_monkeypsych_TDT\'; 
+        session_path = fullfile(combinedRoot, currDateStr);
+    end
+
+    [out, out_cap] = ...
+    bsa_ecg_cap_together_analyze_one_session( ...
+        session_path, ...
+        pathExcel, ...
+        settings_filename, ...
+        'recompute', 'cap');
+end
 
 
 for currDate = sessionList
@@ -137,24 +155,6 @@ for sessNum = 1:length(sessionList)
         bsa_ecg_analyze_one_session_NEW_PoinCarePlot(['Y:\Data\Magnus_phys_combined_monkeypsych_TDT\' currSession], pathExcel, settings_filename, ['Y:\Data\BodySignals\ECG\Magnus\' currSession]);
 end
 
-
-for sessNum = 1:length(sessionList)
-    currSession = num2str(sessionList(sessNum));
-    [out_ecg, out_cap] = ...
-        bsa_ecg_analyze_one_session(['Y:\Data\Magnus_phys_combined_monkeypsych_TDT\' currSession], pathExcel, settings_filename);
-end
-
- 
-
-
-
-for sessNum = 1:length(sessionList)
-    currSession = num2str(sessionList(sessNum));
-    bsa_read_and_save_TDT_data_without_behavior(['Y:\Data\TDTtanks\Magnus_phys\', currSession], ['Y:\Data\BodySignals\CAP\Cornelius\', currSession]);
-
-    [out] = ...
-        bsa_respiration_analyze_one_session(['Y:\Data\BodySignals\CAP\Magnus\', currSession], pathExcel, settings_filename, ['Y:\Data\BodySignals\CAP\Cornelius\' currSession],'keepRunFigs',false,'dataOrigin','TDT');
-end
 
 out = bsa_ecg_analyze_one_session('Y:\Data\Magnus_phys_combined_monkeypsych_TDT\20230623',pathExcel,settings_filename,'Y:\Data\BodySignals\ECG\Magnus\20230623');
 
@@ -232,27 +232,49 @@ out = bsa_ecg_analyze_one_session('Y:\Data\Curius_phys_combined_monkeypsych_TDT\
 %% Inactivation study
 pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905_NoCalibration.xlsx';
 settings_filename = 'bsa_settings_Curius2019.m'; % full path will be complemented in bsa_ecg_analyze_one_session
-
-sessionList = [20190822  ];
-
-sessionList = [20190717, 20190729,20190801,20190802,20190806,20190807, 20190808, 20190809, 20190813, 20190814,20190815, 20190820,20190822, 20190826,20190828,20190903, 20190905,20190910, 20190912,  20190913 ];
 Excel = readtable(pathExcel);
 SessionsInExcel = unique(Excel.date);
 
 % Which Sessions are in the Excel-File?
 SessionsInExcelStrings = cellstr(num2str(SessionsInExcel));
-% Which Sessions should be analyzed from Excel-File?
+% All sessions marked for ECG/CAP analysis
 SessionsInExcel_ForAna = unique(Excel.date(Excel.InaDPul_ECG == 1)).';
-SessionsInExcel_ForAna_Str = cellstr(num2str(SessionsInExcel_ForAna));
-sort(SessionsInExcel_ForAna)
+% Sessions that should be loaded from TDT origin
+SessionsInExcel_DataOrigin_TDT = unique(Excel.date(Excel.DataOrigin_TDT == 1)).';
+% Optional manual exclusions
+manualExclude = [];
+% Final list: all sessions marked for analysis, except manual exclusions
+sessionList = setdiff(SessionsInExcel_ForAna, manualExclude);
 
-SessionsForAna = intersect(SessionsInExcel_ForAna, sessionList);
-NotInSessionList = setdiff(SessionsInExcel_ForAna, sessionList);
+%sessionList = setdiff(SessionsInExcel_ForAna, SessionsInExcel_DataOrigin_TDT);
+%SessionsForAna = intersect(SessionsInExcel_ForAna, sessionList);
+%sessionList = [20191013];
 
-for currDate = sessionList
-    [out_ecg, out_cap] = ...
-        bsa_ecg_cap_together_analyze_one_session(['Y:\Data\Curius_phys_combined_monkeypsych_TDT\' num2str(currDate)], pathExcel,settings_filename);
-end
+% Final list: all sessions marked for analysis, except manual exclusions
+for iSess = 1:numel(sessionList)
+    currDate = sessionList(iSess);
+    currDateStr = num2str(currDate);
+    if ismember(currDate, SessionsInExcel_DataOrigin_TDT)
+        dataOrigin = 'TDT';
+        tdtRoot = 'Y:\Data\BodySignals\';
+        session_path = fullfile(tdtRoot, currDateStr);
+    else
+        dataOrigin = 'combined';
+        combinedRoot = 'Y:\Data\Curius_phys_combined_monkeypsych_TDT\'; 
+        session_path = fullfile(combinedRoot, currDateStr);
+    end
+
+   %session_path = 'Y:\Data\Curius_phys_combined_monkeypsych_TDT\';
+
+    [out, out_cap] = ...
+    bsa_ecg_cap_together_analyze_one_session( ...
+        session_path, ...
+        pathExcel, ...
+        settings_filename, ...
+        'recompute', 'cap');
+    
+  end
+
 
 for sessNum = 1:length(sessionList)
     currSession = num2str(sessionList(sessNum));
@@ -587,5 +609,143 @@ inactivation_sessions = {'20190729' '20190801' '20190809' '20190814' '20190820' 
 path_SaveFig = ['Y:\Projects\Pulv_Inac_ECG_respiration\Figures\',monkey, '\ECG\',targetBrainArea]; 
 bsa_evaluate_outliers(monkey, sessions,targetBrainArea, inactivation_sessions, path_SaveFig )
 
-%%
+%% matlab Function to find the TDT datafiles for 
+%% Detect TDT vs combined sessions from Excel sessions
 
+clear
+
+pathExcel = 'Y:\Logs\Inactivation\Cornelius\Cornelius_Inactivation_log_since201901_NoCalibration_030524.xlsx';
+settings_filename = 'bsa_settings_Cornelius2019.m';
+
+pathExcel = 'Y:\Logs\Inactivation\Curius\Curius_Inactivation_log_since201905_NoCalibration.xlsx';
+settings_filename = 'bsa_settings_curius2019.m';
+
+tdtRoot = 'Y:\Data\BodySignals\';
+%combinedRoot = 'Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\';
+combinedRoot = 'Y:\Data\Curius_phys_combined_monkeypsych_TDT\';
+
+%% Read Excel file
+
+Excel = readtable(pathExcel);
+
+%% Take sessions marked for ECG/CAP analysis
+
+idxForAna = Excel.InaDPul_ECG == 1;
+
+Excel_ForAna = Excel(idxForAna, :);
+
+SessionsInExcel_ForAna = unique(Excel_ForAna.date).';
+
+SessionsInExcel_ForAna_Str = string(compose('%08.0f', SessionsInExcel_ForAna));
+
+%% Detect data origin from folders
+
+session_origin_tbl = table();
+
+for iSess = 1:numel(SessionsInExcel_ForAna_Str)
+
+    currDateStr = SessionsInExcel_ForAna_Str(iSess);
+
+    %% Candidate paths
+
+    tdt_session_path = fullfile(tdtRoot, currDateStr);
+
+    combined_session_path = fullfile(combinedRoot, currDateStr);
+    combined_folder_path = fullfile(combined_session_path, 'combined');
+
+    %% Check what exists
+
+    has_tdt_folder = isfolder(tdt_session_path);
+    has_combined_session_folder = isfolder(combined_session_path);
+    has_combined_folder = isfolder(combined_folder_path);
+
+    %% Decide origin
+
+    if has_combined_folder
+
+        dataOrigin = "combined";
+        DataOrigin_TDT = 0;
+        session_path = combined_session_path;
+        reason = "combined folder exists";
+
+    elseif has_tdt_folder
+
+        dataOrigin = "TDT";
+        DataOrigin_TDT = 1;
+        session_path = tdt_session_path;
+        reason = "TDT folder exists and no combined folder found";
+
+    elseif has_combined_session_folder && ~has_combined_folder
+
+        dataOrigin = "TDT_possible";
+        DataOrigin_TDT = 1;
+        session_path = combined_session_path;
+        reason = "session exists in combined root, but no combined folder";
+
+    else
+
+        dataOrigin = "missing";
+        DataOrigin_TDT = NaN;
+        session_path = "";
+        reason = "no TDT folder and no combined folder found";
+
+    end
+
+    %% Optional: get monkey for this session
+
+    idxThisDate = Excel_ForAna.date == str2double(currDateStr);
+
+    if ismember('Monkey', Excel_ForAna.Properties.VariableNames)
+        monkey = string(Excel_ForAna.Monkey(find(idxThisDate, 1, 'first')));
+    elseif ismember('monkey', Excel_ForAna.Properties.VariableNames)
+        monkey = string(Excel_ForAna.monkey(find(idxThisDate, 1, 'first')));
+    else
+        monkey = "";
+    end
+
+    %% Add row
+
+    tmp = table( ...
+        monkey, ...
+        currDateStr, ...
+        dataOrigin, ...
+        DataOrigin_TDT, ...
+        string(session_path), ...
+        has_tdt_folder, ...
+        has_combined_session_folder, ...
+        has_combined_folder, ...
+        string(reason), ...
+        'VariableNames', { ...
+            'Monkey', ...
+            'SessionDate', ...
+            'DataOrigin', ...
+            'DataOrigin_TDT', ...
+            'SessionPath', ...
+            'Has_TDT_Folder', ...
+            'Has_CombinedSessionFolder', ...
+            'Has_CombinedFolder', ...
+            'Reason'} ...
+        );
+
+    session_origin_tbl = [session_origin_tbl; tmp];
+
+end
+
+%% Sort and show
+
+if any(session_origin_tbl.Monkey ~= "")
+    session_origin_tbl = sortrows(session_origin_tbl, {'Monkey', 'SessionDate'});
+else
+    session_origin_tbl = sortrows(session_origin_tbl, 'SessionDate');
+end
+
+disp(session_origin_tbl)
+
+%% Summary
+
+summaryTbl = groupsummary(session_origin_tbl, {'Monkey', 'DataOrigin'});
+disp(summaryTbl)
+
+%% Save result
+
+%writetable(session_origin_tbl, 'Cornelius_session_data_origin_detected.csv');

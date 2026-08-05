@@ -1,4 +1,6 @@
-Set.Plot       = 1; 
+Set.Plot       = 1;
+Set.pathExcel = 'Y:\Logs\Inactivation\Cornelius\Cornelius_Inactivation_log_since201901_NoCalibration_030524.xlsx';
+Set.Path_ecg_capData = 'Y:\Data\Cornelius_phys_combined_monkeypsych_TDT\';
 % settings for BSA analysis, Cornelius dPul/vPul inactivation - ECG, 2019
 Set.task.Type       = 2; 
 Set.task.reward     = 2; 
@@ -50,6 +52,10 @@ Set.cap.MAD_sensitivity_p2m_diff        = 0; % sensitivity factor for threshold 
 Set.cap.MinPeakProminenceCoef           = 0.05; 
 Set.cap.minFactor_B2BMode               = 0.1; % exclude B2B intervals shorter than this factor multiplied with the mode R2R
 Set.cap.maxFactor_B2BMode               = 2; 
+Set.cap.lowPlateauFrac                   = 0.02;
+Set.cap.signal_top_percentile = 5;          % percent of signal length to calculate amplitude
+Set.cap.fraction_of_top_percentile = 0.2;   % fraction of top percentile to use as threshold
+Set.cap.min_duration_low = 5;               % seconds
 
 Set.cap.fraction_B2B_look4peak          = 0.2; % fraction of R2R interval to look for real R peak next to energy timecourse peak 
 Set.cap.hampel_T                        = 7 ; % threshold for hamplel outlier detection (larger means more permissive, less outliers)
