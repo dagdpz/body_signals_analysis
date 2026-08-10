@@ -1,4 +1,4 @@
-function out = bsa_ecg_analyze_one_session(session_path,pathExcel,settings_filename,varargin)
+function out = bsa_ecg_analyze_one_session_NEW_PoinCarePlot(session_path,pathExcel,settings_filename,varargin)
 %bsa_ecg_analyze_one_session  - analyzing ECG in one session (in multiple runs/blocks)
 %
 % USAGE:
@@ -84,7 +84,9 @@ ses = par.sessionInfo;
 %% which run is task and which is rest? information stored in the excel-sheet (manual input) and behavior file
 % excel file will have a priority so that one can manually exclude some runs
 if ~isempty(pathExcel)
-    table = readtable(pathExcel);
+table = readtable(pathExcel);
+        
+    
     if  sum(table.date == str2num(session_name)) > 0
         ses.monkey          =   table.monkey(table.date == str2num(session_name))';
         ses.date            =   table.date(table.date == str2num(session_name))';
@@ -165,8 +167,8 @@ for f=1:n_blocks
     end
     BlockExcel_uniqu = length(unique(ses.nrblock_combinedFiles)); % count unique blocks
     BlockExcel = length(unique(ses.nrblock_combinedFiles)); % count unique blocks
-    disp(['Found ' num2str(BlockExcel) '  blocks as Excel-file' ]);
-    disp(['Found ' num2str(BlockExcel_uniqu) ' unique blocks as Excel-file' ]);
+    disp(['Found ' num2str(BlockExcel) ' unique blocks as Excel-file' ]);
+    disp(['Found ' num2str(BlockExcel_uniqu) ' unique blocks as cmb' ]);
 
     
     if ~ismember(NrBlock,valid_blocks)
@@ -223,11 +225,11 @@ for f=1:n_blocks
     %  Check entry between behavioral file and excel
     if  ~isempty(pathExcel) && sum(table.date == str2num(session_name)) > 0 %&&  ~(ses.type(i_block) == -2)
         
-        if ses.tasktype_beh(i_block) == ses.tasktype(i_ses(i)) && (ses.tasktype_beh(i_block) == 1 || ses.tasktype_beh(i_block) == 0)
+        if ses.tasktype_beh(i_block) == ses.tasktype(i_ses(Nr_SameBlock)) && (ses.tasktype_beh(i_block) == 1 || ses.tasktype_beh(i_block) == 0)
             % conditions in the Excel bodysignals table and behavioral
             % file match and are either task or rest - don't need to do
             % anything, proceed with subsequent analysis as it is
-        elseif  ses.tasktype(i_ses(i)) == -2
+        elseif  ses.tasktype(i_ses(Nr_SameBlock)) == -2
             % this block is marked as -2 (to skip) in the Excel
             % bodysignals table - in this case the table has a priority
             % and the current block is skipped
@@ -250,7 +252,7 @@ for f=1:n_blocks
             info.session = num2str(ses.date(1));
             info.Nrblock =num2str(NrBlock);
             info.i_block =num2str(i_block);
-            info.taskType_Excel = num2str(ses.tasktype(i_ses(i)));
+            info.taskType_Excel = num2str(ses.tasktype(i_ses(Nr_SameBlock)));
             info.taskType_Behavior = num2str(ses.tasktype_beh(i_block));
             info.errorMessage = 'TaskType do not match - behav vs. excel!';
             
@@ -260,8 +262,6 @@ for f=1:n_blocks
             
         end
     end %close if for check
-    
-   
     
     
     
@@ -282,11 +282,33 @@ for f=1:n_blocks
         ecgSignal   = ecg.ECG1;
         Fs          = ecg.Fs;
     end
-    
-    [ out(i_block), Tab_outlier(i_block) ]= bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,Set.Plot,i_block,NrBlock, ses.monkey{1});
-    print(out(i_block).hf, sprintf('%sblock%02d_NrBlock%02d.png', [par.saveResults filesep], i_block, NrBlock), '-dpng', '-r0');    if ~par.keepRunFigs
+    %,out_overTime, out_overTime_notOverlap, 
+    [  out(i_block),Tab_outlier(i_block), out_overTime, out_overTime_notOverlap]= bsa_ecg_analyze_one_run_PoinCarePlot(ecgSignal,settings_path,Fs,Set.Plot,i_block,NrBlock,[ ses.monkey{1},'_',  num2str(ses.date(1))]);
+    print(out(i_block).hf, sprintf('%sblock%02d_NrBlock%02d.png', [par.saveResults filesep], i_block, NrBlock), '-dpng', '-r0');   
+   
+% NameOut1 = fieldnames(out); 
+% 
+% % Convert expected fields to a structure with empty arrays
+% expected_out = cell2struct(cell(length(expectedFields), 1), expectedFields);
+% 
+% % Get field names from both structures
+% fieldsOut = fieldnames(out);
+% fieldsExpectedOut = fieldnames(expected_out);
+% 
+% isequal(fieldsOut, fieldsExpectedOut)
+
+
+
+
+
+    if ~par.keepRunFigs
         close(out(i_block).hf);
     end
+    
+    out_OverTimelomb{i_block} = out_overTime; 
+    out_OverTimelomb_notOverlap{i_block} = out_overTime_notOverlap; 
+
+
     end %More than one of the same Block Number, but different runs 
     
     
@@ -294,7 +316,7 @@ for f=1:n_blocks
 end % numel files
 
 
-save([par.saveResults filesep session_name '_ecg.mat'],'out','Tab_outlier','par','ses','session_name','session_path');
+save([par.saveResults filesep session_name 'OverTime_ecg.mat'],'out','Tab_outlier','par','ses','session_name','session_path');
 
 
 blks = 1:n_blocks;
@@ -310,31 +332,36 @@ else
     restMFC = [0.8 0.8 0.8];
 end
 
+valid_task_idx = task_idx(arrayfun(@(x) ~isempty(out(x).mean_R2R_valid_bpm), task_idx));
+valid_rest_idx = rest_idx(arrayfun(@(x) ~isempty(out(x).mean_R2R_valid_bpm), rest_idx));
+
 %return; %
 if Set.Plot
     ig_figure('Name',[session_path '->' par.saveResults],'Position',[200 200 900 900],'PaperPositionMode','auto'); % ,'PaperOrientation','landscape'
     ha(1) = subplot(4,1,1);
-    plot(blks(rest_idx),[out(rest_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC); hold on;
-    plot(blks(task_idx),[out(task_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
-    plot(blks(rest_idx),[out(rest_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC);
-    plot(blks(task_idx),[out(task_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
+    plot(blks(valid_rest_idx),[out(valid_rest_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC); hold on;
+    plot(blks(valid_task_idx),[out(valid_task_idx).mean_R2R_valid_bpm],'bo','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
+    plot(blks(valid_rest_idx),[out(valid_rest_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',restMFC);
+    plot(blks(valid_task_idx),[out(valid_task_idx).median_R2R_valid_bpm],'bs','MarkerEdgeColor',[0.4235    0.2510    0.3922],'MarkerFaceColor',taskMFC);
     ylabel('Mean (o) & med (s) of R2R (bpm)');
     
     ha(2) = subplot(4,1,2);
-    plot(blks(rest_idx),[out(rest_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',restMFC); hold on;
-    plot(blks(task_idx),[out(task_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',taskMFC);
+    plot(blks(valid_rest_idx),[out(valid_rest_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',restMFC); hold on;
+    plot(blks(valid_task_idx),[out(valid_task_idx).rmssd_R2R_valid_ms],'bo','MarkerFaceColor',taskMFC);
     ylabel('RMSSD of R2R interval (ms)');
     
     ha(3) = subplot(4,1,3);
-    plot(blks(rest_idx),[out(rest_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',restMFC);  hold on;
-    plot(blks(task_idx),[out(task_idx).std_R2R_valid_bpm],'bo','MarkerFaceColor',taskMFC);
+    plot(blks(valid_rest_idx),[out(valid_rest_idx).std_R2R_valid_ms],'bo','MarkerFaceColor',restMFC);  hold on;
+    plot(blks(valid_task_idx),[out(valid_task_idx).std_R2R_valid_ms],'bo','MarkerFaceColor',taskMFC);
     ylabel('SD of R2R interval (bpm)');
     
     ha(4) = subplot(4,1,4);
-    plot(blks(rest_idx),[out(rest_idx).lfPower],'ro','MarkerFaceColor',restMFC); hold on;
-    plot(blks(task_idx),[out(task_idx).lfPower],'ro','MarkerFaceColor',taskMFC);
-    plot(blks(rest_idx),[out(rest_idx).hfPower],'go','MarkerFaceColor',restMFC);
-    plot(blks(task_idx),[out(task_idx).hfPower],'go','MarkerFaceColor',taskMFC);
+valid2_task_idx = task_idx(arrayfun(@(x) ~isempty(out(x).HF_Chunk), task_idx));
+valid2_rest_idx = rest_idx(arrayfun(@(x) ~isempty(out(x).HF_Chunk), rest_idx));
+    plot(blks(valid2_rest_idx),[out(valid2_rest_idx).LF_Chunk],'ro','MarkerFaceColor',restMFC); hold on;
+    plot(blks(valid2_task_idx),[out(valid2_task_idx).LF_Chunk],'ro','MarkerFaceColor',taskMFC);
+    plot(blks(valid2_rest_idx),[out(valid2_rest_idx).HF_Chunk],'go','MarkerFaceColor',restMFC);
+    plot(blks(valid2_task_idx),[out(valid2_task_idx).HF_Chunk],'go','MarkerFaceColor',taskMFC);
     legend({'lf rest','lf task','hf rest','hf task'},'location','Best');
     xlabel('blocks');
     ylabel('LF and HF power (ms^2)');

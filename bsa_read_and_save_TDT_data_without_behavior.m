@@ -42,8 +42,13 @@ blocknames_correctly_sorted = a.anr;
 blocknames=strcat(session2read, filesep, blocknames_correctly_sorted);
 
 for b=1:numel(blocknames)
-    blockname=blocknames{b};
-    data=TDTbin2mat_working(blockname,'EXCLUSIVELYREAD',{'POX1','ECG1','CAP1'});
+    pathblockname=blocknames{b};
+    blockname{b}=blocknames{b}(end-1:end);
+    dat.blockname(b) = str2double(blockname{b}); 
+    if dat.blockname(b) < 10
+       dat.blockname(b) = abs(dat.blockname(b)); 
+    end
+    data=TDTbin2mat_working(pathblockname,'EXCLUSIVELYREAD',{'POX1','ECG1','CAP1'});
     dat.ECG{b}=data.streams.ECG1.data;
     dat.POX{b}=data.streams.POX1.data;
     dat.CAP{b}=data.streams.CAP1.data;

@@ -1,3 +1,7 @@
+Set.Plot       = 1; 
+pathExcel = 'Y:\Logs\Inactivation\Magnus\Magnus_bodySignals_inactivation_log.xlsx';
+settings_filename = 'bsa_settings_Magnus2019.m';
+
 % settings for BSA analysis, Cornelius dPul/vPul inactivation - ECG, 2019
 Set.task.Type       = 2; 
 Set.task.reward     = 2; 
@@ -22,7 +26,7 @@ Set.wv_scalesPerDecade              = 32;
 
 % properties for the ECG R peak detection
 Set.min_R2R                         = 0.25; % s
-Set.max_R2R                         = 0.6; % s
+Set.max_R2R                         = 0.7; % s
 Set.eP_tc_minpeakheight_med_prop    = 0.33; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
 Set.MAD_sensitivity_p2p_diff        = 3; % sensitivity factor for threshold caluclation -  larger value -> less sensitive (i.e. less outliers)
 Set.minFactor_R2RMode               = 0.6; % exclude R2R intervals shorter than this
@@ -35,17 +39,21 @@ Set.R2R_minValidData = 100;
 
 Set.cap.smoothing_window                = 0.25; % s
 % properties for the respiration peak detection
-Set.cap.min_P2P                         = 1.7; % s
-Set.cap.eP_tc_minpeakheight_med_prop    = 0.3; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
-Set.cap.MAD_sensitivity_p2p_diff        = 8; % sensitivity factor for threshold calculation -  larger value -> less sensitive (i.e. less outliers)
+Set.cap.min_P2P                         = 0.5; % s
+Set.cap.eP_tc_minpeakheight_med_prop    = 0.2; % proportion of median of energyProfile_tc for minpeakheight (when periodic, task related movement noise, use ~0.33, otherwise 1)
+Set.cap.MAD_sensitivity_p2p_diff        = 100; % sensitivity factor for threshold calculation -  larger value -> less sensitive (i.e. less outliers)
 Set.cap.MAD_sensitivity_p2m_diff        = 0; % sensitivity factor for threshold calculation -  smaller value -> smaller threshold -> less sensitive (i.e. less outliers)
-Set.cap.MinPeakProminenceCoef           = 0.3; 
-Set.cap.minFactor_B2BMode               = 0.5; % exclude R2R intervals shorter than this factor multiplied with the mode R2R
+Set.cap.MinPeakProminenceCoef           = 0.05; 
+Set.cap.minFactor_B2BMode               = 0.1; % exclude B2B intervals shorter than this factor multiplied with the mode R2R
 Set.cap.maxFactor_B2BMode               = 2; 
+Set.cap.lowPlateauFrac                   = 0.02;
+Set.cap.signal_top_percentile = 5;          % percent of signal length to calculate amplitude
+Set.cap.fraction_of_top_percentile = 0.2;   % fraction of top percentile to use as threshold
+Set.cap.min_duration_low = 5;               % seconds
 
 Set.cap.fraction_B2B_look4peak          = 0.2; % fraction of R2R interval to look for real R peak next to energy timecourse peak 
 Set.cap.hampel_T                        = 7 ; % threshold for hamplel outlier detection (larger means more permissive, less outliers)
-Set.cap.hampel_DX                       = 10; % (# R peaks) half width of hampel window for outlier detection
+Set.cap.hampel_DX                       = 13; % (# R peaks) half width of hampel window for outlier detection
 Set.cap.hampel_nb_of_std                = 10; 
 Set.cap.hampel_adjacentSampleToComputeMean = 3; 
 Set.B2B_minValidData                    = 50; 

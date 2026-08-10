@@ -1,4 +1,5 @@
-function [out,Tab_outlier] = bsa_ecg_analyze_one_run(ecgSignal,settings_path,Fs,TOPLOT,i_block,NrBlock,FigInfo)
+function [ out, Tab_outlier, Out_OverTime_HF_LF, Out_OverTime_HF_LF_5] = bsa_ecg_analyze_one_run_PoinCarePlot(ecgSignal,settings_path,Fs,TOPLOT,i_block,NrBlock,FigInfo)
+%Tab_outlier, Out_OverTime_HF_LF,Out_OverTime_HF_LF_5
 %bsa_ecg_analyze_one_run  - analyses ECG in one run/block
 %
 % USAGE:
@@ -314,7 +315,149 @@ std_R2R_valid_ms        = std(R2R_valid_ms);
 % find consecutive R2Rs
 idx_valid_R2R_consec = find([NaN diff(t(R2R_valid_locs))]< Set.maxFactor_R2RMode * mode_R2R_valid);
 R2R_valid_bpm_consec = R2R_valid_bpm(idx_valid_R2R_consec);
+R2R_valid_ms_consec = R2R_valid_ms(idx_valid_R2R_consec);
+
 Tab_outlier.R2R_consec = numel(idx_valid_R2R_consec);
+
+%%  CALCULATE HF/LF
+
+HRVparams = InitializeHRVparams('Mky_ECG_InaDPul'); 
+%HRVparams.freq.method = 'welch';             % Default: 'lomb' 
+underscoreIndex = find(FigInfo == '_', 1);
+% Split the string into name and number
+monkey = FigInfo(1:underscoreIndex-1);
+session = FigInfo(underscoreIndex+1:end);
+HRVparams.writedata = [ 'Y:\Data\BodySignals\ECG\', monkey, '\HRV_PhysioNet']; 
+
+HRVparams.preprocess.lowerphysiolim = 60/250;       % Default: 60/160
+HRVparams.preprocess.upperphysiolim = 60/30;  
+HRVparams.preprocess.figures = 0;                   % Figures on = 1, Figures off = 0
+HRVparams.preprocess.gaplimit = 2;                  % Default: 2, seconds; maximum believable gap in rr intervals
+HRVparams.preprocess.per_limit = 0.2;               % Default: 0.2, Percent limit of change from one interval to the next
+HRVparams.preprocess.forward_gap = 3;	            % Default: 3, Maximum tolerable gap at beginning of timeseries in seconds
+HRVparams.preprocess.method_outliers = 'rem';       % Default: 'rem', Method of dealing with outliers
+HRVparams.windowlength = 60;	      % Default: 300, seconds
+
+% Options: 'lomb', 'burg', 'fft', 'welch'
+out_overTime = []; 
+Out_OverTime_HF_LF = []; 
+if length(R2R_valid) > 400
+[results, ResultsFileName, out_overTime ] = Main_HRV_Analysis(R2R_valid, t(R2R_valid_locs),'RRIntervals', HRVparams,[FigInfo, '_', num2str(NrBlock) ] ); 
+
+Out_OverTime_HF_LF = out_overTime; 
+end
+if ~isempty(out_overTime)
+    if strcmp(HRVparams.freq.method, 'lomb')
+        HF_Chunk     = nanmedian(out_overTime.hf);  %(ms^2)
+        LF_Chunk     = nanmedian(out_overTime.lf);
+        VLF_Chunk    = nanmedian(out_overTime.vlf);
+        lfhf_Chunk   = nanmedian(out_overTime.lfhf); %lfhf        : Ratio LF [ms^2]/HF [ms^2]%
+        ttlpwr_Chunk = nanmedian(out_overTime.ttlpwr);
+        NNmean_Chunk = nanmedian(out_overTime.NNmean); %ms 60./NNmean_lomb
+        RMSSD_Chunk  = nanmedian(out_overTime.RMSSD);  %ms
+        SDNN_Chunk   = nanmedian(out_overTime.SDNN);  %ms
+        SD1_Chunk   = nanmedian(out_overTime.SD1); 
+        SD2_Chunk   = nanmedian(out_overTime.SD2); 
+        SD1SD2_Chunk   = nanmedian(out_overTime.SD1SD2); 
+        MeanHR_Chunk   = nanmean(out_overTime.btsdet);
+        MedianHR_Chunk  = nanmedian(out_overTime.btsdet);
+        Nr_Chunks_Chunk  = length(out_overTime.btsdet);
+        NotAnalysdChunks_Chunk  = length(find(out_overTime.tdflag ~= 5));
+    end
+else
+    HF_Chunk       = nan;
+    LF_Chunk       = nan;
+    VLF_Chunk      = nan;
+    lfhf_Chunk     = nan; %lfhf        : Ratio LF [ms^2]/HF [ms^2]%
+    ttlpwr_Chunk   = nan;
+    NNmean_Chunk   = nan; %ms 60./NNmean_lomb
+    RMSSD_Chunk    = nan;  %ms
+    SDNN_Chunk     = nan;  %ms
+    MeanHR_Chunk   = nan;
+    MedianHR_Chunk   = nan;
+    Nr_Chunks_Chunk  = nan;
+    NotAnalysdChunks_Chunk  = nan;
+    SD1_Chunk   = nan;
+    SD2_Chunk  = nan;
+    SD1SD2_Chunk  = nan;
+       
+       
+end
+
+%% 5 min chungs
+out_overTime_5min = []; 
+Out_OverTime_HF_LF_5 = []; 
+if length(R2R_valid) > 400
+HRVparams.windowlength = 300;           
+HRVparams.increment = 30;             % Default: 30, seconds increment
+
+[results, ResultsFileName, out_overTime_5min ] = Main_HRV_Analysis(R2R_valid, t(R2R_valid_locs),'RRIntervals', HRVparams,[FigInfo, '_', num2str(NrBlock) ] ); 
+Out_OverTime_HF_LF_5 = out_overTime_5min; 
+end
+if ~isempty(out_overTime_5min) 
+    if strcmp(HRVparams.freq.method, 'lomb')
+        if sum(~isnan(out_overTime_5min.t_start))  > 0 %% at least one row of data sum(~isnan(out_overTime.t_start)) < 1
+        t_Chungk_5 = out_overTime_5min.t_end(~isnan(out_overTime_5min.t_end)); 
+        t_duration = t_Chungk_5(end); 
+        else
+        t_duration = NaN; 
+        end
+        %numel(t_Chungk_5)
+        HF_Chunk_5     = nanmedian(out_overTime_5min.hf);  %(ms^2)
+        LF_Chunk_5     = nanmedian(out_overTime_5min.lf);
+        VLF_Chunk_5    = nanmedian(out_overTime_5min.vlf);
+        lfhf_Chunk_5   = nanmedian(out_overTime_5min.lfhf); %lfhf        : Ratio LF [ms^2]/HF [ms^2]%
+        ttlpwr_Chunk_5  = nanmedian(out_overTime_5min.ttlpwr);
+        NNmean_Chunk_5  = nanmedian(out_overTime_5min.NNmean); %ms 60./NNmean_lomb
+        RMSSD_Chunk_5   = nanmedian(out_overTime_5min.RMSSD);  %ms
+        SDNN_Chunk_5    = nanmedian(out_overTime_5min.SDNN);  %ms
+        SD1_Chunk_5     = nanmedian(out_overTime_5min.SD1); 
+        SD2_Chunk_5     = nanmedian(out_overTime_5min.SD2); 
+        SD1SD2_Chunk_5              = nanmedian(out_overTime_5min.SD1SD2); 
+        MeanHR_Chunk_5              = nanmean(out_overTime_5min.btsdet/(HRVparams.windowlength/60));
+        MedianHR_Chunk_5            = nanmedian(out_overTime_5min.btsdet/(HRVparams.windowlength/60));
+        Nr_Chunks_Chunk_5           = length(out_overTime_5min.btsdet);
+        NotAnalysdChunks_Chunk_5    = length(find(out_overTime_5min.tdflag ~= 5));
+    end
+else
+    t_duration       = nan;
+    HF_Chunk_5       = nan;
+    LF_Chunk_5       = nan;
+    VLF_Chunk_5      = nan;
+    lfhf_Chunk_5     = nan; %lfhf        : Ratio LF [ms^2]/HF [ms^2]%
+    ttlpwr_Chunk_5   = nan;
+    NNmean_Chunk_5   = nan; %ms 60./NNmean_lomb
+    RMSSD_Chunk_5    = nan;  %ms
+    SDNN_Chunk_5     = nan;  %ms
+    MeanHR_Chunk_5   = nan;
+    MedianHR_Chunk_5    = nan;
+    Nr_Chunks_Chunk_5   = nan;
+    NotAnalysdChunks_Chunk_5  = nan;
+    SD1_Chunk_5         = nan;
+    SD2_Chunk_5         = nan;
+    SD1SD2_Chunk_5      = nan;
+       
+       
+end
+
+%%  CALCULATE PoinCare Variables
+
+
+
+t_IBI = t(R2R_valid_locs); 
+%Low Frequency (LF) and High Frequency (HF) bands are identified based on their frequency ranges (0.04 to 0.15 Hz for LF and 0.15 to 0.4 Hz for HF), 
+%[LF_PWVD, HF_PWVD, t_temp] =compute_PWVD(R2R_valid_ms,t_IBI,Fs); 
+
+wind = 9; 
+method = 'robust'; %'exact' ;  '95%' ; 'approximate'
+if isempty(out_overTime)|| sum(~isnan(out_overTime.t_start)) < 1 % table with NaN -> less than one chunk 
+struct_output = nan;
+else
+struct_output = compute_rCSI_rCVI_type(R2R_valid_ms, t_IBI, wind, method, Fs, 7); 
+end
+%plot_hrv_data(struct_output)
+
+
 
 % RMSSD ("root mean square of successive differences")
 % the square root of the mean of the squares of the successive differences between ***adjacent*** intervals
@@ -353,6 +496,7 @@ end
 
 %% How "much time of the run" was deleted related to the detection of outlier?
 Tab_outlier.durationRun_s                   = max(t);
+Tab_outlier.durationRun_min                   = max(t)/60;
 Tab_outlier.duration_NotValidSegments_s     = max(t)-sum(R2R(idx_valid_R2R));
 Tab_outlier.nrblock                         = i_block;
 Tab_outlier.nrblock_combinedFiles           = NrBlock;
@@ -376,6 +520,7 @@ for RpeakNum = 1:length(idx_valid_R2R_consec_2)
 end
 ecg_data = single(ecg_data);
 
+%  Set.R2R_minValidData_min
 if length(R2R_valid) < Set.R2R_minValidData
     out.Rpeak_t                 = [];
     out.Rpeak_sample            = [];
@@ -396,9 +541,125 @@ if length(R2R_valid) < Set.R2R_minValidData
     out.lfPower                 = [];
     out.hfPower                 = [];
     out.totPower                = [];
+    out.CVI_HRV                 = [];
+    out.CSI_HRV                 = [];
+    out.CSI                     = [];
+    out.CVI                     = [];
+    out.CSI_HR                  = [];
+    out.CVI_HR                  = [];
     out.nrblock                 = [];
     out.nrblock_combinedFiles   = [];
     out.ECG_Rpeaks_valid        = [];
+    
+    out.LF_Chunk                = [];
+    out.HF_Chunk                 = [];
+    out.lfhf_Chunk               = [];
+    out.ttlpwr_Chunk             = [];
+    out.NNmean_Chunk             = [];
+    out.RMSSD_Chunk              = [];
+    out.SDNN_Chunk               = [];
+    out.MeanHR_Chunk             = [];
+    out.MedianHR_Chunk           = [];
+    out.Nr_Chunks_Chunk          = [];
+    out.NotAnalysdChunks_Chunk   = [];
+    
+    out.t_durationFromChunk_5     = [];
+    out.LF_Chunk_5                = [];
+    out.HF_Chunk_5                = [];
+    out.lfhf_Chunk_5              = [];
+    out.ttlpwr_Chunk_5            = [];
+    out.NNmean_Chunk_5            = [];
+    out.RMSSD_Chunk_5             = [];
+    out.SDNN_Chunk_5              = [];
+    out.MedianHR_Chunk_5          = [];
+    out.MeanHR_Chunk_5            = [];
+    out.Nr_Chunks_Chunk_5         = [];
+    out.NotAnalysdChunks_Chunk_5  = [];
+
+elseif isempty(out_overTime) ||  sum(~isnan(out_overTime.t_start)) < 1  % less than one Chunk
+    out.nrblock                   = i_block ;
+    out.nrblock_combinedFiles     = NrBlock ;
+    out.ECG_Rpeaks_valid          = ecg_data; % +/- 500 ms data segments for consecutive R-peaks
+    out.Rpeak_t                 = t(R_valid_locs);
+    out.Rpeak_sample            = R_valid_locs;
+    out.R2R_t                   = t(R2R_valid_locs); % time of R2R refers to the end of the interval, i.e. 2nd R-peak in a pair
+    out.R2R_sample              = R2R_valid_locs;
+    out.R2R_valid               = R2R_valid;
+    out.R2R_valid_bpm           = R2R_valid_bpm;
+    out.idx_valid_R2R_consec    = idx_valid_R2R_consec; % index into R2R_valid vector! consec means it is preceeded by a valid R2R interval
+   
+    if Tab_outlier.durationRun_min > Set.R2R_minValidData_min % smaller 5 min no value recorded, 
+      
+    out.mean_R2R_valid_bpm      = mean_R2R_valid_bpm;
+    out.median_R2R_valid_bpm    = median_R2R_valid_bpm;
+    out.std_R2R_valid_bpm       = std_R2R_valid_bpm;
+    out.std_R2R_valid_ms       = std_R2R_valid_ms;
+    out.rmssd_R2R_valid_ms      = rmssd_R2R_valid_ms;
+    out.rmssd_R2R_valid_bpm     = rmssd_R2R_valid_bpm;
+    out.Pxx                     = Pxx;
+    out.freq                    = freq;
+    out.vlfPower                = vlfPower;
+    out.lfPower                 = lfPower;
+    out.hfPower                 = hfPower;
+    out.totPower                = totPower;
+    else
+    out.mean_R2R_valid_bpm      = nan;
+    out.median_R2R_valid_bpm    = nan;
+    out.std_R2R_valid_bpm       = nan;
+    out.std_R2R_valid_ms        = nan;
+    out.rmssd_R2R_valid_ms      = nan;
+    out.rmssd_R2R_valid_bpm     = nan;
+    out.Pxx                     = nan;
+    out.freq                    = nan;
+    out.vlfPower                = nan;
+    out.lfPower                 = nan;
+    out.hfPower                 = nan;
+    out.totPower                = nan;    
+    end
+    
+    if  isnan(struct_output)
+    out.CVI_HRV      = nan;
+    out.CSI_HRV      = nan;
+    out.CSI          = nan;
+    out.CVI          = nan;
+    out.CSI_HR       = nan;
+    out.CVI_HR       = nan;
+    else
+    out.CVI_HRV     = median(struct_output.CVI_HRV);
+    out.CSI_HRV     = median(struct_output.CSI_HRV);
+    out.CSI         = median(struct_output.CSI);
+    out.CVI         = median(struct_output.CVI);
+    out.CSI_HR      = median(struct_output.CSI_HR);
+    out.CVI_HR      = median(struct_output.CVI_HR);
+    end
+    
+
+    
+    out.LF_Chunk                 = nan;
+    out.HF_Chunk                 = nan;
+    out.lfhf_Chunk               = nan;
+    out.ttlpwr_Chunk             = nan;
+    out.NNmean_Chunk             = nan;
+    out.RMSSD_Chunk              = nan;
+    out.SDNN_Chunk               = nan;
+    out.MedianHR_Chunk           = nan;
+    out.MeanHR_Chunk             = nan;
+    out.Nr_Chunks_Chunk          = nan;
+    out.NotAnalysdChunks_Chunk    = nan;
+    
+    out.t_durationFromChunk_5    = nan;
+    out.LF_Chunk_5                = nan;
+    out.HF_Chunk_5                = nan;
+    out.lfhf_Chunk_5              = nan;
+    out.ttlpwr_Chunk_5            = nan;
+    out.NNmean_Chunk_5            = nan;
+    out.RMSSD_Chunk_5             = nan;
+    out.SDNN_Chunk_5              = nan;
+    out.MedianHR_Chunk_5          = nan;
+    out.MeanHR_Chunk_5            = nan;
+    out.Nr_Chunks_Chunk_5         = nan;
+    out.NotAnalysdChunks_Chunk_5  = nan;
+    
 else
     out.Rpeak_t                 = t(R_valid_locs);
     out.Rpeak_sample            = R_valid_locs;
@@ -419,15 +680,48 @@ else
     out.lfPower                 = lfPower;
     out.hfPower                 = hfPower;
     out.totPower                = totPower;
+    
+    out.CVI_HRV     = median(struct_output.CVI_HRV);
+    out.CSI_HRV     = median(struct_output.CSI_HRV);
+    out.CSI         = median(struct_output.CSI);
+    out.CVI         = median(struct_output.CVI);
+    out.CSI_HR      = median(struct_output.CSI_HR);
+    out.CVI_HR      = median(struct_output.CVI_HR);
     out.nrblock                   = i_block ;
     out.nrblock_combinedFiles     = NrBlock ;
     out.ECG_Rpeaks_valid        = ecg_data; % +/- 500 ms data segments for consecutive R-peaks
+    
+    out.LF_Chunk                 = LF_Chunk;
+    out.HF_Chunk                 = HF_Chunk;
+    out.lfhf_Chunk               = lfhf_Chunk;
+    out.ttlpwr_Chunk             = ttlpwr_Chunk;
+    out.NNmean_Chunk             = NNmean_Chunk;
+    out.RMSSD_Chunk              = RMSSD_Chunk;
+    out.SDNN_Chunk               = SDNN_Chunk;
+    out.MedianHR_Chunk             = MedianHR_Chunk;
+    out.MeanHR_Chunk             = MeanHR_Chunk;
+    out.Nr_Chunks_Chunk               = Nr_Chunks_Chunk;
+    out.NotAnalysdChunks_Chunk        = NotAnalysdChunks_Chunk;
+    
+    out.t_durationFromChunk_5    = t_duration; 
+    out.LF_Chunk_5                 = LF_Chunk_5;
+    out.HF_Chunk_5                = HF_Chunk_5;
+    out.lfhf_Chunk_5               = lfhf_Chunk_5;
+    out.ttlpwr_Chunk_5             = ttlpwr_Chunk_5;
+    out.NNmean_Chunk_5             = NNmean_Chunk_5;
+    out.RMSSD_Chunk_5              = RMSSD_Chunk_5;
+    out.SDNN_Chunk_5               = SDNN_Chunk_5;
+    out.MedianHR_Chunk_5             = MedianHR_Chunk_5;
+    out.MeanHR_Chunk_5             = MeanHR_Chunk_5;
+    out.Nr_Chunks_Chunk_5               = Nr_Chunks_Chunk_5;
+    out.NotAnalysdChunks_Chunk_5        = NotAnalysdChunks_Chunk_5;
+    
 end
+
+
 
 out.settingsStruct = Set;            % entire parameter struct (or Set.cap)
 out.codeTimestamp  = datestr(now,30);% provenance: yyyymmddTHHMMSS
-
-
 
 out.hf = [];
 
@@ -514,12 +808,24 @@ if TOPLOT
     ylabel('BPM');
     
     subplot(4,4,15);
-    plot(R2R_valid_bpm(1:end-1),R2R_valid_bpm(2:end),'k.','MarkerEdgeColor',[0.5 0.5 0.5]); hold on
-    plot(R2R_valid_bpm_consec(1:end-1),R2R_valid_bpm_consec(2:end),'m.','MarkerEdgeColor',[0.4235    0.2510    0.3922]);
+    plot(R2R_valid_ms(1:end-1),R2R_valid_ms(2:end),'k.','MarkerEdgeColor',[0.5 0.5 0.5]); hold on
+    plot(R2R_valid_ms_consec(1:end-1),R2R_valid_ms_consec(2:end),'m.','MarkerEdgeColor',[0.4235    0.2510    0.3922]);
+
+  % Add elipse  
+    addpath 'C:\Users\kkaduk\Desktop\Kristin\GitHub\robust_hrv'
+    ibi1 = R2R_valid_ms_consec(1:end-1); 
+    ibi2 = R2R_valid_ms_consec(2:end); 
+    [C, ~] = robustCovHRV([ibi1', ibi2']);
+    [~, eigenvalues] = eig(C);
+    SD1 = sqrt(eigenvalues(1,1));
+    SD2 = sqrt(eigenvalues(2,2));
+    D = sqrt( (trimmean(ibi1,5))^2 + (trimmean(ibi2,5))^2);
+    plotPoincareWithEllipse(ibi1, ibi2, SD1, SD2, D, C)
+
     
     xlabel('R2R(n)');
     ylabel('R2R(n+1)');
-    title('Poincaré plot');
+    title(['Poincaré plot',num2str(round(SD1)),' ', num2str(round(SD2)), ' ', num2str(round(D)) ]);
     axis square
     ig_set_xy_axes_equal;
     ig_add_equality_line;
@@ -544,6 +850,48 @@ if TOPLOT
     
     
     out.hf = hf;
+    
+%     figure
+%     subplot(1,2,1);
+%     plot(R2R_valid_ms(1:end-1),R2R_valid_ms(2:end),'k.','MarkerEdgeColor',[0.5 0.5 0.5]); hold on
+%     plot(R2R_valid_ms_consec(1:end-1),R2R_valid_ms_consec(2:end),'m.','MarkerEdgeColor',[0.4235    0.2510    0.3922]);
+% 
+%   % Add elipse  
+%     addpath 'C:\Users\kkaduk\Desktop\Kristin\GitHub\robust_hrv'
+%     ibi1 = R2R_valid_ms_consec(1:end-1); 
+%     ibi2 = R2R_valid_ms_consec(2:end); 
+%     [C, ~] = robustCovHRV([ibi1', ibi2']);
+%     [~, eigenvalues] = eig(C);
+%     SD1 = sqrt(eigenvalues(1,1));
+%     SD2 = sqrt(eigenvalues(2,2));
+%     D = sqrt( (trimmean(ibi1,5))^2 + (trimmean(ibi2,5))^2);
+%     plotPoincareWithEllipse(ibi1, ibi2, SD1, SD2, D, C)
+% 
+%     
+%     xlabel('R2R(n)');
+%     ylabel('R2R(n+1)');
+%     title(['Poincaré plot',num2str(round(SD1)),' ', num2str(round(SD2)), ' ', num2str(round(D)) ]);
+%     axis square
+%     ig_set_xy_axes_equal;
+%     ig_add_equality_line;
+%     
+%     subplot(1,2,2);
+%     plot(R2R_valid_ms(1:end-1),R2R_valid_ms(2:end),'k.','MarkerEdgeColor',[0.5 0.5 0.5]); hold on
+%     plot(R2R_valid_ms_consec(1:end-1),R2R_valid_ms_consec(2:end),'m.','MarkerEdgeColor',[0.4235    0.2510    0.3922]);
+%     C = cov([ibi1', ibi2']);
+%     [~, eigenvalues] = eig(C);
+%         SD1 = sqrt(eigenvalues(1,1));
+%         SD2 = sqrt(eigenvalues(2,2));
+%         D = sqrt( (mean(ibi1))^2 + (mean(ibi2))^2);
+% 
+% 
+%     plotPoincareWithEllipse(ibi1, ibi2, SD1, SD2, D, C)
+%     xlabel('R2R(n)');
+%     ylabel('R2R(n+1)');
+%     title(['Poincaré plot',num2str(round(SD1)),' ', num2str(round(SD2)), ' ', num2str(round(D)) ]);
+%     axis square
+%     ig_set_xy_axes_equal;
+%     ig_add_equality_line;
     
 end % of if TOPLOT
 
